@@ -4,6 +4,7 @@
 #include <string>
 #include <fstream>
 #include <bitset>
+#include <calloc>
 
 // Δλÿ Μενώ
 #define OnInfoClicked			1001
