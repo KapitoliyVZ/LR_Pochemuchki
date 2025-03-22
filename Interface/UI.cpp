@@ -72,8 +72,8 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         SetClassLongPtr(hWnd, GCLP_HBRBACKGROUND, (LONG_PTR)buttons.hBrush);
 
         // Загрузка изображения
-        buttons.hBitmap = (HBITMAP)LoadImage(NULL, L"C:\\Users\\rezni\\source\\repos\\MainInterface\\Icon.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-        buttons.hBitmap2 = (HBITMAP)LoadImage(NULL, L"C:\\Users\\rezni\\source\\repos\\MainInterface\\7Institute.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+        buttons.hBitmap = (HBITMAP)LoadImage(NULL, L"Icon.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+        buttons.hBitmap2 = (HBITMAP)LoadImage(NULL, L"7Institute.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
         if (!buttons.hBitmap || !buttons.hBitmap2)
         {
             MessageBox(hWnd, L"Не удалось загрузить изображение", L"Ошибка", MB_OK | MB_ICONERROR);
