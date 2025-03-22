@@ -12,7 +12,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdsho
         LoadIcon(NULL, IDI_QUESTION), L"MainClass", SoftwareMainProcedure);
 
 
-    // Регистрация класса 
+    // Регистрация класса
+    //sgmniusijnsb
     if (!RegisterClassW(&MainWindClass))
         return 0;
 
