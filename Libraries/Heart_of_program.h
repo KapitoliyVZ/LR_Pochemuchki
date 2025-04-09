@@ -5,12 +5,13 @@ using namespace std;
 vector<WordData> unite_functions(const string file_path, const bitset<8> &button_flags, const string &word_to_compare)
 {
     fstream input_file(file_path, ios::out | ios::binary);
-    // РЅСѓР¶РЅР° С„СѓРЅРєС†РёСЏ РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ С„Р°Р№Р»РѕРј (РѕС‚РєСЂС‹С‚РёРµ, РїСЂРѕРІРµСЂРєР°, Рё С‚Рґ.)
+    // нужна функция для работы с файлом (открытие, проверка, и тд.)
 
-    vector<vector<string>> sentences = splitTextIntoSentences(input_file); // СЂР°Р·РґРµР»РµРЅРёРµ С‚РµРєСЃС‚Р° РЅР° РїСЂРµРґР»РѕР¶РµРЅРёСЏ
+    vector<vector<string>> sentences = splitTextIntoSentences(input_file); // разделение текста на предложения
 
-    vector<WordData> data; // РІРµРєС‚РѕСЂ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ РґР°РЅРЅС‹С… Рѕ РЅР°Р№РґРµРЅРЅС‹С… СЂРёС„Рј РїРѕ С‡Р°СЃС‚СЏРј СЂРµС‡Рё
+    vector<WordData> data; // вектор для хранения данных о найденных рифм по частям речи
 
-    deal_with_words(button_flags, sentences, word_to_compare, data); // СЂР°Р±РѕС‚Р° СЃ СЂРёС„РјР°РјРё С‡Р°СЃС‚РµР№ СЂРµС‡Рё
+    deal_with_words(button_flags, sentences, word_to_compare, data); // работа с рифмами частей речи
 
+    return data; // возвращаем вектор с рифмами
 }
