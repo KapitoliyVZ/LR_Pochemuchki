@@ -15,7 +15,6 @@ struct WordData
 	int rhymed_amount = 0;		  // количество слов, с которым рифмуется взятое слово
 };
 
-// Добавлено 06.04.2025
 // Функция разбора UTF-8 строки на отдельные Unicode-символы
 std::vector<std::string> utf8Split(const std::string &str)
 {
@@ -405,7 +404,6 @@ vector<WordData> find_rhymes(vector<vector<string>> &words_text_collection, bits
 };
 
 // основная функция работы с рифмами частей речи
-// TMP VOID
 void deal_with_words(const bitset<8> &button_flags, const vector<vector<string>> &numbered_sentences, string word_to_compare = " ", vector<WordData> &data)
 {
 	vector<vector<string>> sentences = numbered_sentences;
@@ -440,51 +438,7 @@ void deal_with_words(const bitset<8> &button_flags, const vector<vector<string>>
 		}
 	}
 
-	/*// TMP проверка данных
-	for (vector<string>& sentence : sentences)
-	{
-		for (string& word : sentence)
-			cout << word << " ";
-
-		cout << endl;
-	};
-
-	for (int i = 0; i < 6; i++)
-	{
-		if (!words_text_collection[i].empty())
-			cout << "part of speeech" + parts_of_speech[i] + ": ";
-
-		for (string& word : words_text_collection[i])
-		{
-			 cout << word + " ";
-		}
-
-		if (!words_text_collection[i].empty())
-			cout << endl;
-	}*/
-
 	// поиск рифм
 	data = find_rhymes(words_text_collection, button_flags, comparing_word_part_of_speech);
 
-	// Проверка вывода TMP
-	/*cout << endl << endl;
-
-	for (WordData& output : data)
-	{
-		cout << "Слово: " << output.word;
-		cout << endl;
-		if (output.rhymed_words.size() != 0)
-		{
-			cout << "rhymed with ";
-			for (string& word : output.rhymed_words)
-			{
-				cout << " " << word << " ,";
-			}
-
-		}
-		cout << endl;
-		cout << "amount of word in the text:  " << output.amount << endl;
-		cout << "amount of rhymes: " << output.rhymed_amount << endl << endl;
-	}
-	*/
 };

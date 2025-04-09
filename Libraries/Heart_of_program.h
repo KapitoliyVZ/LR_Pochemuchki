@@ -12,5 +12,4 @@ vector<WordData> unite_functions(const string file_path, const bitset<8> &button
     vector<WordData> data; // вектор для хранения данных о найденных рифм по частям речи
 
     deal_with_words(button_flags, sentences, word_to_compare, data); // работа с рифмами частей речи
-
 }
