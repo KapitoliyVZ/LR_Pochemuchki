@@ -93,7 +93,7 @@ OPENFILENAMEW OFN;
 
 
 // Прототипы функций
-void SetOpenFileParams(HWND hWnd, string filename);
+void SetOpenFileParams(HWND hWnd, string filename); 
 void read_data(LPCSTR path);
 void save_data(LPCSTR path, Buttons& buttons);
 BOOL MakeRoundButton(LPDRAWITEMSTRUCT lpDrawItem, Buttons& buttons, bitset<8>& ButtonFlags);
