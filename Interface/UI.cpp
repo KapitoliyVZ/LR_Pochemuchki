@@ -179,15 +179,37 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         }
         else if (LOWORD(wp) == buttons.OnReadFile)
         {
-            string filename = "";
-            if (GetOpenFileNameW(&OFN)) // Исправлен вызов GetOpenFileNameW для чтения
+            string filename = ConvertLPWSTRToString(OFN.lpstrFile);
+            words = unite_functions(filename, ButtonFlags, " ");
+
+            // Очищаем содержимое поля перед добавлением нового текста
+            SetWindowTextA(buttons.hEditRhymes, "");
+
+            // Проходим по всем словам
+            for (WordData& output : words)
             {
-                filename = ConvertLPWSTRToString(OFN.lpstrFile);
-				words = unite_functions(filename, buttons, ButtonFlags);
-				SetWindowText(buttons.hEditText, L"");
-				InvalidateRect(buttons.hEditText, NULL, TRUE); // Перерисовываем кнопку
-				UpdateWindow(buttons.hEditText);
+                // Добавляем слово в поле
+                string wordInfo = "Слово: " + output.word + "\n";
+                SendMessageA(buttons.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)wordInfo.c_str());
+
+                // Если есть рифмы, добавляем их
+                if (!output.rhymed_words.empty())
+                {
+                    SendMessageA(buttons.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)"Рифмы:\n");
+                    for (const string& word : output.rhymed_words)
+                    {
+                        string rhyme = "  - " + word + "\n";
+                        SendMessageA(buttons.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)rhyme.c_str());
+                    }
+                }
+                
+                // Добавляем разделитель между словами
+                SendMessageA(buttons.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)"\n");
             }
+
+            // Перерисовываем поле текста
+            InvalidateRect(buttons.hEditText, NULL, TRUE);
+            UpdateWindow(buttons.hEditText);
         }
         else if (LOWORD(wp) == buttons.OnSaveFile)
         {
