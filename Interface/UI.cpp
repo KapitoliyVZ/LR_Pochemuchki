@@ -59,6 +59,8 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                               NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
     static bitset<8> ButtonFlags; // Флаги для кнопок
     static string filename = "";
+	static vector<WordData> words;
+
     switch (msg)
     {
     case WM_CREATE:
@@ -181,6 +183,10 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             if (GetOpenFileNameW(&OFN)) // Исправлен вызов GetOpenFileNameW для чтения
             {
                 filename = ConvertLPWSTRToString(OFN.lpstrFile);
+				words = unite_functions(filename, buttons, ButtonFlags);
+				SetWindowText(buttons.hEditText, L"");
+				InvalidateRect(buttons.hEditText, NULL, TRUE); // Перерисовываем кнопку
+				UpdateWindow(buttons.hEditText);
             }
         }
         else if (LOWORD(wp) == buttons.OnSaveFile)
