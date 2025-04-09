@@ -59,7 +59,6 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                               NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
     static bitset<8> ButtonFlags; // Флаги для кнопок
     static string filename = "";
-	static vector<WordData> words;
 
     switch (msg)
     {
@@ -180,7 +179,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         else if (LOWORD(wp) == buttons.OnReadFile)
         {
             string filename = ConvertLPWSTRToString(OFN.lpstrFile);
-            words = unite_functions(filename, ButtonFlags, " ");
+            vector<WordData> words = unite_functions(filename, ButtonFlags, " ");
 
             // Очищаем содержимое поля перед добавлением нового текста
             SetWindowTextA(buttons.hEditRhymes, "");
