@@ -25,7 +25,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdsho
 
     // Устанавливаем окно поверх всех окон
     SetWindowPos(hMainWnd, HWND_TOP, 0, 0, screenWidth, screenHeight, SWP_SHOWWINDOW);
-
+    
     // Основной цикл работы проложения
     MSG msg = {0};
 
@@ -178,13 +178,24 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         }
         else if (LOWORD(wp) == buttons.OnReadFile)
         {
-            string filename = ConvertLPWSTRToString(OFN.lpstrFile);
+            string filename;
+            
+            if (GetOpenFileNameW(&OFN)) // Исправлен вызов GetOpenFileNameW для чтения
+            {
+                filename = ConvertLPWSTRToString(OFN.lpstrFile);
+				//MessageBoxA(hWnd, filename.c_str(), "Выбранный файл", MB_OK);
+            }
+            filename = "check3.txt";   //TMP
             vector<WordData> words = unite_functions(filename, ButtonFlags, " ");
-
             // Очищаем содержимое поля перед добавлением нового текста
-            SetWindowTextA(buttons.hEditRhymes, "");
+            
 
             // Проходим по всем словам
+			if (words.empty())
+			{
+				MessageBoxA(hWnd, "Не найдено рифм", "Ошибка", MB_OK | MB_ICONERROR);
+				break;
+			}
             for (WordData& output : words)
             {
                 // Добавляем слово в поле
@@ -201,7 +212,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                         SendMessageA(buttons.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)rhyme.c_str());
                     }
                 }
-                
+
                 // Добавляем разделитель между словами
                 SendMessageA(buttons.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)"\n");
             }
