@@ -1,4 +1,6 @@
 #pragma once
+#ifndef UI_CONST_H
+#define UI_CONST_H
 #include <Windows.h>
 #include <iostream>
 #include <string>
@@ -8,14 +10,14 @@
 
 
 // Размер буфера
-#define TextBufferSize      90
+//#define TextBufferSize      90
 
 using namespace std;
 
 
-char BufferReceive[TextBufferSize] = { 0 };
+//char BufferReceive[TextBufferSize] = { 0 };
 
-
+ifstream file_input; // файл для чтения
 
 
 struct InitialDimensions {
@@ -25,7 +27,7 @@ struct InitialDimensions {
 	int height;
 };
 
-InitialDimensions initialDimensions[20];
+//InitialDimensions initialDimensions[20];
 
 struct Buttons
 {
@@ -86,7 +88,7 @@ struct Buttons
 
 
 
-OPENFILENAMEW OFN;
+// OPENFILENAMEW OFN;
 
 
 
@@ -106,3 +108,5 @@ WNDCLASS NewWindClass(HBRUSH BGColor, HCURSOR Cursor, HINSTANCE hInst, HICON Ico
 string ConvertLPWSTRToString(LPWSTR lpwstr);
 void MakeFrame(HWND hWnd, HDC hdc, HWND Edit, Buttons buttons);
 LPWSTR ConvertStringToLPWSTR(const std::string& str);
+
+#endif // UI_CONST_H
