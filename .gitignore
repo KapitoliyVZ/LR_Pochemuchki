@@ -3,4 +3,7 @@
 ################################################################################
 
 /.vs
-/Interface
+/Interface/.vs
+/Interface/Debug
+/Interface/MainInterface
+/Interface/x64
