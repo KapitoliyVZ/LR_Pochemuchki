@@ -4,6 +4,7 @@
 #include "rhymes.h"
 #include "kulik_search.h"
 
+
 // структура для хранения данных о найденном причастии
 struct WordData
 {

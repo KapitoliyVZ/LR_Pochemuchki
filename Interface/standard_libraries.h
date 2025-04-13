@@ -35,7 +35,7 @@
 #include <unordered_map>
 #include <regex>
 #include <conio.h>
-#include <stdio.h>
+#include <cstdio>
 #include "windows.h"
 #include <commdlg.h>
 #include <iomanip>
@@ -51,4 +51,5 @@
 #include <thread>
 #include <unordered_map>
 #include <regex>
+#include <stdexcept>
 using namespace std;

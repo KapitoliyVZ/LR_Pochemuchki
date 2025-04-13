@@ -7,8 +7,15 @@
 // —тарт приложени€ и создание стартовых процедур
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdshow)
 {
+    
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
+    
+    /*
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+    std::locale::global(std::locale("en_US.UTF-8"));
+    */
 
     // √лавный класс дл€ создани€ параметров приветственного окна
     WNDCLASS MainWindClass = NewWindClass((HBRUSH)COLOR_WINDOW, LoadCursor(NULL, IDC_ARROW), hInst,
