@@ -85,7 +85,7 @@ std::string getPartOfSpeech(const std::string &word)
         return cache[word]; // Возвращаем результат из кэша
     }
 
-    std::string command = "echo " + word + " | \"C:\\Study\\MyStem\\mystem.exe\" -i ";
+    std::string command = "echo " + word + " | \"D:\\TRPO\\LR_Pochemuchki\\Interface\\mystem.exe\" -i ";
     std::string result = exec(command.c_str());
 
     // НОВАЯ ФУНКЦИЯ ПЕРЕВОДА В АНСИ

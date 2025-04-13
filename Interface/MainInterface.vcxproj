@@ -150,6 +150,9 @@
     <Text Include="check2.txt" />
     <Text Include="check3.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="mystem.exe" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
