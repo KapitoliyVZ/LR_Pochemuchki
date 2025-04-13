@@ -89,7 +89,7 @@ std::string getPartOfSpeech(const std::string &word)
     std::string result = exec(command.c_str());
 
     // НОВАЯ ФУНКЦИЯ ПЕРЕВОДА В АНСИ
-    //result = utf8_to_ansi(result);
+    result = utf8_to_ansi(result);
 
     size_t pos = result.find('{');
     if (pos != std::string::npos)
