@@ -190,7 +190,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 				//MessageBoxA(hWnd, filename.c_str(), "Выбранный файл", MB_OK);
                 if (checkTxtFile(filename)) // Проверка файла на существование и корректность
                 {
-                    MessageBoxA(hWnd, "Файл прошел все проверки.", "Информация", MB_OK);
+                    MessageBoxA(hWnd, filename.c_str(), "Информация", MB_OK);
                 }
                 else
                 {
@@ -200,6 +200,8 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             }
 
             vector<WordData> words = unite_functions(ButtonFlags, " ");
+
+
             // Очищаем содержимое поля перед добавлением нового текста
             
 

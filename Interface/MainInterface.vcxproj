@@ -133,13 +133,11 @@
   <ItemGroup>
     <ClInclude Include="file_working.h" />
     <ClInclude Include="general_search.h" />
-    <ClInclude Include="Header.h" />
     <ClInclude Include="Heart_of_program.h" />
     <ClInclude Include="kulik_search.h" />
     <ClInclude Include="NLP.h" />
     <ClInclude Include="parse_sentences.h" />
     <ClInclude Include="rhymes.h" />
-    <ClInclude Include="standard_libraries.h" />
     <ClInclude Include="UI_const.h" />
   </ItemGroup>
   <ItemGroup>
@@ -147,11 +145,11 @@
     <Image Include="Icon.bmp" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="check2.txt" />
-    <Text Include="check3.txt" />
+    <None Include="mystem.exe" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="mystem.exe" />
+    <Text Include="check2.txt" />
+    <Text Include="check3.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

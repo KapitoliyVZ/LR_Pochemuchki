@@ -23,10 +23,10 @@
     <ClInclude Include="UI_const.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="general_search.h">
+    <ClInclude Include="file_working.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="Header.h">
+    <ClInclude Include="general_search.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="Heart_of_program.h">
@@ -44,12 +44,6 @@
     <ClInclude Include="rhymes.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="standard_libraries.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="file_working.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="7Institute.bmp">
@@ -60,16 +54,16 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
+    <None Include="mystem.exe">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
     <Text Include="check2.txt">
       <Filter>Файлы заголовков</Filter>
     </Text>
     <Text Include="check3.txt">
       <Filter>Файлы заголовков</Filter>
     </Text>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="mystem.exe">
-      <Filter>Файлы заголовков</Filter>
-    </None>
   </ItemGroup>
 </Project>
