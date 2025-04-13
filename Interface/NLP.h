@@ -35,6 +35,20 @@ std::string capitalizeAllLetters(const std::string& input) {
     return wstring_to_utf8(wstr);
 }
 
+// Функция перевода ANSI в UTF8
+std::string ansi_to_utf8(const std::string& ansi_str) {
+    int wide_size = MultiByteToWideChar(1251, 0, ansi_str.c_str(), -1, nullptr, 0);
+    std::wstring wide_str(wide_size, 0);
+    MultiByteToWideChar(1251, 0, ansi_str.c_str(), -1, &wide_str[0], wide_size);
+
+    int utf8_size = WideCharToMultiByte(CP_UTF8, 0, wide_str.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    std::string utf8_str(utf8_size, 0);
+    WideCharToMultiByte(CP_UTF8, 0, wide_str.c_str(), -1, &utf8_str[0], utf8_size, nullptr, nullptr);
+
+    utf8_str.pop_back(); // убрать лишний нуль-терминатор
+    return utf8_str;
+}
+
 
 
 // Функция для перекодировки из UTF-8 в ANSI (Windows-1251)
@@ -113,11 +127,15 @@ std::string getPartOfSpeech(const std::string& word) {
         return cache[word]; // Возвращаем результат из кэша
     }
 
-    // std::string command = "cmd /C echo " + word + " | \"C:\\Study\\MyStem\\mystem.exe\" -i ";
+    //string command = "echo " + word + " | \"C:\\Study\\MyStem\\mystem.exe\" -i ";
     //std::string result = exec(command.c_str());
     
 
-    std::string result = exec_with_createprocess("cmd /C echo " + word + " | \"C:\\Study\\MyStem\\mystem.exe\" -i");
+    std::string command = "cmd /C echo " + word + " | \"C:\\Study\\MyStem\\mystem.exe\" -i";
+    //command = ansi_to_utf8(command);
+
+    std::string result = exec_with_createprocess(command);
+
 
     // НОВАЯ ФУНКЦИЯ ПЕРЕВОДА В АНСИ
     result = utf8_to_ansi(result);
