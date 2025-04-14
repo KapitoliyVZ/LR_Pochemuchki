@@ -7,6 +7,27 @@
 #include <unordered_map>
 #include <vector>
 
+// получение пути к mystem.exe
+std::string getMystemPath() {
+    char buffer[MAX_PATH];
+    DWORD length = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
+    if (length == 0) {
+        return "\"mystem.exe\"";  // fallback с кавычками
+    }
+
+    std::string fullPath(buffer, length);
+
+    // Найдём позицию последнего слэша
+    size_t pos = fullPath.find_last_of("\\/");
+    if (pos == std::string::npos) {
+        return "\"mystem.exe\"";
+    }
+
+    // Соберём путь и добавим кавычки
+    std::string mystemPath = fullPath.substr(0, pos + 1) + "mystem.exe";
+    return "\"" + mystemPath + "\"";
+}
+
 // Конвертация строки из UTF-8 в wide-строку (UTF-16)
 std::wstring utf8_to_wstring(const std::string& utf8_str) {
     int size_needed = MultiByteToWideChar(CP_UTF8, 0, utf8_str.c_str(), -1, nullptr, 0);
@@ -91,7 +112,13 @@ std::string run_mystem_on_word(const std::string& word) {
 
     // есть функция подмены пути к mystem, нужна проверка
     // Формируем команду для запуска mystem
-    std::string command = "\"C:\\Study\\MyStem\\mystem.exe\" -i \"" + inputFile + "\" \"" + outputFile + "\"";
+
+    // добавление пути к mystem
+    string mystem_file_path = getMystemPath();
+
+    //std::string command = "\"C:\\Study\\MyStem\\mystem.exe\" -i \"" + inputFile + "\" \"" + outputFile + "\"";
+
+    std::string command = mystem_file_path + " -i \"" + inputFile + "\" \"" + outputFile + "\"";
 
     STARTUPINFOA si = { sizeof(si) };
     PROCESS_INFORMATION pi;
@@ -142,7 +169,7 @@ std::string getPartOfSpeech(const std::string& word) {
                 // Универсальный способ — взять символ после =
                 size_t equalsPos = analysis.find('=');
                 if (equalsPos != std::string::npos && equalsPos + 1 < analysis.size()) {
-                    cache[word] = std::string(1, analysis[equalsPos + 1]);
+                    cache[word] = std::string(1, analysis[equalsPos + 1]);  
                 }
             }
             return cache[word];
