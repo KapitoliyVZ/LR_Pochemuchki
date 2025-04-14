@@ -1,6 +1,7 @@
 #include "UI_const.h"
 #include "Heart_of_program.h"
 #include "file_working.h"
+#include "NLP.h"
 
  OPENFILENAMEW OFN;
 
@@ -254,6 +255,8 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             for (WordData& output : words)
             {
                 // Добавляем слово в поле
+                
+                output.word = utf8_to_ansi(output.word);
                 string wordInfo = "Слово: " + output.word + "\n";
                 SendMessageA(buttons.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)wordInfo.c_str());
 
@@ -261,8 +264,9 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 if (!output.rhymed_words.empty())
                 {
                     SendMessageA(buttons.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)"Рифмы:\n");
-                    for (const string& word : output.rhymed_words)
+                    for (string& word : output.rhymed_words)
                     {
+                        word = utf8_to_ansi(word);
                         string rhyme = "  - " + word + "\n";
                         SendMessageA(buttons.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)rhyme.c_str());
                     }
