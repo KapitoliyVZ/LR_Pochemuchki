@@ -31,6 +31,7 @@ struct InitialDimensions {
 
 struct Buttons
 {
+	bool ShowInEdit;
 	// Кнопки
 	int OnInfoClicked;
 	int OnExitSoftware;

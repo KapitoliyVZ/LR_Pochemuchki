@@ -66,10 +66,11 @@ WNDCLASS NewWindClass(HBRUSH BGColor, HCURSOR Cursor, HINSTANCE hInst, HICON Ico
 LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 {
 
-    static Buttons buttons = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    static Buttons buttons = { false, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                               NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
     static bitset<8> ButtonFlags; // Флаги для кнопок
     static string filename = "";
+
 
     switch (msg)
     {
@@ -100,6 +101,34 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
     }
     case WM_COMMAND:
     {
+        // Проверяем, если уведомление пришло от поля редактирования
+        if (HIWORD(wp) == EN_CHANGE && (HWND)lp == buttons.hEditInputWord)
+        {
+            // Получаем текст из поля редактирования
+            char buffer[256] = { 0 };
+            GetWindowTextA(buttons.hEditInputWord, buffer, sizeof(buffer));
+
+            // Если поле не пустое, блокируем кнопки
+            if (strlen(buffer) > 0)
+            {
+                EnableWindow(buttons.hVerbButton, FALSE);
+                EnableWindow(buttons.hAdverbButton, FALSE);
+                EnableWindow(buttons.hAdjectiveButton, FALSE);
+                EnableWindow(buttons.hNounButton, FALSE);
+                EnableWindow(buttons.hParticipleButton, FALSE);
+                EnableWindow(buttons.hAdverbialButton, FALSE);
+            }
+            else // Если поле пустое, разблокируем кнопки
+            {
+                EnableWindow(buttons.hVerbButton, TRUE);
+                EnableWindow(buttons.hAdverbButton, TRUE);
+                EnableWindow(buttons.hAdjectiveButton, TRUE);
+                EnableWindow(buttons.hNounButton, TRUE);
+                EnableWindow(buttons.hParticipleButton, TRUE);
+                EnableWindow(buttons.hAdverbialButton, TRUE);
+            }
+        }
+        //break;
         if (LOWORD(wp) == buttons.ButExit)
         {
             SetWindowText(buttons.hExitButton, L"");
@@ -109,6 +138,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         }
         else if (LOWORD(wp) == buttons.OnToggleButtonClicked)
         {
+			buttons.ShowInEdit = !buttons.ShowInEdit;
             SetWindowText(buttons.hToggleButton, L"");
             InvalidateRect(buttons.hToggleButton, NULL, TRUE); // Перерисовываем кнопку
             UpdateWindow(buttons.hToggleButton);
@@ -180,44 +210,47 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         }
         else if (LOWORD(wp) == buttons.Search)
         {
+			ButtonFlags[6] = 0; // Сброс флага поиска слова
             char WordToSearch[60] = ""; 
             GetWindowTextA(buttons.hEditInputWord, WordToSearch, 60);
             string data = WordToSearch;
-            ButtonFlags.flip(6);
-            // Доделать запуск обработки поиска рифм к введеному слову
+			if (data.length() != 0)
+			{
+                ButtonFlags.flip(6);
+			}
             
-        }
-        else if (LOWORD(wp) == buttons.OnReadFile)
-        {
-            string filename;
-
-            if (GetOpenFileNameW(&OFN)) // Исправлен вызов GetOpenFileNameW для чтения
+            if (ButtonFlags.test(0) == 0 and ButtonFlags.test(1) == 0 and
+                ButtonFlags.test(2) == 0 and ButtonFlags.test(3) == 0 and
+                ButtonFlags.test(4) == 0 and ButtonFlags.test(5) == 0 and
+                ButtonFlags.test(6) == 0)
             {
-                filename = ConvertLPWSTRToString(OFN.lpstrFile);
-				//MessageBoxA(hWnd, filename.c_str(), "Выбранный файл", MB_OK);
-                if (checkTxtFile(filename)) // Проверка файла на существование и корректность
-                {
-                    MessageBoxA(hWnd, filename.c_str(), "Информация", MB_OK);
-                }
-                else
-                {
-                    MessageBoxA(hWnd, "Файл не прошел проверку.", "Ошибка", MB_OK | MB_ICONERROR);
-                    break;
-                }
+                MessageBoxA(hWnd, "Выберите часть речи или введите слово для поиска", "Ошибка", MB_OK | MB_ICONERROR);
+                break;
             }
-
-            vector<WordData> words = unite_functions(ButtonFlags, " ");
+            if (ButtonFlags.count() >= 2 and
+                ButtonFlags.test(7) == 0)
+            {
+                MessageBoxA(hWnd, "Выберите несколько частей речи или введите слово для поиска", "Ошибка", MB_OK | MB_ICONERROR);
+                break;
+            }
+            if (filename.length() == 0)
+            {
+                MessageBoxA(hWnd, "Выберите файл с текстом для поиска рифм", "Ошибка", MB_OK | MB_ICONERROR);
+                break;
+            }
+            vector<WordData> words = unite_functions(ButtonFlags, data);
 
 
             // Очищаем содержимое поля перед добавлением нового текста
-            
+            SetWindowTextA(buttons.hEditRhymes, "");
+            SetWindowTextA(buttons.hEditText, "");
 
             // Проходим по всем словам
-			if (words.empty())
-			{
-				MessageBoxA(hWnd, "Не найдено рифм", "Ошибка", MB_OK | MB_ICONERROR);
-				break;
-			}
+            if (words.empty())
+            {
+                MessageBoxA(hWnd, "Не найдено рифм", "Ошибка", MB_OK | MB_ICONERROR);
+                break;
+            }
             for (WordData& output : words)
             {
                 // Добавляем слово в поле
@@ -242,6 +275,28 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             // Перерисовываем поле текста
             InvalidateRect(buttons.hEditText, NULL, TRUE);
             UpdateWindow(buttons.hEditText);
+            
+        }
+        else if (LOWORD(wp) == buttons.OnReadFile)
+        {
+            
+
+            if (GetOpenFileNameW(&OFN)) // Исправлен вызов GetOpenFileNameW для чтения
+            {
+                filename = ConvertLPWSTRToString(OFN.lpstrFile);
+				//MessageBoxA(hWnd, filename.c_str(), "Выбранный файл", MB_OK);
+                if (checkTxtFile(filename)) // Проверка файла на существование и корректность
+                {
+                    MessageBoxA(hWnd, filename.c_str(), "Информация", MB_OK);
+                }
+                else
+                {
+                    MessageBoxA(hWnd, "Файл не прошел проверку.", "Ошибка", MB_OK | MB_ICONERROR);
+                    break;
+                }
+            }
+
+            
         }
         else if (LOWORD(wp) == buttons.OnSaveFile)
         {
@@ -328,7 +383,6 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         }
         break;
     }
-
     case WM_CTLCOLOREDIT:
     {
         HDC hdcEdit = (HDC)wp;
@@ -342,6 +396,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         }
         break;
     }
+    
     //case WM_SIZE:
     //{
     //    int width = LOWORD(lp);
@@ -459,7 +514,7 @@ BOOL MakeRoundButton(LPDRAWITEMSTRUCT lpDrawItem, Buttons &buttons, bitset<8> &B
     }
     else if (lpDrawItem->hwndItem == buttons.hToggleButton)
     {
-        isActive = ButtonFlags.test(6);
+        isActive = buttons.ShowInEdit;
         hBrushes = isActive ? buttons.hBrushGreen : buttons.hBrushGrey;
         buttonText = isActive ? "Вывод на экран включен" : "Вывод на экран выключен";
     }
@@ -646,13 +701,13 @@ void MainWndAddWidget(HWND hWnd, Buttons &buttons)
    // initialDimensions[8] = {20, 330, 250, 40};
 
     // Создаем кнопку с флагом BS_OWNERDRAW для кастомной отрисовки
-    buttons.hToggleButton = CreateWindowA("BUTTON", "", WS_VISIBLE | WS_CHILD | BS_OWNERDRAW,
+    buttons.hToggleButton = CreateWindowA("BUTTON", "Вывод на экран", WS_VISIBLE | WS_CHILD | BS_OWNERDRAW,
                                           605, 20, 200, 40, hWnd, (HMENU)buttons.OnToggleButtonClicked, NULL, NULL);
   //  initialDimensions[9] = {605, 20, 200, 40};
 
     // Кнопка однородного поиска
-    buttons.hSearchType = CreateWindowA("BUTTON", "", WS_VISIBLE | WS_CHILD | BS_OWNERDRAW,
-                                        810, 20, 200, 40, hWnd, (HMENU)buttons.ButSearchType, NULL, NULL);
+    buttons.hSearchType = CreateWindowA("BUTTON", "Тип поиска", WS_VISIBLE | WS_CHILD | BS_OWNERDRAW,
+                                        810, 20, 210, 40, hWnd, (HMENU)buttons.ButSearchType, NULL, NULL);
    // initialDimensions[19] = {810, 20, 200, 40};
 
     // Диалоговые окна и их подписи
@@ -660,8 +715,8 @@ void MainWndAddWidget(HWND hWnd, Buttons &buttons)
                                               20, 385, 250, 30, hWnd, NULL, NULL, NULL);
    // initialDimensions[10] = {20, 385, 250, 30};
 
-    buttons.hOutputStatus = CreateWindowA("static", "", WS_VISIBLE | WS_CHILD | ES_MULTILINE | WS_VSCROLL,
-                                          20, 415, 250, 150, hWnd, NULL, NULL, NULL);
+    buttons.hOutputStatus = CreateWindowA("edit", "", WS_VISIBLE | WS_CHILD | ES_MULTILINE |ES_READONLY| WS_VSCROLL,
+                                          20, 416, 250, 150, hWnd, NULL, NULL, NULL);
    // initialDimensions[11] = {20, 415, 250, 150};
 
     // Поле ввода слова для поиска рифмующихся пар с этим словом
@@ -670,10 +725,10 @@ void MainWndAddWidget(HWND hWnd, Buttons &buttons)
   //  initialDimensions[12] = {20, 600, 250, 30};
 
     buttons.hEditInputWord = CreateWindowA("edit", "", WS_VISIBLE | WS_CHILD | ES_MULTILINE | WS_VSCROLL,
-                                           20, 630, 250, 50, hWnd, NULL, NULL, NULL);
+                                           20, 631, 250, 50, hWnd, NULL, NULL, NULL);
   //  initialDimensions[13] = {20, 630, 250, 50};
 
-    buttons.hSearch = CreateWindowA("BUTTON", "", WS_VISIBLE | WS_CHILD | BS_OWNERDRAW,
+    buttons.hSearch = CreateWindowA("BUTTON", "Поиск", WS_VISIBLE | WS_CHILD | BS_OWNERDRAW,
                                     20, 690, 250, 40, hWnd, (HMENU)buttons.Search, NULL, NULL);
    // initialDimensions[14] = {20, 690, 250, 40};
 
@@ -682,17 +737,17 @@ void MainWndAddWidget(HWND hWnd, Buttons &buttons)
                                           295, 80, 300, 30, hWnd, NULL, NULL, NULL);
    // initialDimensions[15] = {295, 80, 300, 30};
 
-    buttons.hEditRhymes = CreateWindowA("edit", "", WS_VISIBLE | WS_CHILD | ES_MULTILINE | WS_VSCROLL,
-                                        295, 110, screenWidth - 315, 400, hWnd, NULL, NULL, NULL);
+    buttons.hEditRhymes = CreateWindowA("edit", "", WS_VISIBLE | WS_CHILD | ES_MULTILINE  | WS_VSCROLL| ES_READONLY,
+                                        295, 111, screenWidth - 315, 400, hWnd, NULL, NULL, NULL);
    // initialDimensions[16] = {295, 110, screenWidth - 315, 400};
 
     // Окно приема данных
     buttons.hOutputText = CreateWindowA("static", "Текст с найденными рифмами", WS_VISIBLE | WS_CHILD | ES_CENTER,
-                                        295, 620, 300, 30, hWnd, NULL, NULL, NULL);
+                                        295, 520, 300, 30, hWnd, NULL, NULL, NULL);
    // initialDimensions[17] = {295, 620, 300, 30};
 
-    buttons.hEditText = CreateWindowA("edit", "", WS_VISIBLE | WS_CHILD | ES_MULTILINE | WS_VSCROLL,
-                                      295, 650, screenWidth - 315, 400, hWnd, NULL, NULL, NULL);
+    buttons.hEditText = CreateWindowA("edit", "", WS_VISIBLE | WS_CHILD | ES_MULTILINE | ES_READONLY | WS_VSCROLL,
+                                      295, 551, screenWidth - 315, 400, hWnd, NULL, NULL, NULL);
 // initialDimensions[18] = {295, 650, screenWidth - 315, 400};
 }
 // Запись в файл

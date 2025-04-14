@@ -13,7 +13,9 @@ int utf8CharLength(unsigned char byte) {
 
 // функция удаления пробелов
 void removeSpacesFromSentences(vector<vector<string>>& sentences) {
+	if (sentences.empty()) return; // Если вектор пустой, ничего не делаем
     for (auto& sentence : sentences) {
+		if (sentence.empty()) continue; // Если предложение пустое, пропускаем его
         for (auto& word : sentence) {
             // Удаляем все пробелы из строки
             word.erase(remove(word.begin(), word.end(), ' '), word.end());
@@ -61,9 +63,16 @@ vector<vector<string>> splitTextIntoSentences()
     vector<vector<string>> sentences;
     string text, line;
 
+
+    // Где открытие файла???????????
+
+
     // Чтение текста из файла
-    while (getline(file_input, line)) {
-        text += line + " ";
+    if (!file_input.eof())
+    {
+        while (getline(file_input, line)) {
+            text += line + " ";
+        }
     }
     file_input.close();
     //text = "Лес стоял таинственный, Дом был давно забытый. Ветер дул молчаливый, Огонь был еле укрытый. Путь лежал опасный, След был давно оставленный, забытый. Мир казался ясный, Но голос — кем-то сказанный. Свет был тёплый, нежный, Взгляд — невольно пойманный. Сад рос пышный, душный, И лист — дождём умытый.";
@@ -127,6 +136,10 @@ vector<vector<string>> splitTextIntoSentences()
     }
 
     removeSpacesFromSentences(sentences);
-    sentences.pop_back();
+
+	// Удаляем последний элемент, если он пустой
+	if (!sentences.empty())
+        sentences.pop_back();
+
     return sentences;
 }

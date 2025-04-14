@@ -10,7 +10,8 @@ vector<WordData> unite_functions( bitset<8> &button_flags, const string &word_to
 
     vector<WordData> data; // вектор для хранения данных о найденных рифм по частям речи
 
-    deal_with_words(button_flags, sentences, word_to_compare, data); // работа с рифмами частей речи
+	if (!sentences.empty()) // если вектор пустой, ничего не делаем
+        deal_with_words(button_flags, sentences, word_to_compare, data); // работа с рифмами частей речи
 
     return data; // возвращаем вектор с рифмами
 }

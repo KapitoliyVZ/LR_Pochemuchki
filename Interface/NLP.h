@@ -7,7 +7,9 @@ std::wstring utf8_to_wstring(const std::string& utf8_str) {
     int size_needed = MultiByteToWideChar(CP_UTF8, 0, utf8_str.c_str(), -1, nullptr, 0);
     std::wstring wstr(size_needed, 0);
     MultiByteToWideChar(CP_UTF8, 0, utf8_str.c_str(), -1, &wstr[0], size_needed);
-    wstr.pop_back(); // убрать лишний нуль-терминатор
+    if (!wstr.empty()) {
+        wstr.pop_back(); // убрать лишний нуль-терминатор
+    }
     return wstr;
 }
 
@@ -15,7 +17,10 @@ std::string wstring_to_utf8(const std::wstring& wstr) {
     int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
     std::string str(size_needed, 0);
     WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, &str[0], size_needed, nullptr, nullptr);
-    str.pop_back(); // убрать лишний нуль-терминатор
+    if (!str.empty()) {
+        str.pop_back(); // убрать лишний нуль-терминатор
+    }
+
     return str;
 }
 
