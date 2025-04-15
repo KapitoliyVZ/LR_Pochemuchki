@@ -23,50 +23,34 @@
     <ClInclude Include="UI_const.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="file_working.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
     <ClInclude Include="general_search.h">
-      <Filter>Файлы заголовков</Filter>
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="Header.h">
+      <Filter>Исходные файлы</Filter>
     </ClInclude>
     <ClInclude Include="Heart_of_program.h">
-      <Filter>Файлы заголовков</Filter>
+      <Filter>Исходные файлы</Filter>
     </ClInclude>
     <ClInclude Include="kulik_search.h">
-      <Filter>Файлы заголовков</Filter>
+      <Filter>Исходные файлы</Filter>
     </ClInclude>
     <ClInclude Include="NLP.h">
-      <Filter>Файлы заголовков</Filter>
+      <Filter>Исходные файлы</Filter>
     </ClInclude>
     <ClInclude Include="parse_sentences.h">
-      <Filter>Файлы заголовков</Filter>
+      <Filter>Исходные файлы</Filter>
     </ClInclude>
     <ClInclude Include="rhymes.h">
-      <Filter>Файлы заголовков</Filter>
+      <Filter>Исходные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="Buttons.h">
-      <Filter>Файлы заголовков</Filter>
+    <ClInclude Include="standard_libraries.h">
+      <Filter>Исходные файлы</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="7Institute.bmp">
-      <Filter>Файлы заголовков</Filter>
-    </Image>
-    <Image Include="Icon.bmp">
-      <Filter>Файлы заголовков</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="mystem.exe">
-      <Filter>Файлы заголовков</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="check2.txt">
-      <Filter>Файлы заголовков</Filter>
-    </Text>
-    <Text Include="check3.txt">
-      <Filter>Файлы заголовков</Filter>
+      <Filter>Исходные файлы</Filter>
     </Text>
   </ItemGroup>
 </Project>

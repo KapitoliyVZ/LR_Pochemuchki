@@ -3,7 +3,7 @@
 #include "file_working.h"
 #include "NLP.h"
 
- OPENFILENAMEW OFN;
+
 
 // Старт приложения и создание стартовых процедур
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdshow)
@@ -33,16 +33,25 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdsho
     // Само создание с заложенными параметрами
     HWND hMainWnd = CreateWindow(L"MainClass", L"ТРПО лабораторная", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
                                  0, 0, screenWidth, screenHeight, NULL, NULL, NULL, NULL);
-
+    if (!hMainWnd) {
+        MessageBox(NULL, L"Не удалось создать главное окно", L"Ошибка", MB_OK | MB_ICONERROR);
+        return 0;
+    }
     // Устанавливаем окно поверх всех окон
     SetWindowPos(hMainWnd, HWND_TOP, 0, 0, screenWidth, screenHeight, SWP_SHOWWINDOW);
     
     // Основной цикл работы проложения
     MSG msg = {0};
 
-    while (GetMessage(&msg, NULL, NULL, NULL))
-    {
+    while (GetMessage(&msg, NULL, 0, 0) > 0) {
         TranslateMessage(&msg);
+
+        // Проверяем, что окно действительно существует, если hwnd не NULL
+        if (msg.hwnd != NULL && !IsWindow(msg.hwnd)) {
+            MessageBox(NULL, L"Недействительное окно в сообщении", L"Ошибка", MB_OK | MB_ICONERROR);
+            break; // Прерываем цикл, если окно недействительно
+        }
+
         DispatchMessage(&msg);
     }
 
@@ -66,10 +75,6 @@ WNDCLASS NewWindClass(HBRUSH BGColor, HCURSOR Cursor, HINSTANCE hInst, HICON Ico
 // Основной цикл программы
 LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 {
-
-    static Buttons buttons = { false, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-                              NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-    static bitset<8> ButtonFlags; // Флаги для кнопок
     static string filename = "";
 
 
@@ -77,159 +82,157 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
     {
     case WM_CREATE:
     {
-        MainWndAddMenus(hWnd, buttons);
-        MainWndAddWidget(hWnd, buttons);
+        MainWndAddMenus(hWnd);
+        MainWndAddWidget(hWnd);
         SetOpenFileParams(hWnd, filename);
-        ButtonFlags.reset();
-        buttons.hBrush = CreateSolidBrush(RGB(255, 255, 255)); // Фон окна (Gainsboro)
-        SetClassLongPtr(hWnd, GCLP_HBRBACKGROUND, (LONG_PTR)buttons.hBrush);
+        buttons::ButtonFlags.reset();
+        buttons::graphics.hBrush = CreateSolidBrush(RGB(255, 255, 255)); // Фон окна (Gainsboro)
+        SetClassLongPtr(hWnd, GCLP_HBRBACKGROUND, (LONG_PTR)buttons::graphics.hBrush);
 
         // Загрузка изображения
-        buttons.hBitmap = (HBITMAP)LoadImageA(NULL, "Icon.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-        buttons.hBitmap2 = (HBITMAP)LoadImageA(NULL, "7Institute.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-        if (!buttons.hBitmap || !buttons.hBitmap2)
+        buttons::graphics.hBitmap = (HBITMAP)LoadImageA(NULL, "Icon.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+        buttons::graphics.hBitmap2 = (HBITMAP)LoadImageA(NULL, "7Institute.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+        if (!buttons::graphics.hBitmap || !buttons::graphics.hBitmap2)
         {
             MessageBoxA(hWnd, "Не удалось загрузить изображение", "Ошибка", MB_OK | MB_ICONERROR);
         }
 
         // Создание кистей для кнопки
-        buttons.hBrushRed = CreateSolidBrush(RGB(255, 129, 129));
-        buttons.hBrushGreen = CreateSolidBrush(RGB(129, 255, 129));
-        buttons.hBrushGrey = CreateSolidBrush(RGB(178, 178, 178));
-        buttons.hPenBlack = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
-        buttons.hBrushNeutral = CreateSolidBrush(RGB(127, 255, 212));
+        buttons::graphics.hBrushRed = CreateSolidBrush(RGB(205, 92, 92));
+        buttons::graphics.hBrushGreen = CreateSolidBrush(RGB(129, 255, 129));
+        buttons::graphics.hBrushGrey = CreateSolidBrush(RGB(178, 178, 178));
+        buttons::graphics.hPenBlack = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
+        buttons::graphics.hBrushNeutral = CreateSolidBrush(RGB(127, 255, 212));
         break;
     }
     case WM_COMMAND:
     {
+        if ((!file_input.is_open()))
+        {
+            SetWindowTextA(buttons::widgets.hOutputStatus, "");
+        }
         // Проверяем, если уведомление пришло от поля редактирования
-        if (HIWORD(wp) == EN_CHANGE && (HWND)lp == buttons.hEditInputWord)
+        if (HIWORD(wp) == EN_CHANGE && (HWND)lp == buttons::widgets.hEditInputWord)
         {
             // Получаем текст из поля редактирования
             char buffer[256] = { 0 };
-            GetWindowTextA(buttons.hEditInputWord, buffer, sizeof(buffer));
+            GetWindowTextA(buttons::widgets.hEditInputWord, buffer, sizeof(buffer));
 
             // Если поле не пустое, блокируем кнопки
             if (strlen(buffer) > 0)
             {
-                EnableWindow(buttons.hVerbButton, FALSE);
-                EnableWindow(buttons.hAdverbButton, FALSE);
-                EnableWindow(buttons.hAdjectiveButton, FALSE);
-                EnableWindow(buttons.hNounButton, FALSE);
-                EnableWindow(buttons.hParticipleButton, FALSE);
-                EnableWindow(buttons.hAdverbialButton, FALSE);
+                EnableWindow(buttons::widgets.hVerbButton, FALSE);
+                EnableWindow(buttons::widgets.hAdverbButton, FALSE);
+                EnableWindow(buttons::widgets.hAdjectiveButton, FALSE);
+                EnableWindow(buttons::widgets.hNounButton, FALSE);
+                EnableWindow(buttons::widgets.hParticipleButton, FALSE);
+                EnableWindow(buttons::widgets.hAdverbialButton, FALSE);
             }
             else // Если поле пустое, разблокируем кнопки
             {
-                EnableWindow(buttons.hVerbButton, TRUE);
-                EnableWindow(buttons.hAdverbButton, TRUE);
-                EnableWindow(buttons.hAdjectiveButton, TRUE);
-                EnableWindow(buttons.hNounButton, TRUE);
-                EnableWindow(buttons.hParticipleButton, TRUE);
-                EnableWindow(buttons.hAdverbialButton, TRUE);
+                EnableWindow(buttons::widgets.hVerbButton, TRUE);
+                EnableWindow(buttons::widgets.hAdverbButton, TRUE);
+                EnableWindow(buttons::widgets.hAdjectiveButton, TRUE);
+                EnableWindow(buttons::widgets.hNounButton, TRUE);
+                EnableWindow(buttons::widgets.hParticipleButton, TRUE);
+                EnableWindow(buttons::widgets.hAdverbialButton, TRUE);
             }
         }
         //break;
-        if (LOWORD(wp) == buttons.ButExit)
+        if (LOWORD(wp) == buttons::buttonIDs.ButExit)
         {
-            SetWindowText(buttons.hExitButton, L"");
-            InvalidateRect(buttons.hExitButton, NULL, TRUE); // Перерисовываем кнопку
-            UpdateWindow(buttons.hExitButton);
+            SetWindowText(buttons::widgets.hExitButton, L"");
+            InvalidateRect(buttons::widgets.hExitButton, NULL, TRUE); // Перерисовываем кнопку
+            UpdateWindow(buttons::widgets.hExitButton);
             PostQuitMessage(0);
         }
-        else if (LOWORD(wp) == buttons.OnToggleButtonClicked)
+
+        else if (LOWORD(wp) == buttons::buttonIDs.ButSearchType)
         {
-			buttons.ShowInEdit = !buttons.ShowInEdit;
-            SetWindowText(buttons.hToggleButton, L"");
-            InvalidateRect(buttons.hToggleButton, NULL, TRUE); // Перерисовываем кнопку
-            UpdateWindow(buttons.hToggleButton);
+            buttons::ButtonFlags.flip(7);
+            SetWindowText(buttons::widgets.hSearchType, L"");
+            InvalidateRect(buttons::widgets.hSearchType, NULL, TRUE); // Перерисовываем кнопку
+            UpdateWindow(buttons::widgets.hSearchType);
         }
-        else if (LOWORD(wp) == buttons.ButSearchType)
+        else if (LOWORD(wp) == buttons::buttonIDs.ButVerb)
         {
-            ButtonFlags.flip(7);
-            SetWindowText(buttons.hSearchType, L"");
-            InvalidateRect(buttons.hSearchType, NULL, TRUE); // Перерисовываем кнопку
-            UpdateWindow(buttons.hSearchType);
+            buttons::ButtonFlags.flip(0);
+            SetWindowText(buttons::widgets.hVerbButton, L"");
+            InvalidateRect(buttons::widgets.hVerbButton, NULL, TRUE); // Перерисовываем кнопку
+            UpdateWindow(buttons::widgets.hVerbButton);
         }
-        else if (LOWORD(wp) == buttons.ButVerb)
+        else if (LOWORD(wp) == buttons::buttonIDs.ButAdverb)
         {
-            ButtonFlags.flip(0);
-            SetWindowText(buttons.hVerbButton, L"");
-            InvalidateRect(buttons.hVerbButton, NULL, TRUE); // Перерисовываем кнопку
-            UpdateWindow(buttons.hVerbButton);
+            buttons::ButtonFlags.flip(1);
+            SetWindowText(buttons::widgets.hAdverbButton, L"");
+            InvalidateRect(buttons::widgets.hAdverbButton, NULL, TRUE); // Перерисовываем кнопку
+            UpdateWindow(buttons::widgets.hAdverbButton);
         }
-        else if (LOWORD(wp) == buttons.ButAdverb)
+        else if (LOWORD(wp) == buttons::buttonIDs.ButAdjective)
         {
-            ButtonFlags.flip(1);
-            SetWindowText(buttons.hAdverbButton, L"");
-            InvalidateRect(buttons.hAdverbButton, NULL, TRUE); // Перерисовываем кнопку
-            UpdateWindow(buttons.hAdverbButton);
+            buttons::ButtonFlags.flip(2);
+            SetWindowText(buttons::widgets.hAdjectiveButton, L"");
+            InvalidateRect(buttons::widgets.hAdjectiveButton, NULL, TRUE); // Перерисовываем кнопку
+            UpdateWindow(buttons::widgets.hAdjectiveButton);
         }
-        else if (LOWORD(wp) == buttons.ButAdjective)
+        else if (LOWORD(wp) == buttons::buttonIDs.ButNoun)
         {
-            ButtonFlags.flip(2);
-            SetWindowText(buttons.hAdjectiveButton, L"");
-            InvalidateRect(buttons.hAdjectiveButton, NULL, TRUE); // Перерисовываем кнопку
-            UpdateWindow(buttons.hAdjectiveButton);
+            buttons::ButtonFlags.flip(3);
+            SetWindowText(buttons::widgets.hNounButton, L"");
+            InvalidateRect(buttons::widgets.hNounButton, NULL, TRUE); // Перерисовываем кнопку
+            UpdateWindow(buttons::widgets.hNounButton);
         }
-        else if (LOWORD(wp) == buttons.ButNoun)
+        else if (LOWORD(wp) == buttons::buttonIDs.ButParticiple)
         {
-            ButtonFlags.flip(3);
-            SetWindowText(buttons.hNounButton, L"");
-            InvalidateRect(buttons.hNounButton, NULL, TRUE); // Перерисовываем кнопку
-            UpdateWindow(buttons.hNounButton);
+            buttons::ButtonFlags.flip(4);
+            SetWindowText(buttons::widgets.hParticipleButton, L"");
+            InvalidateRect(buttons::widgets.hParticipleButton, NULL, TRUE); // Перерисовываем кнопку
+            UpdateWindow(buttons::widgets.hParticipleButton);
         }
-        else if (LOWORD(wp) == buttons.ButParticiple)
+        else if (LOWORD(wp) == buttons::buttonIDs.ButAdverbial)
         {
-            ButtonFlags.flip(4);
-            SetWindowText(buttons.hParticipleButton, L"");
-            InvalidateRect(buttons.hParticipleButton, NULL, TRUE); // Перерисовываем кнопку
-            UpdateWindow(buttons.hParticipleButton);
+            buttons::ButtonFlags.flip(5);
+            SetWindowText(buttons::widgets.hAdverbialButton, L"");
+            InvalidateRect(buttons::widgets.hAdverbialButton, NULL, TRUE); // Перерисовываем кнопку
+            UpdateWindow(buttons::widgets.hAdverbialButton);
         }
-        else if (LOWORD(wp) == buttons.ButAdverbial)
-        {
-            ButtonFlags.flip(5);
-            SetWindowText(buttons.hAdverbialButton, L"");
-            InvalidateRect(buttons.hAdverbialButton, NULL, TRUE); // Перерисовываем кнопку
-            UpdateWindow(buttons.hAdverbialButton);
-        }
-        else if (LOWORD(wp) == buttons.OnExitSoftware)
+        else if (LOWORD(wp) == buttons::buttonIDs.OnExitSoftware)
         {
             PostQuitMessage(0);
         }
-        else if (LOWORD(wp) == buttons.ClearRhymes)
+        else if (LOWORD(wp) == buttons::buttonIDs.ClearRhymes)
         {
-            SetWindowText(buttons.hEditRhymes, L"");
-            InvalidateRect(buttons.hEditRhymes, NULL, TRUE); // Перерисовываем кнопку
-            UpdateWindow(buttons.hEditRhymes);
+            SetWindowText(buttons::widgets.hEditRhymes, L"");
+            InvalidateRect(buttons::widgets.hEditRhymes, NULL, TRUE); // Перерисовываем кнопку
+            UpdateWindow(buttons::widgets.hEditRhymes);
         }
-        else if (LOWORD(wp) == buttons.ClearText)
+        else if (LOWORD(wp) == buttons::buttonIDs.ClearText)
         {
-            SetWindowText(buttons.hEditText, L"");
-            InvalidateRect(buttons.hEditText, NULL, TRUE); // Перерисовываем кнопку
-            UpdateWindow(buttons.hEditText);
+            SetWindowText(buttons::widgets.hEditText, L"");
+            InvalidateRect(buttons::widgets.hEditText, NULL, TRUE); // Перерисовываем кнопку
+            UpdateWindow(buttons::widgets.hEditText);
         }
-        else if (LOWORD(wp) == buttons.Search)
+        else if (LOWORD(wp) == buttons::buttonIDs.Search)
         {
-			ButtonFlags[6] = 0; // Сброс флага поиска слова
+			buttons::ButtonFlags[6] = 0; // Сброс флага поиска слова
             char WordToSearch[60] = ""; 
-            GetWindowTextA(buttons.hEditInputWord, WordToSearch, 60);
+            GetWindowTextA(buttons::widgets.hEditInputWord, WordToSearch, 60);
             string data = WordToSearch;
 			if (data.length() != 0)
 			{
-                ButtonFlags.flip(6);
+                buttons::ButtonFlags.flip(6);
 			}
             
-            if (ButtonFlags.test(0) == 0 and ButtonFlags.test(1) == 0 and
-                ButtonFlags.test(2) == 0 and ButtonFlags.test(3) == 0 and
-                ButtonFlags.test(4) == 0 and ButtonFlags.test(5) == 0 and
-                ButtonFlags.test(6) == 0)
+            if (buttons::ButtonFlags.test(0) == 0 and buttons::ButtonFlags.test(1) == 0 and
+                buttons::ButtonFlags.test(2) == 0 and buttons::ButtonFlags.test(3) == 0 and
+                buttons::ButtonFlags.test(4) == 0 and buttons::ButtonFlags.test(5) == 0 and
+                buttons::ButtonFlags.test(6) == 0)
             {
                 MessageBoxA(hWnd, "Выберите часть речи или введите слово для поиска", "Ошибка", MB_OK | MB_ICONERROR);
                 break;
             }
-            if (ButtonFlags.count() >= 2 and
-                ButtonFlags.test(7) == 0)
+            if (buttons::ButtonFlags.count() < 2 and
+                buttons::ButtonFlags.test(7) == 0)
             {
                 MessageBoxA(hWnd, "Выберите несколько частей речи или введите слово для поиска", "Ошибка", MB_OK | MB_ICONERROR);
                 break;
@@ -239,12 +242,12 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 MessageBoxA(hWnd, "Выберите файл с текстом для поиска рифм", "Ошибка", MB_OK | MB_ICONERROR);
                 break;
             }
-            vector<WordData> words = unite_functions(ButtonFlags, data);
+            vector<WordData> words = unite_functions(buttons::ButtonFlags, data);
 
 
             // Очищаем содержимое поля перед добавлением нового текста
-            SetWindowTextA(buttons.hEditRhymes, "");
-            SetWindowTextA(buttons.hEditText, "");
+            SetWindowTextA(buttons::widgets.hEditRhymes, "");
+            SetWindowTextA(buttons::widgets.hEditText, "");
 
             // Проходим по всем словам
             if (words.empty())
@@ -258,40 +261,46 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 
                 output.word = utf8_to_ansi(output.word);
                 string wordInfo = "Слово: " + output.word + "\n";
-                SendMessageA(buttons.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)wordInfo.c_str());
+                SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)wordInfo.c_str());
 
                 // Если есть рифмы, добавляем их
                 if (!output.rhymed_words.empty())
                 {
-                    SendMessageA(buttons.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)"Рифмы:\n");
+                    SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)"Рифмы:\n");
                     for (string& word : output.rhymed_words)
                     {
                         word = utf8_to_ansi(word);
                         string rhyme = "  - " + word + "\n";
-                        SendMessageA(buttons.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)rhyme.c_str());
+                        SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)rhyme.c_str());
                     }
                 }
 
                 // Добавляем разделитель между словами
-                SendMessageA(buttons.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)"\n");
+                SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)"\n");
             }
 
             // Перерисовываем поле текста
-            InvalidateRect(buttons.hEditText, NULL, TRUE);
-            UpdateWindow(buttons.hEditText);
+            InvalidateRect(buttons::widgets.hEditText, NULL, TRUE);
+            UpdateWindow(buttons::widgets.hEditText);
             
         }
-        else if (LOWORD(wp) == buttons.OnReadFile)
+        // Нажатие кнопки "чтение файла"
+        else if (LOWORD(wp) == buttons::buttonIDs.OnReadFile)
         {
-            
-
             if (GetOpenFileNameW(&OFN)) // Исправлен вызов GetOpenFileNameW для чтения
             {
                 filename = ConvertLPWSTRToString(OFN.lpstrFile);
-				//MessageBoxA(hWnd, filename.c_str(), "Выбранный файл", MB_OK);
+
                 if (checkTxtFile(filename)) // Проверка файла на существование и корректность
                 {
-                    MessageBoxA(hWnd, filename.c_str(), "Информация", MB_OK);
+                    if (IsWindow(hWnd))
+                    {
+                        SetWinStatus(filename);
+                    }
+                    else
+                    {
+                        MessageBoxA(NULL, "Ошибка: недействительное окно!", "Ошибка", MB_OK | MB_ICONERROR);
+                    }
                 }
                 else
                 {
@@ -302,13 +311,13 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 
             
         }
-        else if (LOWORD(wp) == buttons.OnSaveFile)
+        else if (LOWORD(wp) == buttons::buttonIDs.OnSaveFile)
         {
             if (GetSaveFileNameW(&OFN))
             {
             }
         }
-        else if (LOWORD(wp) == buttons.OnInfoClicked)
+        else if (LOWORD(wp) == buttons::buttonIDs.OnInfoClicked)
         {
             MessageBox(hWnd, L"Информация о программе и ее разработчиках:", L"Инфо", MB_OK | MB_ICONINFORMATION);
         }
@@ -317,7 +326,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
     case WM_DRAWITEM:
     {
         LPDRAWITEMSTRUCT lpDrawItem = (LPDRAWITEMSTRUCT)lp;
-        MakeRoundButton(lpDrawItem, buttons, ButtonFlags);
+        MakeRoundButton(lpDrawItem);
         break;
     }
 
@@ -329,42 +338,42 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         BITMAP bitmap;
         BITMAP bitmap2;
         // Отображение первого изображения
-        if (buttons.hBitmap)
+        if (buttons::graphics.hBitmap)
         {
-            buttons.hdcMem = CreateCompatibleDC(hdc);
-            HBITMAP hOldBitmap = (HBITMAP)SelectObject(buttons.hdcMem, buttons.hBitmap);
+            buttons::graphics.hdcMem = CreateCompatibleDC(hdc);
+            HBITMAP hOldBitmap = (HBITMAP)SelectObject(buttons::graphics.hdcMem, buttons::graphics.hBitmap);
 
-            GetObject(buttons.hBitmap, sizeof(BITMAP), &bitmap);
-            BitBlt(hdc, 20, 0, bitmap.bmWidth, bitmap.bmHeight, buttons.hdcMem, 0, 0, SRCCOPY);
+            GetObject(buttons::graphics.hBitmap, sizeof(BITMAP), &bitmap);
+            BitBlt(hdc, 20, 0, bitmap.bmWidth, bitmap.bmHeight, buttons::graphics.hdcMem, 0, 0, SRCCOPY);
 
-            SelectObject(buttons.hdcMem, hOldBitmap);
-            DeleteDC(buttons.hdcMem);
+            SelectObject(buttons::graphics.hdcMem, hOldBitmap);
+            DeleteDC(buttons::graphics.hdcMem);
         }
 
         // Отображение второго изображения
-        if (buttons.hBitmap2)
+        if (buttons::graphics.hBitmap2)
         {
-            buttons.hdcMem = CreateCompatibleDC(hdc);
-            HBITMAP hOldBitmap = (HBITMAP)SelectObject(buttons.hdcMem, buttons.hBitmap2);
+            buttons::graphics.hdcMem = CreateCompatibleDC(hdc);
+            HBITMAP hOldBitmap = (HBITMAP)SelectObject(buttons::graphics.hdcMem, buttons::graphics.hBitmap2);
 
-            GetObject(buttons.hBitmap2, sizeof(BITMAP), &bitmap2);
-            BitBlt(hdc, bitmap.bmWidth + 20, 0, bitmap2.bmWidth, bitmap2.bmHeight, buttons.hdcMem, 0, 0, SRCCOPY);
+            GetObject(buttons::graphics.hBitmap2, sizeof(BITMAP), &bitmap2);
+            BitBlt(hdc, bitmap.bmWidth + 20, 0, bitmap2.bmWidth, bitmap2.bmHeight, buttons::graphics.hdcMem, 0, 0, SRCCOPY);
 
-            SelectObject(buttons.hdcMem, hOldBitmap);
-            DeleteDC(buttons.hdcMem);
+            SelectObject(buttons::graphics.hdcMem, hOldBitmap);
+            DeleteDC(buttons::graphics.hdcMem);
         }
 
         // Рисуем черную рамку вокруг статических полей
 
-        HPEN hOldPen = (HPEN)SelectObject(hdc, buttons.hPenBlack);
+        HPEN hOldPen = (HPEN)SelectObject(hdc, buttons::graphics.hPenBlack);
         HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
 
-        HWND All_hwnd[8] = {buttons.hOutputStatus, buttons.hOutputStatusText, buttons.hEditRhymes,
-                            buttons.hOutputRhymes, buttons.hOutputText, buttons.hEditText, buttons.hInputWord, buttons.hEditInputWord};
+        HWND All_hwnd[8] = { buttons::widgets.hOutputStatus, buttons::widgets.hOutputStatusText, buttons::widgets.hEditRhymes,
+                            buttons::widgets.hOutputRhymes, buttons::widgets.hOutputText, buttons::widgets.hEditText, buttons::widgets.hInputWord, buttons::widgets.hEditInputWord};
 
         for (int i = 0; i < 8; i++)
         {
-            MakeFrame(hWnd, hdc, All_hwnd[i], buttons);
+            MakeFrame(hWnd, hdc, All_hwnd[i]);
         }
 
         SelectObject(hdc, hOldBrush);
@@ -378,12 +387,12 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         HDC hdcStatic = (HDC)wp;
         HWND hStatic = (HWND)lp;
 
-        if (hStatic == buttons.hOutputStatus || hStatic == buttons.hOutputStatusText || hStatic == buttons.hOutputStatus ||
-            hStatic == buttons.hOutputRhymes || hStatic == buttons.hOutputText)
+        if (hStatic == buttons::widgets.hOutputStatus || hStatic == buttons::widgets.hOutputStatusText || hStatic == buttons::widgets.hOutputStatus ||
+            hStatic == buttons::widgets.hOutputRhymes || hStatic == buttons::widgets.hOutputText)
         {
             SetBkColor(hdcStatic, RGB(255, 255, 255)); // Устанавливаем цвет фона (белый)
             SetTextColor(hdcStatic, RGB(0, 0, 0));     // Устанавливаем цвет текста (черный)
-            return (INT_PTR)buttons.hBrush;            // Возвращаем кисть для фона
+            return (INT_PTR)buttons::graphics.hBrush;            // Возвращаем кисть для фона
         }
         break;
     }
@@ -392,69 +401,24 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         HDC hdcEdit = (HDC)wp;
         HWND hEdit = (HWND)lp;
 
-        if (hEdit == buttons.hEditRhymes || hEdit == buttons.hEditText || hEdit == buttons.hEditInputWord)
+        if (hEdit == buttons::widgets.hEditRhymes || hEdit == buttons::widgets.hEditText || hEdit == buttons::widgets.hEditInputWord)
         {
             SetBkColor(hdcEdit, RGB(255, 255, 255)); // Устанавливаем цвет фона (белый)
             SetTextColor(hdcEdit, RGB(0, 0, 0));     // Устанавливаем цвет текста (черный)
-            return (INT_PTR)buttons.hBrush;          // Возвращаем кисть для фона
+            return (INT_PTR)buttons::graphics.hBrush;          // Возвращаем кисть для фона
         }
         break;
     }
-    
-    //case WM_SIZE:
-    //{
-    //    int width = LOWORD(lp);
-    //    int height = HIWORD(lp);
+    case WM_QUIT:
+    {
 
-    //    // Изменения размера и позиции кнопок
-    //    MoveWindow(buttons.hClearRhymes, width * initialDimensions[0].x / 1400, height * initialDimensions[0].y / 1050, width * initialDimensions[0].width / 1400, height * initialDimensions[0].height / 1050, TRUE);
-    //    MoveWindow(buttons.hClearText, width * initialDimensions[1].x / 1400, height * initialDimensions[1].y / 1050, width * initialDimensions[1].width / 1400, height * initialDimensions[1].height / 1050, TRUE);
-    //    MoveWindow(buttons.hExitButton, width * initialDimensions[2].x / 1400, height - height * 150 / 1050, width * initialDimensions[2].width / 1400, height * initialDimensions[2].height / 1050, TRUE);
-    //    MoveWindow(buttons.hVerbButton, width * initialDimensions[3].x / 1400, height * initialDimensions[3].y / 1050, width * initialDimensions[3].width / 1400, height * initialDimensions[3].height / 1050, TRUE);
-    //    MoveWindow(buttons.hAdjectiveButton, width * initialDimensions[4].x / 1400, height * initialDimensions[4].y / 1050, width * initialDimensions[4].width / 1400, height * initialDimensions[4].height / 1050, TRUE);
-    //    MoveWindow(buttons.hNounButton, width * initialDimensions[5].x / 1400, height * initialDimensions[5].y / 1050, width * initialDimensions[5].width / 1400, height * initialDimensions[5].height / 1050, TRUE);
-    //    MoveWindow(buttons.hAdverbialButton, width * initialDimensions[6].x / 1400, height * initialDimensions[6].y / 1050, width * initialDimensions[6].width / 1400, height * initialDimensions[6].height / 1050, TRUE);
-    //    MoveWindow(buttons.hParticipleButton, width * initialDimensions[7].x / 1400, height * initialDimensions[7].y / 1050, width * initialDimensions[7].width / 1400, height * initialDimensions[7].height / 1050, TRUE);
-    //    MoveWindow(buttons.hAdverbButton, width * initialDimensions[8].x / 1400, height * initialDimensions[8].y / 1050, width * initialDimensions[8].width / 1400, height * initialDimensions[8].height / 1050, TRUE);
-    //    MoveWindow(buttons.hToggleButton, width * initialDimensions[9].x / 1400, height * initialDimensions[9].y / 1050, width * initialDimensions[9].width / 1400, height * initialDimensions[9].height / 1050, TRUE);
-    //    MoveWindow(buttons.hOutputStatusText, width * initialDimensions[10].x / 1400, height * initialDimensions[10].y / 1050, width * initialDimensions[10].width / 1400, height * initialDimensions[10].height / 1050, TRUE);
-    //    MoveWindow(buttons.hOutputStatus, width * initialDimensions[11].x / 1400, height * initialDimensions[11].y / 1050, width * initialDimensions[11].width / 1400, height * initialDimensions[11].height / 1050, TRUE);
-    //    MoveWindow(buttons.hInputWord, width * initialDimensions[12].x / 1400, height * initialDimensions[12].y / 1050, width * initialDimensions[12].width / 1400, height * initialDimensions[12].height / 1050, TRUE);
-    //    MoveWindow(buttons.hEditInputWord, width * initialDimensions[13].x / 1400, height * initialDimensions[13].y / 1050, width * initialDimensions[13].width / 1400, height * initialDimensions[13].height / 1400, TRUE);
-    //    MoveWindow(buttons.hSearch, width * initialDimensions[14].x / 1400, height * initialDimensions[14].y / 1050, width * initialDimensions[14].width / 1400, height * initialDimensions[14].height / 1050, TRUE);
-    //    MoveWindow(buttons.hOutputRhymes, width * initialDimensions[15].x / 1400, height * initialDimensions[15].y / 1050, width * initialDimensions[15].width / 1400, height * initialDimensions[15].height / 1050, TRUE);
-    //    MoveWindow(buttons.hEditRhymes, width * initialDimensions[16].x / 1400, height * initialDimensions[16].y / 1050, width - width * 315 / 1400, height * 350 / 1050, TRUE);
-    //    MoveWindow(buttons.hOutputText, width * initialDimensions[17].x / 1400, height * initialDimensions[16].y / 1050 + height * 360 / 1050, width * initialDimensions[17].width / 1400, height * initialDimensions[17].height / 1050, TRUE);
-    //    MoveWindow(buttons.hEditText, width * initialDimensions[18].x / 1400, height * initialDimensions[16].y / 1050 + height * 390 / 1050, width - width * 315 / 1400, height * 350 / 1050, TRUE);
-    //    MoveWindow(buttons.hSearchType, width * initialDimensions[19].x / 1400, height * initialDimensions[19].y / 1050, width * initialDimensions[19].width / 1400, height * initialDimensions[19].height / 1050, TRUE);
-
-    //    // Изменение размера шрифта
-    //    int newFontSize = (width + height) / 160; // Примерная формула для изменения размера шрифта
-    //    HFONT hFont = CreateFont(newFontSize, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Arial");
-
-    //    HWND controls[] = {
-    //        buttons.hClearRhymes, buttons.hClearText, buttons.hExitButton, buttons.hVerbButton, buttons.hAdjectiveButton,
-    //        buttons.hNounButton, buttons.hAdverbialButton, buttons.hParticipleButton, buttons.hAdverbButton, buttons.hToggleButton,
-    //        buttons.hOutputStatusText, buttons.hOutputStatus, buttons.hInputWord, buttons.hEditInputWord, buttons.hSearch,
-    //        buttons.hOutputRhymes, buttons.hEditRhymes, buttons.hOutputText, buttons.hEditText, buttons.hSearchType};
-
-    //    for (HWND control : controls)
-    //    {
-    //        SendMessage(control, WM_SETFONT, (WPARAM)hFont, TRUE);
-    //    }
-
-    //    // Перерисовываем все элементы управления
-    //    InvalidateRect(hWnd, NULL, TRUE);
-    //    UpdateWindow(hWnd);
-
-    //    break;
-    //}
+    }
     case WM_DESTROY:
         ExitSoftware();
-        DeleteObject(buttons.hBrushRed);
-        DeleteObject(buttons.hBrushGreen);
-        DeleteObject(buttons.hBrushGrey);
-        DeleteObject(buttons.hBrush);
+        DeleteObject(buttons::graphics.hBrushRed);
+        DeleteObject(buttons::graphics.hBrushGreen);
+        DeleteObject(buttons::graphics.hBrushGrey);
+        DeleteObject(buttons::graphics.hBrush);
         PostQuitMessage(0);
         break;
     default:
@@ -481,14 +445,14 @@ LPWSTR ConvertStringToLPWSTR(const std::string &str)
     return lpwstr;
 }
 
-void MakeFrame(HWND hWnd, HDC hdc, HWND Edit, Buttons buttons)
+void MakeFrame(HWND hWnd, HDC hdc, HWND Edit)
 {
     RECT rect;
     GetWindowRect(Edit, &rect);
     MapWindowPoints(HWND_DESKTOP, hWnd, (LPPOINT)&rect, 2);
 
     // Рисуем черную рамку вокруг элемента управления
-    HPEN hOldPen = (HPEN)SelectObject(hdc, buttons.hPenBlack);
+    HPEN hOldPen = (HPEN)SelectObject(hdc, buttons::graphics.hPenBlack);
     HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
 
     Rectangle(hdc, rect.left - 1, rect.top - 1, rect.right + 1, rect.bottom + 1);
@@ -497,7 +461,7 @@ void MakeFrame(HWND hWnd, HDC hdc, HWND Edit, Buttons buttons)
     SelectObject(hdc, hOldPen);
 }
 
-BOOL MakeRoundButton(LPDRAWITEMSTRUCT lpDrawItem, Buttons &buttons, bitset<8> &ButtonFlags)
+BOOL MakeRoundButton(LPDRAWITEMSTRUCT lpDrawItem)
 {
     HDC hdc = lpDrawItem->hDC; // Используем локальную переменную HDC
     RECT rect = lpDrawItem->rcItem;
@@ -511,72 +475,62 @@ BOOL MakeRoundButton(LPDRAWITEMSTRUCT lpDrawItem, Buttons &buttons, bitset<8> &B
     HBRUSH hBrushes;
     BOOL isActive = FALSE;
     const char *buttonText;
-    if (lpDrawItem->hwndItem == buttons.hExitButton)
+    if (lpDrawItem->hwndItem == buttons::widgets.hExitButton)
     {
-        hBrushes = buttons.hBrushNeutral;
+        hBrushes = buttons::graphics.hBrushRed;
         buttonText = "Выход";
     }
-    else if (lpDrawItem->hwndItem == buttons.hToggleButton)
+    else if (lpDrawItem->hwndItem == buttons::widgets.hToggleButton)
     {
-        isActive = buttons.ShowInEdit;
-        hBrushes = isActive ? buttons.hBrushGreen : buttons.hBrushGrey;
+        isActive = buttons::ShowInEdit;
+        hBrushes = isActive ? buttons::graphics.hBrushGreen : buttons::graphics.hBrushGrey;
         buttonText = isActive ? "Вывод на экран включен" : "Вывод на экран выключен";
     }
-    else if (lpDrawItem->hwndItem == buttons.hVerbButton)
+    else if (lpDrawItem->hwndItem == buttons::widgets.hVerbButton)
     {
-        isActive = ButtonFlags.test(0);
-        hBrushes = isActive ? buttons.hBrushGreen : buttons.hBrushGrey;
+        isActive = buttons::ButtonFlags.test(0);
+        hBrushes = isActive ? buttons::graphics.hBrushGreen : buttons::graphics.hBrushGrey;
         buttonText = "Глагол";
     }
-    else if (lpDrawItem->hwndItem == buttons.hAdverbButton)
+    else if (lpDrawItem->hwndItem == buttons::widgets.hAdverbButton)
     {
-        isActive = ButtonFlags.test(1);
-        hBrushes = isActive ? buttons.hBrushGreen : buttons.hBrushGrey;
+        isActive = buttons::ButtonFlags.test(1);
+        hBrushes = isActive ? buttons::graphics.hBrushGreen : buttons::graphics.hBrushGrey;
         buttonText = "Наречие";
     }
-    else if (lpDrawItem->hwndItem == buttons.hAdjectiveButton)
+    else if (lpDrawItem->hwndItem == buttons::widgets.hAdjectiveButton)
     {
-        isActive = ButtonFlags.test(2);
-        hBrushes = isActive ? buttons.hBrushGreen : buttons.hBrushGrey;
+        isActive = buttons::ButtonFlags.test(2);
+        hBrushes = isActive ? buttons::graphics.hBrushGreen : buttons::graphics.hBrushGrey;
         buttonText = "Прилагательное";
     }
-    else if (lpDrawItem->hwndItem == buttons.hNounButton)
+    else if (lpDrawItem->hwndItem == buttons::widgets.hNounButton)
     {
-        isActive = ButtonFlags.test(3);
-        hBrushes = isActive ? buttons.hBrushGreen : buttons.hBrushGrey;
+        isActive = buttons::ButtonFlags.test(3);
+        hBrushes = isActive ? buttons::graphics.hBrushGreen : buttons::graphics.hBrushGrey;
         buttonText = "Существительное";
     }
-    else if (lpDrawItem->hwndItem == buttons.hParticipleButton)
+    else if (lpDrawItem->hwndItem == buttons::widgets.hParticipleButton)
     {
-        isActive = ButtonFlags.test(4);
-        hBrushes = isActive ? buttons.hBrushGreen : buttons.hBrushGrey;
+        isActive = buttons::ButtonFlags.test(4);
+        hBrushes = isActive ? buttons::graphics.hBrushGreen : buttons::graphics.hBrushGrey;
         buttonText = "Причастие";
     }
-    else if (lpDrawItem->hwndItem == buttons.hAdverbialButton)
+    else if (lpDrawItem->hwndItem == buttons::widgets.hAdverbialButton)
     {
-        isActive = ButtonFlags.test(5);
-        hBrushes = isActive ? buttons.hBrushGreen : buttons.hBrushGrey;
+        isActive = buttons::ButtonFlags.test(5);
+        hBrushes = isActive ? buttons::graphics.hBrushGreen : buttons::graphics.hBrushGrey;
         buttonText = "Деепричастие";
     }
-    else if (lpDrawItem->hwndItem == buttons.hSearchType)
+    else if (lpDrawItem->hwndItem == buttons::widgets.hSearchType)
     {
-        isActive = ButtonFlags.test(7);
-        hBrushes = isActive ? buttons.hBrushGreen : buttons.hBrushGrey;
+        isActive = buttons::ButtonFlags.test(7);
+        hBrushes = isActive ? buttons::graphics.hBrushGreen : buttons::graphics.hBrushGrey;
         buttonText = isActive ? "Режим поиска: однородный" : "Режим поиска: неоднородный";
     }
-    else if (lpDrawItem->hwndItem == buttons.hClearRhymes)
+    else if (lpDrawItem->hwndItem == buttons::widgets.hSearch)
     {
-        hBrushes = buttons.hBrushNeutral;
-        buttonText = "Очистить поле рифм";
-    }
-    else if (lpDrawItem->hwndItem == buttons.hClearText)
-    {
-        hBrushes = buttons.hBrushNeutral;
-        buttonText = "Очистить поле текста";
-    }
-    else if (lpDrawItem->hwndItem == buttons.hSearch)
-    {
-        hBrushes = buttons.hBrushNeutral;
+        hBrushes = buttons::graphics.hBrushNeutral;
         buttonText = "Поиск";
     }
     else
@@ -588,10 +542,8 @@ BOOL MakeRoundButton(LPDRAWITEMSTRUCT lpDrawItem, Buttons &buttons, bitset<8> &B
     HPEN hOldPen = NULL;
     HBRUSH hOldBrush = NULL;
 
-    if (lpDrawItem->hwndItem == buttons.hExitButton ||
-        lpDrawItem->hwndItem == buttons.hClearRhymes ||
-        lpDrawItem->hwndItem == buttons.hClearText ||
-        lpDrawItem->hwndItem == buttons.hSearch)
+    if (lpDrawItem->hwndItem == buttons::widgets.hExitButton ||
+        lpDrawItem->hwndItem == buttons::widgets.hSearch)
     {
         hPen = CreatePen(PS_SOLID, 1, RGB(0, 210, 210)); // Синее обрамление для голубой кнопки
     }
@@ -635,127 +587,148 @@ void ExitSoftware()
 }
 
 // Создание пунктов меню
-void MainWndAddMenus(HWND hWnd, const Buttons &buttons)
+void MainWndAddMenus(HWND hWnd)
 {
     HMENU RootMenu = CreateMenu();
     HMENU SubMenu = CreateMenu();
 
     // Создание основного меню
     AppendMenu(RootMenu, MF_POPUP, (UINT_PTR)SubMenu, L"Файл");
-    AppendMenu(RootMenu, MF_STRING, buttons.OnReadFile, L"Чтение файла");
-    AppendMenu(RootMenu, MF_STRING, buttons.OnSaveFile, L"Запись файла");
+    AppendMenu(RootMenu, MF_STRING, buttons::buttonIDs.OnReadFile, L"Чтение файла");
+    AppendMenu(RootMenu, MF_STRING, buttons::buttonIDs.OnSaveFile, L"Запись файла");
 
     // Создание подменю Файл
-    AppendMenu(SubMenu, MF_STRING, buttons.OnInfoClicked, L"Инфо");
+    AppendMenu(SubMenu, MF_STRING, buttons::buttonIDs.OnInfoClicked, L"Инфо");
     AppendMenu(SubMenu, MF_SEPARATOR, NULL, NULL);
-    AppendMenu(SubMenu, MF_STRING, buttons.OnExitSoftware, L"Завершить работу");
+    AppendMenu(SubMenu, MF_STRING, buttons::buttonIDs.OnExitSoftware, L"Завершить работу");
 
     SetMenu(hWnd, RootMenu);
 }
 
 // Создание виджетов
-void MainWndAddWidget(HWND hWnd, Buttons &buttons)
+void MainWndAddWidget(HWND hWnd)
 {
-    /* Создание окна 1) класс окна
-    2) текст
-    3) стиль окна
-    4) и 5) расположение верхнего левого угла виджета в окне
-    6) и 7) ширина и высота виджета в окне
-    8) главное окно
-    */
-    // Кнопки приложения
-
     int screenWidth = GetSystemMetrics(SM_CXSCREEN);
     int screenHeight = GetSystemMetrics(SM_CYSCREEN) - 45;
 
-    buttons.hClearRhymes = CreateWindowA("BUTTON", "Очистить поле рифм", WS_VISIBLE | WS_CHILD | BS_OWNERDRAW,
-                                         295, 20, 150, 40, hWnd, (HMENU)buttons.ClearRhymes, NULL, NULL);
-    //initialDimensions[0] = {295, 20, 150, 40};
+    // Пропорции для кнопок и виджетов
+    int buttonWidth = screenWidth * 12 / 100;  // 15% от ширины экрана
+    int buttonHeight = screenHeight * 4 / 100; // 5% от высоты экрана
+    int marginX = screenWidth * 2 / 100;       // 2% от ширины экрана
+    int marginY = screenHeight * 2 / 100;      // 2% от высоты экрана
 
-    buttons.hClearText = CreateWindowA("BUTTON", "Отправить поле текста", WS_VISIBLE | WS_CHILD | BS_OWNERDRAW,
-                                       450, 20, 150, 40, hWnd, (HMENU)buttons.ClearText, NULL, NULL);
-    //initialDimensions[1] = {450, 20, 150, 40};
+    // Кнопки
+    buttons::widgets.hExitButton = CreateButton("Выход", marginX, screenHeight - buttonHeight - marginY-100, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.ButExit);
+    buttons::widgets.hVerbButton = CreateButton("Глагол", marginX, marginY + buttonHeight + marginY + 20, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.ButVerb);
+    buttons::widgets.hAdjectiveButton = CreateButton("Прилагательное", marginX, marginY + 2 * (buttonHeight + marginY) + 20, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.ButAdjective);
+    buttons::widgets.hNounButton = CreateButton("Существительное", marginX, marginY + 3 * (buttonHeight + marginY) + 20, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.ButNoun);
+    buttons::widgets.hAdverbialButton = CreateButton("Деепричастие", marginX, marginY + 4 * (buttonHeight + marginY) + 20, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.ButAdverbial);
+    buttons::widgets.hParticipleButton = CreateButton("Причастие", marginX, marginY + 5 * (buttonHeight + marginY) + 20, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.ButParticiple);
+    buttons::widgets.hAdverbButton = CreateButton("Наречие", marginX, marginY + 6 * (buttonHeight + marginY) + 20, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.ButAdverb);
+    buttons::widgets.hSearchType = CreateButton("Тип поиска", marginX, marginY + 7 * (buttonHeight + marginY) + 20, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.ButSearchType);
+    buttons::widgets.hSearch = CreateButton("Поиск", marginX, screenHeight - 2 * (buttonHeight + marginY) - 280, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.Search);
 
-    buttons.hExitButton = CreateWindowA("BUTTON", "Выход", WS_VISIBLE | WS_CHILD | BS_OWNERDRAW,
-                                        20, screenHeight - 150, 250, 40, hWnd, (HMENU)buttons.ButExit, NULL, NULL);
-    //initialDimensions[2] = {20, screenHeight - 150, 250, 40};
 
-    buttons.hVerbButton = CreateWindowA("BUTTON", "Глагол", WS_VISIBLE | WS_CHILD | BS_OWNERDRAW,
-                                        20, 82, 250, 40, hWnd, (HMENU)buttons.ButVerb, NULL, NULL);
-    //initialDimensions[3] = {20, 82, 250, 40};
+    // Статические элементы
+    buttons::widgets.hOutputStatusText = CreateStatic("Выбранный файл: ", marginX + buttonWidth + marginX, marginY, buttonWidth-100, 20, hWnd);
+    buttons::widgets.hInputWord = CreateStatic("Введите слово для поиска рифм", marginX, marginY + 7 * (buttonHeight + marginY) + 30 + buttonHeight + 11, buttonWidth, 20, hWnd);
+    buttons::widgets.hOutputRhymes = CreateStatic("Найденные рифмы", marginX + buttonWidth + marginX, marginY + buttonHeight + marginY, (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2 - 1, buttonHeight, hWnd);
+    buttons::widgets.hOutputText = CreateStatic("Текст с найденными рифмами", marginX + buttonWidth + marginX + (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, marginY + buttonHeight + marginY, (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, buttonHeight, hWnd);
 
-    buttons.hAdjectiveButton = CreateWindowA("BUTTON", "Прилагательное", WS_VISIBLE | WS_CHILD | BS_OWNERDRAW,
-                                             20, 130, 250, 40, hWnd, (HMENU)buttons.ButAdjective, NULL, NULL);
-   // initialDimensions[4] = {20, 130, 250, 40};
+    // Поля редактирования
+    buttons::widgets.hOutputStatus = CreateStatic("",marginX + buttonWidth + marginX + buttonWidth - 99, marginY, buttonWidth*4, 20, hWnd);
+    buttons::widgets.hEditInputWord = CreateEdit(
+        marginX,
+        marginY + 7 * (buttonHeight + marginY) + 30 + buttonHeight + 32, // Позиция сразу под hInputWord с зазором в 1 пиксель
+        buttonWidth,
+        60, // Высота поля
+        hWnd,
+        false
+    );
+    // Поля редактирования
+    int editTopMargin = marginY + buttonHeight + marginY + buttonHeight + 1; // Верхняя граница для полей редактирования (вплотную с hOutputRhymes и hOutputText)
+    int editHeight = screenHeight - editTopMargin - 2 * (buttonHeight + marginY) - 1; // Высота полей с учетом зазоров
+    
+    buttons::widgets.hEditRhymes = CreateEdit(
+        marginX + buttonWidth + marginX,
+        editTopMargin,
+        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2 - 1, // Ширина с учетом зазора
+        editHeight,
+        hWnd,
+        true
+    );
 
-    buttons.hNounButton = CreateWindowA("BUTTON", "Существительное", WS_VISIBLE | WS_CHILD | BS_OWNERDRAW,
-                                        20, 180, 250, 40, hWnd, (HMENU)buttons.ButNoun, NULL, NULL);
-    //initialDimensions[5] = {20, 180, 250, 40};
+    buttons::widgets.hEditText = CreateEdit(
+        marginX + buttonWidth + marginX + (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2 , // Сдвиг вправо с учетом зазора
+        editTopMargin,
+        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, // Ширина с учетом зазора
+        editHeight,
+        hWnd,
+        true
+    );
+}
 
-    buttons.hAdverbialButton = CreateWindowA("BUTTON", "Деепричастие", WS_VISIBLE | WS_CHILD | BS_OWNERDRAW,
-                                             20, 230, 250, 40, hWnd, (HMENU)buttons.ButAdverbial, NULL, NULL);
-    //initialDimensions[6] = {20, 230, 250, 40};
+// Функция для создания кнопки
+HWND CreateButton(const char* text, int x, int y, int width, int height, HWND hWnd, int id)
+{
+    HWND hButton = CreateWindowA(
+        "BUTTON", text, WS_VISIBLE | WS_CHILD | BS_OWNERDRAW,
+        x, y, width, height, hWnd, (HMENU)id, NULL, NULL);
 
-    buttons.hParticipleButton = CreateWindowA("BUTTON", "Причастие", WS_VISIBLE | WS_CHILD | BS_OWNERDRAW,
-                                              20, 280, 250, 40, hWnd, (HMENU)buttons.ButParticiple, NULL, NULL);
-    //initialDimensions[7] = {20, 280, 250, 40};
+    if (!hButton)
+    {
+        MessageBoxA(hWnd, "Не удалось создать кнопку", "Ошибка", MB_OK | MB_ICONERROR);
+    }
 
-    buttons.hAdverbButton = CreateWindowA("BUTTON", "Наречие", WS_VISIBLE | WS_CHILD | BS_OWNERDRAW,
-                                          20, 330, 250, 40, hWnd, (HMENU)buttons.ButAdverb, NULL, NULL);
-   // initialDimensions[8] = {20, 330, 250, 40};
+    return hButton;
+}
 
-    // Создаем кнопку с флагом BS_OWNERDRAW для кастомной отрисовки
-    buttons.hToggleButton = CreateWindowA("BUTTON", "Вывод на экран", WS_VISIBLE | WS_CHILD | BS_OWNERDRAW,
-                                          605, 20, 200, 40, hWnd, (HMENU)buttons.OnToggleButtonClicked, NULL, NULL);
-  //  initialDimensions[9] = {605, 20, 200, 40};
+// Функция для создания статического текста
+HWND CreateStatic(const char* text, int x, int y, int width, int height, HWND hWnd)
+{
+    HWND hStatic = 0;
+    if (text == "Выбранный файл: ")
+    {
+        hStatic = CreateWindowA(
+            "static", text, WS_VISIBLE | WS_CHILD | ES_LEFT,
+            x, y, width, height, hWnd, NULL, NULL, NULL);
+    }
+    else
+    {
+        hStatic = CreateWindowA(
+            "static", text, WS_VISIBLE | WS_CHILD | ES_CENTER,
+            x, y, width, height, hWnd, NULL, NULL, NULL);
+    }
+    if (!hStatic)
+    {
+        MessageBoxA(hWnd, "Не удалось создать статический текст", "Ошибка", MB_OK | MB_ICONERROR);
+    }
 
-    // Кнопка однородного поиска
-    buttons.hSearchType = CreateWindowA("BUTTON", "Тип поиска", WS_VISIBLE | WS_CHILD | BS_OWNERDRAW,
-                                        810, 20, 210, 40, hWnd, (HMENU)buttons.ButSearchType, NULL, NULL);
-   // initialDimensions[19] = {810, 20, 200, 40};
+    return hStatic;
+}
 
-    // Диалоговые окна и их подписи
-    buttons.hOutputStatusText = CreateWindowA("static", "Лог выполнения", WS_VISIBLE | WS_CHILD | ES_CENTER,
-                                              20, 385, 250, 30, hWnd, NULL, NULL, NULL);
-   // initialDimensions[10] = {20, 385, 250, 30};
+// Функция для создания поля редактирования
+HWND CreateEdit(int x, int y, int width, int height, HWND hWnd, bool readOnly)
+{
+    DWORD style = WS_VISIBLE | WS_CHILD | ES_MULTILINE | WS_VSCROLL;
+    if (readOnly)
+    {
+        style |= ES_READONLY;
+    }
 
-    buttons.hOutputStatus = CreateWindowA("edit", "", WS_VISIBLE | WS_CHILD | ES_MULTILINE |ES_READONLY| WS_VSCROLL,
-                                          20, 416, 250, 150, hWnd, NULL, NULL, NULL);
-   // initialDimensions[11] = {20, 415, 250, 150};
+    HWND hEdit = CreateWindowA(
+        "edit", "", style,
+        x, y, width, height, hWnd, NULL, NULL, NULL);
 
-    // Поле ввода слова для поиска рифмующихся пар с этим словом
-    buttons.hInputWord = CreateWindowA("static", "Введите слово для поиска рифм", WS_VISIBLE | WS_CHILD | ES_CENTER,
-                                       20, 600, 250, 30, hWnd, NULL, NULL, NULL);
-  //  initialDimensions[12] = {20, 600, 250, 30};
+    if (!hEdit)
+    {
+        MessageBoxA(hWnd, "Не удалось создать поле редактирования", "Ошибка", MB_OK | MB_ICONERROR);
+    }
 
-    buttons.hEditInputWord = CreateWindowA("edit", "", WS_VISIBLE | WS_CHILD | ES_MULTILINE | WS_VSCROLL,
-                                           20, 631, 250, 50, hWnd, NULL, NULL, NULL);
-  //  initialDimensions[13] = {20, 630, 250, 50};
-
-    buttons.hSearch = CreateWindowA("BUTTON", "Поиск", WS_VISIBLE | WS_CHILD | BS_OWNERDRAW,
-                                    20, 690, 250, 40, hWnd, (HMENU)buttons.Search, NULL, NULL);
-   // initialDimensions[14] = {20, 690, 250, 40};
-
-    // Окно передачи данных
-    buttons.hOutputRhymes = CreateWindowA("static", "Найденные рифмы", WS_VISIBLE | WS_CHILD | ES_CENTER,
-                                          295, 80, 300, 30, hWnd, NULL, NULL, NULL);
-   // initialDimensions[15] = {295, 80, 300, 30};
-
-    buttons.hEditRhymes = CreateWindowA("edit", "", WS_VISIBLE | WS_CHILD | ES_MULTILINE  | WS_VSCROLL| ES_READONLY,
-                                        295, 111, screenWidth - 315, 400, hWnd, NULL, NULL, NULL);
-   // initialDimensions[16] = {295, 110, screenWidth - 315, 400};
-
-    // Окно приема данных
-    buttons.hOutputText = CreateWindowA("static", "Текст с найденными рифмами", WS_VISIBLE | WS_CHILD | ES_CENTER,
-                                        295, 520, 300, 30, hWnd, NULL, NULL, NULL);
-   // initialDimensions[17] = {295, 620, 300, 30};
-
-    buttons.hEditText = CreateWindowA("edit", "", WS_VISIBLE | WS_CHILD | ES_MULTILINE | ES_READONLY | WS_VSCROLL,
-                                      295, 551, screenWidth - 315, 400, hWnd, NULL, NULL, NULL);
-// initialDimensions[18] = {295, 650, screenWidth - 315, 400};
+    return hEdit;
 }
 // Запись в файл
-void save_data(LPCSTR path, Buttons &buttons)
+void save_data(LPCSTR path)
 {
     HANDLE SAVEfile = CreateFileA(
         path,
@@ -765,10 +738,10 @@ void save_data(LPCSTR path, Buttons &buttons)
         CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL,
         NULL);
-    int SAVElength = GetWindowTextLength(buttons.hSearch) + 1;
+    int SAVElength = GetWindowTextLength(buttons::widgets.hSearch) + 1;
     char *data = new char[SAVElength];
 
-    SAVElength = GetWindowTextA(buttons.hSearch, data, SAVElength);
+    SAVElength = GetWindowTextA(buttons::widgets.hSearch, data, SAVElength);
 
     DWORD bytesIterated;
 
@@ -793,7 +766,7 @@ void SetOpenFileParams(HWND hWnd, string filename)
     OFN.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 }
 // Записать в статус программы
-void SetWinStatus(string status, const Buttons &buttons)
+void SetWinStatus(string status)
 {
-    SetWindowTextA(buttons.hOutputStatus, status.c_str());
+    SetWindowTextA(buttons::widgets.hOutputStatus, status.c_str());
 }

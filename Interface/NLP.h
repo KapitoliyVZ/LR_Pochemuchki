@@ -125,7 +125,7 @@ std::string run_mystem_on_word(const std::string& word) {
     std::vector<char> cmd(command.begin(), command.end());
     cmd.push_back('\0'); // Завершающий ноль обязателен для CreateProcess
 
-    // Запускаем mystem.exe через CreateProcessA
+    // Запускаем mystem.exe через CreateProcessAЫ
     BOOL success = CreateProcessA(NULL, cmd.data(), NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
     if (!success) throw std::runtime_error("CreateProcessA failed");
 
