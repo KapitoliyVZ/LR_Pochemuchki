@@ -152,24 +152,35 @@ std::string getPartOfSpeech(const std::string& word) {
     std::string result = run_mystem_on_word(word); // Запускаем mystem
     result = utf8_to_ansi(result); // Перекодируем результат в ANSI
 
-    // Ищем часть речи по шаблону в строке
+    // Ищем разбор в фигурных скобках
     size_t pos = result.find('{');
     if (pos != std::string::npos) {
         size_t endPos = result.find('}', pos);
         if (endPos != std::string::npos) {
             std::string analysis = result.substr(pos + 1, endPos - pos - 1);
 
+            // Получаем только первую часть до '|'
+            size_t pipePos = analysis.find('|');
+            std::string firstParse = (pipePos != std::string::npos)
+                ? analysis.substr(0, pipePos)
+                : analysis;
+
             // Приоритетная проверка некоторых частей речи
-            if (analysis.find("прич") != std::string::npos) cache[word] = "прич";
-            else if (analysis.find("деепр") != std::string::npos) cache[word] = "деепр";
-            else if (analysis.find("SPRO") != std::string::npos) cache[word] = "SPRO";
-            else if (analysis.find("ADV") != std::string::npos) cache[word] = "ADV";
-            else if (analysis.find("A=") != std::string::npos) cache[word] = "A";
+            if (firstParse.find("прич") != std::string::npos) cache[word] = "прич";
+            else if (firstParse.find("деепр") != std::string::npos) cache[word] = "деепр";
+            else if (firstParse.find("SPRO") != std::string::npos) cache[word] = "SPRO";
+            else if (firstParse.find("ADV") != std::string::npos) cache[word] = "ADV";
+            else if (firstParse.find("A=") != std::string::npos) cache[word] = "A";
             else {
                 // Универсальный способ — взять символ после =
-                size_t equalsPos = analysis.find('=');
-                if (equalsPos != std::string::npos && equalsPos + 1 < analysis.size()) {
-                    cache[word] = std::string(1, analysis[equalsPos + 1]);  
+                size_t equalsPos = firstParse.find('=');
+                if (equalsPos != std::string::npos && equalsPos + 1 < firstParse.size()) {
+                    // До первого символа "," или "=" после =
+                    size_t endPos = firstParse.find_first_of(",=", equalsPos + 1);
+                    std::string posTag = (endPos != std::string::npos)
+                        ? firstParse.substr(equalsPos + 1, endPos - equalsPos - 1)
+                        : firstParse.substr(equalsPos + 1);
+                    cache[word] = posTag;
                 }
             }
             return cache[word];
@@ -177,6 +188,7 @@ std::string getPartOfSpeech(const std::string& word) {
     }
     return ""; // Если не удалось определить часть речи
 }
+
 
 // Поиск слов по части речи в предложениях
 std::vector<std::string> findWordsByPartOfSpeech(std::vector<std::vector<std::string>>& sentences, const std::string& targetPartOfSpeech) {
