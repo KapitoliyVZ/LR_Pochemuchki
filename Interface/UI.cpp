@@ -144,7 +144,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             SetWindowText(buttons::widgets.hExitButton, L"");
             InvalidateRect(buttons::widgets.hExitButton, NULL, TRUE); // Перерисовываем кнопку
             UpdateWindow(buttons::widgets.hExitButton);
-            PostQuitMessage(0);
+            ExitSoftware();
         }
 
         else if (LOWORD(wp) == buttons::buttonIDs.ButSearchType)
@@ -198,7 +198,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         }
         else if (LOWORD(wp) == buttons::buttonIDs.OnExitSoftware)
         {
-            PostQuitMessage(0);
+            ExitSoftware();
         }
         else if (LOWORD(wp) == buttons::buttonIDs.ClearRhymes)
         {
@@ -420,12 +420,12 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 
     }
     case WM_DESTROY:
-        ExitSoftware();
+        
         DeleteObject(buttons::graphics.hBrushRed);
         DeleteObject(buttons::graphics.hBrushGreen);
         DeleteObject(buttons::graphics.hBrushGrey);
         DeleteObject(buttons::graphics.hBrush);
-        PostQuitMessage(0);
+        ExitSoftware();
         break;
     default:
         return DefWindowProc(hWnd, msg, wp, lp);
