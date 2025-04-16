@@ -261,22 +261,34 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 MessageBoxA(hWnd, "Не найдено рифм", "Ошибка", MB_OK | MB_ICONERROR);
                 break;
             }
+            int counter = 0;
             for (WordData& output : rhymes_data)
             {
-                // Добавляем слово в поле
-                
+                counter++;
+                string wordInfo;
+                if (counter == 1)
+                {
+                    wordInfo = "Слово: ";
+                }
+                else
+                {
+					wordInfo = "\r\nСлово: ";
+                }
+
                 output.word = utf8_to_ansi(output.word);
-                string wordInfo = "Слово: " + output.word + "\n";
+                
+                wordInfo += output.word;
+
                 SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)wordInfo.c_str());
 
                 // Если есть рифмы, добавляем их
                 if (!output.rhymed_words.empty())
                 {
-                    SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)"Рифмы:\n");
+                    SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)"\r\nРифмы: ");
                     for (string& word : output.rhymed_words)
                     {
                         word = utf8_to_ansi(word);
-                        string rhyme = "  - " + word + "\n";
+                        string rhyme = "\r\n  - " + word;
                         SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)rhyme.c_str());
                     }
                 }
@@ -291,13 +303,15 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             
         }
         // Нажатие кнопки "чтение файла"
+        
         else if (LOWORD(wp) == buttons::buttonIDs.OnReadFile)
         {
-            if (GetOpenFileNameW(&OFN)) // Исправлен вызов GetOpenFileNameW для чтения
+            // Проверка успешности выбора файла
+            if (GetOpenFileNameW(&OFN)) // Вызов GetOpenFileNameW
             {
-                filename = ConvertLPWSTRToString(OFN.lpstrFile);
+                filename = ConvertLPWSTRToString(OFN.lpstrFile); // Сохраняем выбранный файл
 
-                if (checkTxtFile(filename)) // Проверка файла на существование и корректность
+                if (checkTxtFile(filename)) // Проверка файла
                 {
                     if (IsWindow(hWnd))
                     {
@@ -311,11 +325,13 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 else
                 {
                     MessageBoxA(hWnd, "Файл не прошел проверку.", "Ошибка", MB_OK | MB_ICONERROR);
-                    break;
                 }
             }
-
-            
+            else
+            {
+                MessageBoxA(hWnd, "Ошибка открытия файла.", "Ошибка", MB_OK | MB_ICONERROR);
+            }
+            break;
         }
         else if (LOWORD(wp) == buttons::buttonIDs.OnSaveFile)
         {
@@ -431,6 +447,11 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         return DefWindowProc(hWnd, msg, wp, lp);
     }
     return 0;
+}
+
+void FreeLPWSTR(LPWSTR lpwstr)
+{
+    delete[] lpwstr;
 }
 
 // Функция для преобразования LPWSTR в std::string
@@ -759,17 +780,20 @@ void save_data(LPCSTR path)
 // Установка начальных параметров на открытие файлов для чтения и записи
 void SetOpenFileParams(HWND hWnd, string filename)
 {
-    LPWSTR path = ConvertStringToLPWSTR(filename);
-    ZeroMemory(&OFN, sizeof(OFN));
+    // Выделяем буфер для пути с учетом MAX_PATH
+    WCHAR path[MAX_PATH] = L""; // Инициализируем пустой буфер
+
+    // Инициализация структуры OPENFILENAME
+    ZeroMemory(&OFN, sizeof(OFN)); // Очищаем структуру
     OFN.lStructSize = sizeof(OFN);
     OFN.hwndOwner = hWnd;
-    OFN.lpstrFile = path;
-    OFN.nMaxFile = MAX_PATH; // Используем MAX_PATH для корректного размера буфера
-    OFN.lpstrFilter = L"*.txt";
-    OFN.lpstrFileTitle = NULL;
+    OFN.lpstrFile = path;  // Указываем буфер для хранения имени файла
+    OFN.nMaxFile = MAX_PATH;  // Максимальная длина пути
+    OFN.lpstrFilter = L"Текстовые файлы (*.txt)\0*.txt\0Все файлы (*.*)\0*.*\0"; // Фильтр для файлов
+    OFN.lpstrFileTitle = NULL;  // Название файла
     OFN.nMaxFileTitle = 0;
-    OFN.lpstrInitialDir = L"D:\\Рабочий стол\\WindowProjectTEst";
-    OFN.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+    OFN.lpstrInitialDir = L"D:\\Рабочий стол\\WindowProjectTEst"; // Начальная директория
+    OFN.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR; // Проверка существования пути и файла
 }
 // Записать в статус программы
 void SetWinStatus(string status)

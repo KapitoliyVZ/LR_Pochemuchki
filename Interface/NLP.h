@@ -118,17 +118,22 @@ std::string run_mystem_on_word(const std::string& word) {
 
     //std::string command = "\"C:\\Study\\MyStem\\mystem.exe\" -i \"" + inputFile + "\" \"" + outputFile + "\"";
 
-    std::string command = mystem_file_path + " -i \"" + inputFile + "\" \"" + outputFile + "\"";
+    std::string command = mystem_file_path + " -i " + inputFile + " " + outputFile;
 
     STARTUPINFOA si = { sizeof(si) };
+
     PROCESS_INFORMATION pi;
+    ZeroMemory(&pi, sizeof(pi));
     std::vector<char> cmd(command.begin(), command.end());
     cmd.push_back('\0'); // Завершающий ноль обязателен для CreateProcess
 
     // Запускаем mystem.exe через CreateProcessAЫ
     BOOL success = CreateProcessA(NULL, cmd.data(), NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
-    if (!success) throw std::runtime_error("CreateProcessA failed");
-
+    if (!success) 
+    {
+        DWORD errorCode = GetLastError();
+        throw std::runtime_error("CreateProcessA failed with error code: " + std::to_string(errorCode));
+    }
     WaitForSingleObject(pi.hProcess, INFINITE); // Ждём завершения
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
