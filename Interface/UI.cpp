@@ -217,8 +217,8 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 			buttons::ButtonFlags[6] = 0; // Сброс флага поиска слова
             char WordToSearch[60] = ""; 
             GetWindowTextA(buttons::widgets.hEditInputWord, WordToSearch, 60);
-            string data = WordToSearch;
-			if (data.length() != 0)
+			string word_to_compare = WordToSearch; // слово для поиска по нему рифм
+			if (word_to_compare.length() != 0)
 			{
                 buttons::ButtonFlags.flip(6);
 			}
@@ -242,7 +242,13 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 MessageBoxA(hWnd, "Выберите файл с текстом для поиска рифм", "Ошибка", MB_OK | MB_ICONERROR);
                 break;
             }
-            vector<WordData> words = unite_functions(buttons::ButtonFlags, data);
+
+
+            vector<WordData> rhymes_data;     // Найденные рифмы к данному слову
+            vector<vector<string>> sentences; // Текст с разделенными предложениями
+
+			// Получаем найденные рифмы, разделенные предложения и флаги 
+            unite_functions(rhymes_data, sentences, word_to_compare, buttons::ButtonFlags);
 
 
             // Очищаем содержимое поля перед добавлением нового текста
@@ -250,12 +256,12 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             SetWindowTextA(buttons::widgets.hEditText, "");
 
             // Проходим по всем словам
-            if (words.empty())
+            if (rhymes_data.empty())
             {
                 MessageBoxA(hWnd, "Не найдено рифм", "Ошибка", MB_OK | MB_ICONERROR);
                 break;
             }
-            for (WordData& output : words)
+            for (WordData& output : rhymes_data)
             {
                 // Добавляем слово в поле
                 
