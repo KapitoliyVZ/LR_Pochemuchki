@@ -8,7 +8,7 @@
 int len_txt = 4;               // длина расширения .txt
 string extension_txt = ".txt"; // расширение .txt
 
-// Проверка расширения .txt
+// Проверка наличия расширения .txt у файла
 bool check_txt_extension(string file_name)
 {
     if (file_name.length() >= len_txt && file_name.substr(file_name.length() - len_txt) == extension_txt)
@@ -23,9 +23,9 @@ bool check_inputFile_is_empty(string file_name)
     // true - файл пустой
     // false - файл не пустой
 
-    if (file_input.peek() == EOF) // если первый символ это конец файла
+    if (file_input.peek() == EOF)
     {
-        // закрываем файл
+        // Закрытие файла, если он пустой
         file_input.close();
         return true;
     }
@@ -33,27 +33,22 @@ bool check_inputFile_is_empty(string file_name)
         return false;
 }
 
-// Проверка, имеет ли файл расширение .txt, существует ли он, можно ли его открыть, и не пустой ли он
-bool checkTxtFile(const std::string &filePath)
+// Проверка файла на наличие в пути (имени) расширения .txt и его существование
+bool checkTxtFile(const string &filePath)
 {
     // Проверка расширения .txt вручную
-    std::string path = filePath;
+    string path = filePath;
 
+    // Удаление кавычек в начале и конце строки, если они есть
     if (!path.empty() && path.front() == '"' && path.back() == '"')
-        path = path.substr(1, path.size() - 2); // Удаление кавычек
+        path = path.substr(1, path.size() - 2);
 
     if (check_txt_extension(filePath))
         return false; // Неверное расширение
 
-    // Проверка, существует ли файл
-    struct stat buffer;
-    if (stat(path.c_str(), &buffer) != 0)
-        return false; // Файл не существует
-
     // Открытие файла через глобальный ifstream
     file_input.open(filePath, ios_base::in);
 
-    // Проверка, удалось ли открыть файл
     if (!file_input.is_open())
         return false; // Не удалось открыть файл
 
