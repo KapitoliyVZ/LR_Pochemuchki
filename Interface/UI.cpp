@@ -237,11 +237,11 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 MessageBoxA(hWnd, "Выберите несколько частей речи или введите слово для поиска", "Ошибка", MB_OK | MB_ICONERROR);
                 break;
             }
-            if (filename.length() == 0)
+            /*if (filename.length() == 0)
             {
                 MessageBoxA(hWnd, "Выберите файл с текстом для поиска рифм", "Ошибка", MB_OK | MB_ICONERROR);
                 break;
-            }
+            }*/
 
 
             vector<WordData> rhymes_data;     // Найденные рифмы к данному слову
@@ -307,7 +307,10 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         else if (LOWORD(wp) == buttons::buttonIDs.OnReadFile)
         {
             wchar_t filePath[MAX_PATH] = {}; // Обязательно выделяем буфер
-
+            
+            
+            ////////////////////////////
+            // штука для буфера
             OPENFILENAMEW OFN = { 0 };
             OFN.lStructSize = sizeof(OPENFILENAMEW);
             OFN.hwndOwner = nullptr; // или HWND твоего окна
@@ -316,6 +319,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             OFN.lpstrFilter = L"Text Files\0*.txt\0All Files\0*.*\0";
             OFN.nFilterIndex = 1;
             OFN.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+            ///////////////////////////////////
 
             std::string filename;
             // Проверка успешности выбора файла
