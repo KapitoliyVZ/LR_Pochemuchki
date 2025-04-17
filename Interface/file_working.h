@@ -34,11 +34,12 @@ bool check_inputFile_is_empty(string file_name)
 }
 
 // Проверка файла на наличие в пути (имени) расширения .txt и его существование
-bool checkTxtFile(const string &filePath)
+bool checkName_openFile(const string &filePath) // filePath - путь к файлу
 {
-    // Проверка расширения .txt вручную
-    string path = filePath;
+    if (filePath.empty())
+        return false; // Путь к файлу пустой
 
+    string path = filePath;
     // Удаление кавычек в начале и конце строки, если они есть
     if (!path.empty() && path.front() == '"' && path.back() == '"')
         path = path.substr(1, path.size() - 2);
@@ -46,7 +47,7 @@ bool checkTxtFile(const string &filePath)
     if (check_txt_extension(filePath))
         return false; // Неверное расширение
 
-    // Открытие файла через глобальный ifstream
+    // Открытие файла через глобальный ifstream file_input
     file_input.open(filePath, ios_base::in);
 
     if (!file_input.is_open())

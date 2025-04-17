@@ -311,7 +311,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             {
                 filename = ConvertLPWSTRToString(OFN.lpstrFile); // Сохраняем выбранный файл
 
-                if (checkTxtFile(filename)) // Проверка файла
+                if (checkName_openFile(filename)) // Проверка файла
                 {
                     if (IsWindow(hWnd))
                     {
@@ -792,7 +792,7 @@ void SetOpenFileParams(HWND hWnd, string filename)
     OFN.lpstrFilter = L"Текстовые файлы (*.txt)\0*.txt\0Все файлы (*.*)\0*.*\0"; // Фильтр для файлов
     OFN.lpstrFileTitle = NULL;  // Название файла
     OFN.nMaxFileTitle = 0;
-    OFN.lpstrInitialDir = L"D:\\Рабочий стол\\WindowProjectTEst"; // Начальная директория
+    // OFN.lpstrInitialDir = L"D:\\Рабочий стол\\WindowProjectTEst"; // Начальная директория
     OFN.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR; // Проверка существования пути и файла
 }
 // Записать в статус программы
