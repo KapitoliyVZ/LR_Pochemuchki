@@ -44,16 +44,16 @@ bool checkName_openFile(const string &filePath) // filePath - путь к фай
     if (!path.empty() && path.front() == '"' && path.back() == '"')
         path = path.substr(1, path.size() - 2);
 
-    if (check_txt_extension(filePath))
+    if (!check_txt_extension(path))
         return false; // Неверное расширение
 
     // Открытие файла через глобальный ifstream file_input
-    file_input.open(filePath, ios_base::in);
+    file_input.open(path, ios_base::in);
 
     if (!file_input.is_open())
         return false; // Не удалось открыть файл
 
-    if (check_inputFile_is_empty(filePath))
+    if (check_inputFile_is_empty(path))
         return false; // файл пустой
 
     return true; // Файл прошел все проверки

@@ -306,6 +306,18 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         
         else if (LOWORD(wp) == buttons::buttonIDs.OnReadFile)
         {
+            wchar_t filePath[MAX_PATH] = {}; // Обязательно выделяем буфер
+
+            OPENFILENAMEW OFN = { 0 };
+            OFN.lStructSize = sizeof(OPENFILENAMEW);
+            OFN.hwndOwner = nullptr; // или HWND твоего окна
+            OFN.lpstrFile = filePath;
+            OFN.nMaxFile = MAX_PATH;
+            OFN.lpstrFilter = L"Text Files\0*.txt\0All Files\0*.*\0";
+            OFN.nFilterIndex = 1;
+            OFN.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+            std::string filename;
             // Проверка успешности выбора файла
             if (GetOpenFileNameW(&OFN)) // Вызов GetOpenFileNameW
             {
@@ -455,12 +467,29 @@ void FreeLPWSTR(LPWSTR lpwstr)
 }
 
 // Функция для преобразования LPWSTR в std::string
-string ConvertLPWSTRToString(LPWSTR lpwstr)
+std::string ConvertLPWSTRToString(LPWSTR lpwstr)
 {
-    int size_needed = WideCharToMultiByte(CP_UTF8, 0, lpwstr, -1, NULL, 0, NULL, NULL);
-    string strTo(size_needed, 0);
-    WideCharToMultiByte(CP_UTF8, 0, lpwstr, -1, &strTo[0], size_needed, NULL, NULL);
-    return strTo;
+    if (!lpwstr) {
+        std::cerr << "Null LPWSTR" << std::endl;
+        return std::string();
+    }
+
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, lpwstr, -1, nullptr, 0, nullptr, nullptr);
+    if (size_needed <= 0) {
+        DWORD error = GetLastError();
+        std::cerr << "WideCharToMultiByte failed, error: " << error << std::endl;
+        return std::string();
+    }
+
+    std::string result(size_needed, 0);
+    WideCharToMultiByte(CP_UTF8, 0, lpwstr, -1, &result[0], size_needed, nullptr, nullptr);
+
+    // Удаляем завершающий нуль
+    if (!result.empty() && result.back() == '\0') {
+        result.pop_back();
+    }
+
+    return result;
 }
 
 // Функция для преобразования std::string в LPWSTR
@@ -792,7 +821,7 @@ void SetOpenFileParams(HWND hWnd, string filename)
     OFN.lpstrFilter = L"Текстовые файлы (*.txt)\0*.txt\0Все файлы (*.*)\0*.*\0"; // Фильтр для файлов
     OFN.lpstrFileTitle = NULL;  // Название файла
     OFN.nMaxFileTitle = 0;
-    // OFN.lpstrInitialDir = L"D:\\Рабочий стол\\WindowProjectTEst"; // Начальная директория
+    OFN.lpstrInitialDir = L"D:"; // Начальная директория
     OFN.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR; // Проверка существования пути и файла
 }
 // Записать в статус программы
