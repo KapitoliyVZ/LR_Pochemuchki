@@ -217,8 +217,39 @@ bool existenceRhymedParticiples(WordData& candidate, const string& word)
 	return false;
 }
 
+// функция взятия название части речи взятого слова
+std::string get_output_part_of_speech(string part_of_speech)
+{
+	// перевод в ANSI, чтобы проверка проходила для случая кириллицы (причастие, деепричастие)
+	//part_of_speech = utf8_to_ansi(part_of_speech);
+
+	// { "V", "ADV", "A", "S", "прич", "деепр" }
+
+	// основная проверка части речи
+
+	if (part_of_speech == "V")
+		return "глагол";
+
+	if (part_of_speech == "ADV")
+		return "наречие";
+
+	if (part_of_speech == "A")
+		return "прилагательное";
+
+	if (part_of_speech == "прич")
+		return "причастие";
+
+	if (part_of_speech == "деепр")
+		return "деепричастие";
+
+	if (part_of_speech == "S")
+		return "существительное";
+
+	
+};
+
 // основная функция поиска рифм
-vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bitset<8> button_flags, vector<string>& word_to_compare)
+vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bitset<8> button_flags, vector<string>& word_to_compare,const vector<string>& parts_of_speech)
 {
 
 	vector<WordData> data;
@@ -309,6 +340,7 @@ vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bits
 					if (existence_of_participle(data, candidate.word))
 						continue;
 
+					candidate.part_of_speech = get_output_part_of_speech(parts_of_speech[i]);
 					candidate.amount = same_words_counter;
 					candidate.rhymed_amount = candidate.rhymed_words.size();
 					data.push_back(candidate);
@@ -528,7 +560,7 @@ void deal_with_words(bitset<8>& button_flags, const vector<vector<string>>& numb
 	}
 
 	// поиск рифм
-	data = find_rhymes(words_text_collection, button_flags, comparing_word_part_of_speech);
+	data = find_rhymes(words_text_collection, button_flags, comparing_word_part_of_speech, parts_of_speech);
 
 
 	// поднятие всех регистров для красивого вывода и поиска слов по рифмам в
