@@ -28,6 +28,21 @@ std::string getMystemPath() {
     return "\"" + mystemPath + "\"";
 }
 
+
+// функция перевода ANSI в UTF-8
+std::string ansi_to_utf8(const std::string& ansi_str) {
+    int wide_size = MultiByteToWideChar(1251, 0, ansi_str.c_str(), -1, nullptr, 0);
+    std::wstring wide_str(wide_size, 0);
+    MultiByteToWideChar(1251, 0, ansi_str.c_str(), -1, &wide_str[0], wide_size);
+
+    int utf8_size = WideCharToMultiByte(CP_UTF8, 0, wide_str.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    std::string utf8_str(utf8_size, 0);
+    WideCharToMultiByte(CP_UTF8, 0, wide_str.c_str(), -1, &utf8_str[0], utf8_size, nullptr, nullptr);
+
+    if (!utf8_str.empty()) utf8_str.pop_back(); // Удаляем завершающий ноль
+    return utf8_str;
+}
+
 // Конвертация строки из UTF-8 в wide-строку (UTF-16)
 std::wstring utf8_to_wstring(const std::string& utf8_str) {
     int size_needed = MultiByteToWideChar(CP_UTF8, 0, utf8_str.c_str(), -1, nullptr, 0);
@@ -61,16 +76,36 @@ std::string wstring_to_utf8(const std::wstring& wstr) {
 
 // Преобразует первую букву строки в нижний регистр
 std::string lowFirstLetter(const std::string& input) {
-    std::wstring wstr = utf8_to_wstring(input);
-    if (!wstr.empty()) wstr[0] = std::towlower(wstr[0]);
-    return wstring_to_utf8(wstr);
+    std::unordered_map<char, char> to_lower = {
+        {'А','а'}, {'Б','б'}, {'В','в'}, {'Г','г'}, {'Д','д'}, {'Е','е'}, {'Ё','ё'},
+        {'Ж','ж'}, {'З','з'}, {'И','и'}, {'Й','й'}, {'К','к'}, {'Л','л'}, {'М','м'},
+        {'Н','н'}, {'О','о'}, {'П','п'}, {'Р','р'}, {'С','с'}, {'Т','т'}, {'У','у'},
+        {'Ф','ф'}, {'Х','х'}, {'Ц','ц'}, {'Ч','ч'}, {'Ш','ш'}, {'Щ','щ'}, {'Ъ','ъ'},
+        {'Ы','ы'}, {'Ь','ь'}, {'Э','э'}, {'Ю','ю'}, {'Я','я'}
+    };
+
+    std::string ansi = utf8_to_ansi(input);
+    if (!ansi.empty() && to_lower.count(ansi[0])) {
+        ansi[0] = to_lower[ansi[0]];
+    }
+    return ansi_to_utf8(ansi);
 }
 
 // Преобразует все символы строки в верхний регистр
 std::string capitalizeAllLetters(const std::string& input) {
-    std::wstring wstr = utf8_to_wstring(input);
-    for (auto& ch : wstr) ch = std::towupper(ch);
-    return wstring_to_utf8(wstr);
+    std::unordered_map<char, char> to_upper = {
+        {'а','А'}, {'б','Б'}, {'в','В'}, {'г','Г'}, {'д','Д'}, {'е','Е'}, {'ё','Ё'},
+        {'ж','Ж'}, {'з','З'}, {'и','И'}, {'й','Й'}, {'к','К'}, {'л','Л'}, {'м','М'},
+        {'н','Н'}, {'о','О'}, {'п','П'}, {'р','Р'}, {'с','С'}, {'т','Т'}, {'у','У'},
+        {'ф','Ф'}, {'х','Х'}, {'ц','Ц'}, {'ч','Ч'}, {'ш','Ш'}, {'щ','Щ'}, {'ъ','Ъ'},
+        {'ы','Ы'}, {'ь','Ь'}, {'э','Э'}, {'ю','Ю'}, {'я','Я'}
+    };
+
+    std::string ansi = utf8_to_ansi(input);
+    for (auto& ch : ansi) {
+        if (to_upper.count(ch)) ch = to_upper[ch];
+    }
+    return ansi_to_utf8(ansi);
 }
 
 // Удаляет знаки пунктуации из слова
@@ -205,7 +240,7 @@ std::vector<std::string> findWordsByPartOfSpeech(std::vector<std::vector<std::st
             if (partOfSpeech == targetPartOfSpeech) {
                 
                 // TMP РАЗОБРАТЬСЯ ПОЧЕМУ НЕ РАБОТАЮТ ФУНКЦИИ РЕГИСТРОВ
-                lowFirstLetter(word);
+                word = lowFirstLetter(word);
 
                 foundWords.push_back(word); // Сохраняем найденное слово с обработкой регистра
 
