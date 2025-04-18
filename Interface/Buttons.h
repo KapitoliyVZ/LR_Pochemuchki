@@ -24,6 +24,9 @@ namespace buttons
         int ButAdverbial = 13;
         int ButExit = 14;
         int ButSearchType = 15;
+		int CheckBox1 = 16;
+		int CheckBox2 = 17;
+		int CheckBox3 = 18;
     };
 
     // Структура для хранения виджетов
@@ -50,6 +53,12 @@ namespace buttons
         HWND hInputWord = nullptr;
         HWND hEditInputWord = nullptr;
         HWND hSearchType = nullptr;
+		HWND hStaticCheckBox1Info = nullptr;
+		HWND hStaticCheckBox2Info = nullptr;
+		HWND hStaticCheckBox3Info = nullptr;
+		HWND hCheckBox1 = nullptr;
+		HWND hCheckBox2 = nullptr;
+		HWND hCheckBox3 = nullptr;
     };
 
     // Структура для хранения графических ресурсов

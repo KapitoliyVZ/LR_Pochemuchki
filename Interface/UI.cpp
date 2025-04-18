@@ -57,6 +57,39 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdsho
 
     return 0;
 }
+
+void UpdateButtonStatesAndColors()
+{
+    // Обновляем состояние кнопок в зависимости от флагов
+    bool isHomogeneousMode = buttons::ButtonFlags[7]; // Флаг однородного режима
+    bool hasInput = GetWindowTextLengthA(buttons::widgets.hEditInputWord) > 0;
+
+    // Обновляем доступность кнопок
+    EnableWindow(buttons::widgets.hVerbButton, !isHomogeneousMode || !hasInput);
+    EnableWindow(buttons::widgets.hAdverbButton, !isHomogeneousMode || !hasInput);
+    EnableWindow(buttons::widgets.hAdjectiveButton, !isHomogeneousMode || !hasInput);
+    EnableWindow(buttons::widgets.hNounButton, !isHomogeneousMode || !hasInput);
+    EnableWindow(buttons::widgets.hParticipleButton, !isHomogeneousMode || !hasInput);
+    EnableWindow(buttons::widgets.hAdverbialButton, !isHomogeneousMode || !hasInput);
+
+    // Перерисовываем кнопки для обновления их цветов
+    InvalidateRect(buttons::widgets.hVerbButton, NULL, TRUE);
+    InvalidateRect(buttons::widgets.hAdverbButton, NULL, TRUE);
+    InvalidateRect(buttons::widgets.hAdjectiveButton, NULL, TRUE);
+    InvalidateRect(buttons::widgets.hNounButton, NULL, TRUE);
+    InvalidateRect(buttons::widgets.hParticipleButton, NULL, TRUE);
+    InvalidateRect(buttons::widgets.hAdverbialButton, NULL, TRUE);
+    InvalidateRect(buttons::widgets.hSearchType, NULL, TRUE);
+
+    // Обновляем окно для применения изменений
+    UpdateWindow(buttons::widgets.hVerbButton);
+    UpdateWindow(buttons::widgets.hAdverbButton);
+    UpdateWindow(buttons::widgets.hAdjectiveButton);
+    UpdateWindow(buttons::widgets.hNounButton);
+    UpdateWindow(buttons::widgets.hParticipleButton);
+    UpdateWindow(buttons::widgets.hAdverbialButton);
+    UpdateWindow(buttons::widgets.hSearchType);
+}
 // Создаем новое окно приложение
 WNDCLASS NewWindClass(HBRUSH BGColor, HCURSOR Cursor, HINSTANCE hInst, HICON Icon, LPCWSTR Name, WNDPROC Procedure)
 {
@@ -70,6 +103,22 @@ WNDCLASS NewWindClass(HBRUSH BGColor, HCURSOR Cursor, HINSTANCE hInst, HICON Ico
     NWC.lpfnWndProc = Procedure;
 
     return NWC;
+}
+
+void CheckAndUpdateCheckbox(HWND hWnd)
+{
+	// Проверяем состояние чекбокса
+	if (SendMessage(buttons::widgets.hCheckBox1, BM_GETCHECK, 0, 0) == BST_CHECKED)
+	{
+		// Если чекбокс отмечен, выполняем действия
+		// Например, можно изменить цвет текста или выполнить другие действия
+		SetWindowTextA(buttons::widgets.hOutputStatusText, "Чекбокс отмечен");
+	}
+	else
+	{
+		// Если чекбокс не отмечен, выполняем другие действия
+		SetWindowTextA(buttons::widgets.hOutputStatusText, "Чекбокс не отмечен");
+	}
 }
 
 // Основной цикл программы
@@ -111,6 +160,20 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         {
             SetWindowTextA(buttons::widgets.hOutputStatus, "");
         }
+        else
+        {
+            SendMessage(buttons::widgets.hCheckBox2, BM_SETCHECK, BST_CHECKED, 0);
+            UpdateWindow(buttons::widgets.hCheckBox2);
+        }
+
+        if ((buttons::ButtonFlags.count() >= 2 and
+            buttons::ButtonFlags.test(7) == 0) or (buttons::ButtonFlags.count() == 1 and
+                buttons::ButtonFlags.test(7) == 1))
+        {
+            SendMessage(buttons::widgets.hCheckBox1, BM_SETCHECK, BST_CHECKED, 0);
+            UpdateWindow(buttons::widgets.hCheckBox1);
+        }
+
         // Проверяем, если уведомление пришло от поля редактирования
         if (HIWORD(wp) == EN_CHANGE && (HWND)lp == buttons::widgets.hEditInputWord)
         {
@@ -119,7 +182,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             GetWindowTextA(buttons::widgets.hEditInputWord, buffer, sizeof(buffer));
 
             // Если поле не пустое, блокируем кнопки
-            if (strlen(buffer) > 0 and buttons::ButtonFlags[7] == true)
+            if ( (strlen(buffer) > 0) && buttons::ButtonFlags[7] == true)
             {
                 EnableWindow(buttons::widgets.hVerbButton, FALSE);
                 EnableWindow(buttons::widgets.hAdverbButton, FALSE);
@@ -150,9 +213,8 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         else if (LOWORD(wp) == buttons::buttonIDs.ButSearchType)
         {
             buttons::ButtonFlags.flip(7);
-            SetWindowText(buttons::widgets.hSearchType, L"");
-            InvalidateRect(buttons::widgets.hSearchType, NULL, TRUE); // Перерисовываем кнопку
-            UpdateWindow(buttons::widgets.hSearchType);
+            UpdateButtonStatesAndColors();
+
         }
         else if (LOWORD(wp) == buttons::buttonIDs.ButVerb)
         {
@@ -200,18 +262,6 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         {
             ExitSoftware();
         }
-        else if (LOWORD(wp) == buttons::buttonIDs.ClearRhymes)
-        {
-            SetWindowText(buttons::widgets.hEditRhymes, L"");
-            InvalidateRect(buttons::widgets.hEditRhymes, NULL, TRUE); // Перерисовываем кнопку
-            UpdateWindow(buttons::widgets.hEditRhymes);
-        }
-        else if (LOWORD(wp) == buttons::buttonIDs.ClearText)
-        {
-            SetWindowText(buttons::widgets.hEditText, L"");
-            InvalidateRect(buttons::widgets.hEditText, NULL, TRUE); // Перерисовываем кнопку
-            UpdateWindow(buttons::widgets.hEditText);
-        }
         else if (LOWORD(wp) == buttons::buttonIDs.Search)
         {
 			buttons::ButtonFlags[6] = 0; // Сброс флага поиска слова
@@ -220,7 +270,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 			string word_to_compare = WordToSearch; // слово для поиска по нему рифм
 			if (word_to_compare.length() != 0)
 			{
-                buttons::ButtonFlags[6] = true;;
+                buttons::ButtonFlags[6] = true;
 			}
             
             if (buttons::ButtonFlags.test(0) == 0 and buttons::ButtonFlags.test(1) == 0 and
@@ -279,6 +329,10 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 
                 wordInfo += output.word;
 
+				string part_of_speech = " (" + output.part_of_speech + ")";
+
+				wordInfo += part_of_speech;
+
                 SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)wordInfo.c_str());
 
                 // Если есть рифмы, добавляем их
@@ -301,6 +355,10 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             InvalidateRect(buttons::widgets.hEditText, NULL, TRUE);
             UpdateWindow(buttons::widgets.hEditText);
             buttons::ButtonFlags.reset();
+            SendMessage(buttons::widgets.hCheckBox1, BM_SETCHECK, BST_UNCHECKED, 0);
+            SendMessage(buttons::widgets.hCheckBox2, BM_SETCHECK, BST_UNCHECKED, 0);
+            SendMessage(buttons::widgets.hCheckBox3, BM_SETCHECK, BST_UNCHECKED, 0);
+            UpdateButtonStatesAndColors();
         }
         // Нажатие кнопки "чтение файла"
         
@@ -350,6 +408,8 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             {
                 MessageBoxA(hWnd, "Ошибка открытия файла.", "Ошибка", MB_OK | MB_ICONERROR);
             }
+            SendMessage(buttons::widgets.hCheckBox2, BM_SETCHECK, BST_CHECKED, 0);
+            UpdateWindow(buttons::widgets.hCheckBox2);
             break;
         }
         else if (LOWORD(wp) == buttons::buttonIDs.OnSaveFile)
@@ -712,7 +772,7 @@ void MainWndAddWidget(HWND hWnd)
     buttons::widgets.hParticipleButton = CreateButton("Причастие", marginX, marginY + 5 * (buttonHeight + marginY) + 20, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.ButParticiple);
     buttons::widgets.hAdverbButton = CreateButton("Наречие", marginX, marginY + 6 * (buttonHeight + marginY) + 20, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.ButAdverb);
     buttons::widgets.hSearchType = CreateButton("Тип поиска", marginX, marginY + 7 * (buttonHeight + marginY) + 20, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.ButSearchType);
-    buttons::widgets.hSearch = CreateButton("Поиск", marginX, screenHeight - 2 * (buttonHeight + marginY) - 200, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.Search);
+    buttons::widgets.hSearch = CreateButton("Поиск", marginX, screenHeight - 2 * (buttonHeight + marginY) - 100, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.Search);
 
 
     // Статические элементы
@@ -752,6 +812,29 @@ void MainWndAddWidget(HWND hWnd)
         hWnd,
         true
     );
+
+
+    buttons::widgets.hCheckBox1 = CreateWindowA(
+        "BUTTON", "", WS_VISIBLE | WS_CHILD | BS_CHECKBOX | WS_DISABLED,
+        marginX, screenHeight - 2 * (buttonHeight + marginY) - 130, // Позиция под поясняющим текстом
+        12, buttonHeight-10, // Размеры
+        hWnd, (HMENU)buttons::buttonIDs.CheckBox1, NULL, NULL
+    );
+	buttons::widgets.hStaticCheckBox1Info = CreateStatic("Выберите часть речи", marginX+15, screenHeight - 2 * (buttonHeight + marginY) - 128, buttonWidth-10, 20, hWnd);
+    buttons::widgets.hCheckBox2 = CreateWindowA(
+        "BUTTON", "", WS_VISIBLE | WS_CHILD | BS_CHECKBOX | WS_DISABLED,
+        marginX, screenHeight - 2 * (buttonHeight + marginY) - 150, // Позиция под поясняющим текстом
+        12, buttonHeight - 10, // Размеры
+        hWnd, (HMENU)buttons::buttonIDs.CheckBox2, NULL, NULL
+    );
+    buttons::widgets.hStaticCheckBox2Info = CreateStatic("Выберите файл", marginX + 15, screenHeight - 2 * (buttonHeight + marginY) - 148, buttonWidth - 10, 20, hWnd);
+    buttons::widgets.hCheckBox3 = CreateWindowA(
+        "BUTTON", "", WS_VISIBLE | WS_CHILD | BS_CHECKBOX | WS_DISABLED,
+        marginX, screenHeight - 2 * (buttonHeight + marginY) - 170, // Позиция под поясняющим текстом
+        12, buttonHeight - 10, // Размеры
+        hWnd, (HMENU)buttons::buttonIDs.CheckBox3, NULL, NULL
+    );
+	buttons::widgets.hStaticCheckBox3Info = CreateStatic("Выберите тип поиска", marginX + 15, screenHeight - 2 * (buttonHeight + marginY) - 168, buttonWidth - 10, 20, hWnd);
 }
 
 // Функция для создания кнопки
@@ -773,7 +856,7 @@ HWND CreateButton(const char* text, int x, int y, int width, int height, HWND hW
 HWND CreateStatic(const char* text, int x, int y, int width, int height, HWND hWnd)
 {
     HWND hStatic = 0;
-    if (text == "Выбранный файл: ")
+    if (text == "Выбранный файл: " or text == "Выберите часть речи" or text == "Выберите файл" or text == "Выберите тип поиска")
     {
         hStatic = CreateWindowA(
             "static", text, WS_VISIBLE | WS_CHILD | ES_LEFT,

@@ -61,6 +61,6 @@ void FreeLPWSTR(LPWSTR lpwstr);
 HWND CreateEdit(int x, int y, int width, int height, HWND hWnd, bool readOnly = false);
 HWND CreateStatic(const char* text, int x, int y, int width, int height, HWND hWnd);
 HWND CreateButton(const char* text, int x, int y, int width, int height, HWND hWnd, int id);
-
+void UpdateButtonStatesAndColors();
 
 #endif // UI_CONST_H
