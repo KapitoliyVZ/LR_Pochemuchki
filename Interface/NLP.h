@@ -194,7 +194,6 @@ std::string getPartOfSpeech(const std::string& word) {
     return ""; // Если не удалось определить часть речи
 }
 
-
 // Поиск слов по части речи в предложениях
 std::vector<std::string> findWordsByPartOfSpeech(std::vector<std::vector<std::string>>& sentences, const std::string& targetPartOfSpeech) {
     std::vector<std::string> foundWords;
@@ -204,7 +203,12 @@ std::vector<std::string> findWordsByPartOfSpeech(std::vector<std::vector<std::st
             word = removePunctuation(word); // Удаляем пунктуацию
             std::string partOfSpeech = getPartOfSpeech(word);
             if (partOfSpeech == targetPartOfSpeech) {
-                foundWords.push_back(lowFirstLetter(capitalizeAllLetters(word))); // Сохраняем найденное слово с обработкой регистра
+                
+                // TMP РАЗОБРАТЬСЯ ПОЧЕМУ НЕ РАБОТАЮТ ФУНКЦИИ РЕГИСТРОВ
+                lowFirstLetter(word);
+
+                foundWords.push_back(word); // Сохраняем найденное слово с обработкой регистра
+
                 word = capitalizeAllLetters(word); // Обновляем слово в предложении
             }
         }

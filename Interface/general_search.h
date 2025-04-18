@@ -127,17 +127,48 @@ bool existence_of_participle(vector<WordData>& data, string& comparing_participl
 	return false;
 };
 
+// функция поиска максимальной длины идущего подряд совпадений в окончаниях слов
+int countMaxConsecutiveMatches(const std::string& s1, const std::string& s2) {
+	int maxCount = 0;
+	int currentCount = 0;
+	for (size_t i = 0; i < std::min(s1.size(), s2.size()); ++i) {
+		if (s1[i] == s2[i]) {
+			currentCount++;
+			maxCount = std::max(maxCount, currentCount);
+		}
+		else {
+			currentCount = 0;
+		}
+	}
+	return maxCount;
+}
+
 // Функция для проверки рифмы (сравнение окончаний двух слов)
 bool areWordsRhymed(const std::string& word_1, const std::string& word_2)
 {
-	// Разбиваем слова на Unicode-символы
+	// Функция для подсчета максимального количества подряд совпадающих символов
+	auto countMaxConsecutiveMatches = [](const std::vector<std::string>& s1, const std::vector<std::string>& s2) {
+		int maxCount = 0;
+		int currentCount = 0;
+		int len = std::min(s1.size(), s2.size());
+		for (int i = 0; i < len; ++i) {
+			if (s1[s1.size() - len + i] == s2[s2.size() - len + i]) {
+				currentCount++;
+				maxCount = std::max(maxCount, currentCount);
+			}
+			else {
+				currentCount = 0;
+			}
+		}
+		return maxCount;
+		};
+
 	std::vector<std::string> letters_1 = utf8Split(word_1);
 	std::vector<std::string> letters_2 = utf8Split(word_2);
 
 	int len_1 = letters_1.size();
 	int len_2 = letters_2.size();
 
-	// Если оба слова длиннее 4 символов
 	if (len_1 > 4 && len_2 > 4)
 	{
 		int diff_count = 0;
@@ -154,7 +185,13 @@ bool areWordsRhymed(const std::string& word_1, const std::string& word_2)
 				if (diff_count > 2) return false;
 			}
 		}
-		return true;
+
+		// Дополнительная проверка: есть ли хотя бы 2 подряд совпадающих символа
+		std::vector<std::string> suffix1(letters_1.end() - 4, letters_1.end());
+		std::vector<std::string> suffix2(letters_2.end() - 4, letters_2.end());
+		int maxConsecutive = countMaxConsecutiveMatches(suffix1, suffix2);
+
+		return maxConsecutive >= 2;
 	}
 	else
 	{
