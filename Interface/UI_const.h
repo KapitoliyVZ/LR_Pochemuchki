@@ -14,10 +14,14 @@
 
 using namespace std;
 
-OPENFILENAMEW OFN;
+OPENFILENAMEA OFN;
 //char BufferReceive[TextBufferSize] = { 0 };
 
 ifstream file_input; // файл для чтения
+
+
+string filename_str = "";
+char filename[265] = {};
 
 
 struct InitialDimensions {
@@ -40,8 +44,8 @@ struct InitialDimensions {
 
 
 // Прототипы функций
-void SetOpenFileParams(HWND hWnd, string filename); 
-void read_data(LPCSTR path);
+void SetOpenFileParams(HWND hWnd); 
+void read_data(string& path);
 void save_data(LPCSTR path);
 BOOL MakeRoundButton(LPDRAWITEMSTRUCT lpDrawItem);
 void ExitSoftware();
@@ -57,5 +61,6 @@ void FreeLPWSTR(LPWSTR lpwstr);
 HWND CreateEdit(int x, int y, int width, int height, HWND hWnd, bool readOnly = false);
 HWND CreateStatic(const char* text, int x, int y, int width, int height, HWND hWnd);
 HWND CreateButton(const char* text, int x, int y, int width, int height, HWND hWnd, int id);
+
 
 #endif // UI_CONST_H

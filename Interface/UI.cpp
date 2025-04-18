@@ -75,7 +75,7 @@ WNDCLASS NewWindClass(HBRUSH BGColor, HCURSOR Cursor, HINSTANCE hInst, HICON Ico
 // Основной цикл программы
 LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 {
-    static string filename = "";
+
 
 
     switch (msg)
@@ -84,7 +84,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
     {
         MainWndAddMenus(hWnd);
         MainWndAddWidget(hWnd);
-        SetOpenFileParams(hWnd, filename);
+        SetOpenFileParams(hWnd);
         buttons::ButtonFlags.reset();
         buttons::graphics.hBrush = CreateSolidBrush(RGB(255, 255, 255)); // Фон окна (Gainsboro)
         SetClassLongPtr(hWnd, GCLP_HBRBACKGROUND, (LONG_PTR)buttons::graphics.hBrush);
@@ -107,7 +107,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
     }
     case WM_COMMAND:
     {
-        if ((!file_input.is_open()))
+        if (filename_str == "")
         {
             SetWindowTextA(buttons::widgets.hOutputStatus, "");
         }
@@ -119,7 +119,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             GetWindowTextA(buttons::widgets.hEditInputWord, buffer, sizeof(buffer));
 
             // Если поле не пустое, блокируем кнопки
-            if (strlen(buffer) > 0)
+            if (strlen(buffer) > 0 and buttons::ButtonFlags[7] == true)
             {
                 EnableWindow(buttons::widgets.hVerbButton, FALSE);
                 EnableWindow(buttons::widgets.hAdverbButton, FALSE);
@@ -220,7 +220,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 			string word_to_compare = WordToSearch; // слово для поиска по нему рифм
 			if (word_to_compare.length() != 0)
 			{
-                buttons::ButtonFlags.flip(6);
+                buttons::ButtonFlags[6] = true;;
 			}
             
             if (buttons::ButtonFlags.test(0) == 0 and buttons::ButtonFlags.test(1) == 0 and
@@ -300,17 +300,18 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             // Перерисовываем поле текста
             InvalidateRect(buttons::widgets.hEditText, NULL, TRUE);
             UpdateWindow(buttons::widgets.hEditText);
-            
+            buttons::ButtonFlags.reset();
         }
         // Нажатие кнопки "чтение файла"
         
         else if (LOWORD(wp) == buttons::buttonIDs.OnReadFile)
         {
-            wchar_t filePath[MAX_PATH] = {}; // Обязательно выделяем буфер
+            
             
             
             ////////////////////////////
             // штука для буфера
+            /*
             OPENFILENAMEW OFN = { 0 };
             OFN.lStructSize = sizeof(OPENFILENAMEW);
             OFN.hwndOwner = nullptr; // или HWND твоего окна
@@ -318,15 +319,17 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             OFN.nMaxFile = MAX_PATH;
             OFN.lpstrFilter = L"Text Files\0*.txt\0All Files\0*.*\0";
             OFN.nFilterIndex = 1;
-            OFN.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+            OFN.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;*/
             ///////////////////////////////////
+         
 
-            std::string filename;
             // Проверка успешности выбора файла
-            if (GetOpenFileNameW(&OFN)) // Вызов GetOpenFileNameW
+            if (GetOpenFileNameA(&OFN)) // Вызов GetOpenFileNameW
             {
-                filename = ConvertLPWSTRToString(OFN.lpstrFile); // Сохраняем выбранный файл
-
+                filename_str = filename;
+                read_data(filename_str);
+                //filename = ConvertLPWSTRToString(OFN.lpstrFile); // Сохраняем выбранный файл
+                /*
                 if (checkName_openFile(filename)) // Проверка файла
                 {
                     if (IsWindow(hWnd))
@@ -341,7 +344,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 else
                 {
                     MessageBoxA(hWnd, "Файл не прошел проверку.", "Ошибка", MB_OK | MB_ICONERROR);
-                }
+                }*/
             }
             else
             {
@@ -351,7 +354,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         }
         else if (LOWORD(wp) == buttons::buttonIDs.OnSaveFile)
         {
-            if (GetSaveFileNameW(&OFN))
+            if (GetSaveFileNameA(&OFN))
             {
             }
         }
@@ -468,6 +471,29 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 void FreeLPWSTR(LPWSTR lpwstr)
 {
     delete[] lpwstr;
+}
+
+void read_data(string& path)
+{
+    std::thread([path]()
+        { // Запускаем в новом потоке
+            if (!checkName_openFile(path))
+            {
+                SetWindowTextA(buttons::widgets.hOutputStatus, "Ошибка открытия файла");
+                return;
+            }
+            else
+            {
+                SetWindowTextA(buttons::widgets.hOutputStatus, path.c_str());
+            }
+            // Позволяем Windows обрабатывать сообщения
+            MSG msg;
+            while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+            {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+        }).detach();
 }
 
 // Функция для преобразования LPWSTR в std::string
@@ -672,7 +698,7 @@ void MainWndAddWidget(HWND hWnd)
     int screenHeight = GetSystemMetrics(SM_CYSCREEN) - 45;
 
     // Пропорции для кнопок и виджетов
-    int buttonWidth = screenWidth * 12 / 100;  // 15% от ширины экрана
+    int buttonWidth = screenWidth * 15 / 100;  // 15% от ширины экрана
     int buttonHeight = screenHeight * 4 / 100; // 5% от высоты экрана
     int marginX = screenWidth * 2 / 100;       // 2% от ширины экрана
     int marginY = screenHeight * 2 / 100;      // 2% от высоты экрана
@@ -686,7 +712,7 @@ void MainWndAddWidget(HWND hWnd)
     buttons::widgets.hParticipleButton = CreateButton("Причастие", marginX, marginY + 5 * (buttonHeight + marginY) + 20, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.ButParticiple);
     buttons::widgets.hAdverbButton = CreateButton("Наречие", marginX, marginY + 6 * (buttonHeight + marginY) + 20, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.ButAdverb);
     buttons::widgets.hSearchType = CreateButton("Тип поиска", marginX, marginY + 7 * (buttonHeight + marginY) + 20, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.ButSearchType);
-    buttons::widgets.hSearch = CreateButton("Поиск", marginX, screenHeight - 2 * (buttonHeight + marginY) - 280, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.Search);
+    buttons::widgets.hSearch = CreateButton("Поиск", marginX, screenHeight - 2 * (buttonHeight + marginY) - 200, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.Search);
 
 
     // Статические элементы
@@ -811,22 +837,18 @@ void save_data(LPCSTR path)
 }
 
 // Установка начальных параметров на открытие файлов для чтения и записи
-void SetOpenFileParams(HWND hWnd, string filename)
+void SetOpenFileParams(HWND hWnd)
 {
-    // Выделяем буфер для пути с учетом MAX_PATH
-    WCHAR path[MAX_PATH] = L""; // Инициализируем пустой буфер
-
-    // Инициализация структуры OPENFILENAME
-    ZeroMemory(&OFN, sizeof(OFN)); // Очищаем структуру
+    ZeroMemory(&OFN, sizeof(OFN));
     OFN.lStructSize = sizeof(OFN);
     OFN.hwndOwner = hWnd;
-    OFN.lpstrFile = path;  // Указываем буфер для хранения имени файла
-    OFN.nMaxFile = MAX_PATH;  // Максимальная длина пути
-    OFN.lpstrFilter = L"Текстовые файлы (*.txt)\0*.txt\0Все файлы (*.*)\0*.*\0"; // Фильтр для файлов
-    OFN.lpstrFileTitle = NULL;  // Название файла
+    OFN.lpstrFile = filename;
+    OFN.nMaxFile = sizeof(filename);
+    OFN.lpstrFilter = "*.txt";
+    OFN.lpstrFileTitle = NULL;
     OFN.nMaxFileTitle = 0;
-    OFN.lpstrInitialDir = L"D:"; // Начальная директория
-    OFN.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR; // Проверка существования пути и файла
+    OFN.lpstrInitialDir = "D:\\";
+    OFN.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 }
 // Записать в статус программы
 void SetWinStatus(string status)
