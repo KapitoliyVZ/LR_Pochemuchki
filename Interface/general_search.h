@@ -1,23 +1,23 @@
-#pragma once
+п»ї#pragma once
 #include "standard_libraries.h"
 #include "NLP.h"
 #include "rhymes.h"
 #include "kulik_search.h"
 
 
-// структура для хранения данных о найденном причастии
+// СЃС‚СЂСѓРєС‚СѓСЂР° РґР»СЏ С…СЂР°РЅРµРЅРёСЏ РґР°РЅРЅС‹С… Рѕ РЅР°Р№РґРµРЅРЅРѕРј РїСЂРёС‡Р°СЃС‚РёРё
 struct WordData
 {
-	string word;				  // строка с самим словом
-	string part_of_speech;		  // строка с информацией о части речи
-	vector<int> sentence_counter; // переменная для хранения номера предложения, в котором встретилось слово
-	vector<string> rhymed_words;  // вектор для хранения слов, с которыми рифмуется слово
-	int amount = 0;				  // количество встреч данного слова в тексте
-	int rhymed_amount = 0;		  // количество слов, с которым рифмуется взятое слово
+	string word;				  // СЃС‚СЂРѕРєР° СЃ СЃР°РјРёРј СЃР»РѕРІРѕРј
+	string part_of_speech;		  // СЃС‚СЂРѕРєР° СЃ РёРЅС„РѕСЂРјР°С†РёРµР№ Рѕ С‡Р°СЃС‚Рё СЂРµС‡Рё
+	vector<int> sentence_counter; // РїРµСЂРµРјРµРЅРЅР°СЏ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ РЅРѕРјРµСЂР° РїСЂРµРґР»РѕР¶РµРЅРёСЏ, РІ РєРѕС‚РѕСЂРѕРј РІСЃС‚СЂРµС‚РёР»РѕСЃСЊ СЃР»РѕРІРѕ
+	vector<string> rhymed_words;  // РІРµРєС‚РѕСЂ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ СЃР»РѕРІ, СЃ РєРѕС‚РѕСЂС‹РјРё СЂРёС„РјСѓРµС‚СЃСЏ СЃР»РѕРІРѕ
+	int amount = 0;				  // РєРѕР»РёС‡РµСЃС‚РІРѕ РІСЃС‚СЂРµС‡ РґР°РЅРЅРѕРіРѕ СЃР»РѕРІР° РІ С‚РµРєСЃС‚Рµ
+	int rhymed_amount = 0;		  // РєРѕР»РёС‡РµСЃС‚РІРѕ СЃР»РѕРІ, СЃ РєРѕС‚РѕСЂС‹Рј СЂРёС„РјСѓРµС‚СЃСЏ РІР·СЏС‚РѕРµ СЃР»РѕРІРѕ
 };
 
-// Функция разбора UTF-8 строки на отдельные Unicode-символы
-std::vector<std::string> utf8Split(const std::string &str)
+// Р¤СѓРЅРєС†РёСЏ СЂР°Р·Р±РѕСЂР° UTF-8 СЃС‚СЂРѕРєРё РЅР° РѕС‚РґРµР»СЊРЅС‹Рµ Unicode-СЃРёРјРІРѕР»С‹
+std::vector<std::string> utf8Split(const std::string& str)
 {
 	std::vector<std::string> result;
 	size_t i = 0;
@@ -45,13 +45,13 @@ std::vector<std::string> utf8Split(const std::string &str)
 		}
 		else
 		{
-			// Неверный UTF-8 байт
+			// РќРµРІРµСЂРЅС‹Р№ UTF-8 Р±Р°Р№С‚
 			char_len = 1;
 		}
 
 		if (i + char_len > str.size())
 		{
-			char_len = 1; // безопасность
+			char_len = 1; // Р±РµР·РѕРїР°СЃРЅРѕСЃС‚СЊ
 		}
 
 		result.emplace_back(str.substr(i, char_len));
@@ -61,47 +61,47 @@ std::vector<std::string> utf8Split(const std::string &str)
 	return result;
 }
 
-// Функция для расчета расстояния Дамерау-Левенштейна
-int damerauLevenshteinDistance(const string &ending_1, const string &ending_2)
+// Р¤СѓРЅРєС†РёСЏ РґР»СЏ СЂР°СЃС‡РµС‚Р° СЂР°СЃСЃС‚РѕСЏРЅРёСЏ Р”Р°РјРµСЂР°Сѓ-Р›РµРІРµРЅС€С‚РµР№РЅР°
+int damerauLevenshteinDistance(const string& ending_1, const string& ending_2)
 {
 	int len_1 = ending_1.size();
 	int len_2 = ending_2.size();
 
-	// Матрица для хранения промежуточных результатов
+	// РњР°С‚СЂРёС†Р° РґР»СЏ С…СЂР°РЅРµРЅРёСЏ РїСЂРѕРјРµР¶СѓС‚РѕС‡РЅС‹С… СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ
 	vector<vector<int>> dist(len_1 + 1, vector<int>(len_2 + 1));
 
-	// Инициализация первой строки и первого столбца
+	// РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РїРµСЂРІРѕР№ СЃС‚СЂРѕРєРё Рё РїРµСЂРІРѕРіРѕ СЃС‚РѕР»Р±С†Р°
 	for (int i = 0; i <= len_1; ++i)
 		dist[i][0] = i;
 	for (int j = 0; j <= len_2; ++j)
 		dist[0][j] = j;
 
-	// Основной цикл для вычисления расстояний
+	// РћСЃРЅРѕРІРЅРѕР№ С†РёРєР» РґР»СЏ РІС‹С‡РёСЃР»РµРЅРёСЏ СЂР°СЃСЃС‚РѕСЏРЅРёР№
 	for (int i = 1; i <= len_1; ++i)
 	{
 		for (int j = 1; j <= len_2; ++j)
 		{
 			int cost = (ending_1[i - 1] == ending_2[j - 1]) ? 0 : 1;
 
-			// Минимум из удаления, вставки или замены
+			// РњРёРЅРёРјСѓРј РёР· СѓРґР°Р»РµРЅРёСЏ, РІСЃС‚Р°РІРєРё РёР»Рё Р·Р°РјРµРЅС‹
 			dist[i][j] = min({
-				dist[i - 1][j] + 1,		  // удаление
-				dist[i][j - 1] + 1,		  // вставка
-				dist[i - 1][j - 1] + cost // замена
-			});
+				dist[i - 1][j] + 1,		  // СѓРґР°Р»РµРЅРёРµ
+				dist[i][j - 1] + 1,		  // РІСЃС‚Р°РІРєР°
+				dist[i - 1][j - 1] + cost // Р·Р°РјРµРЅР°
+				});
 
-			// Транспозиция символов
+			// РўСЂР°РЅСЃРїРѕР·РёС†РёСЏ СЃРёРјРІРѕР»РѕРІ
 			if (i > 1 && j > 1 && ending_1[i - 1] == ending_2[j - 2] && ending_1[i - 2] == ending_2[j - 1])
 			{
-				dist[i][j] = min(dist[i][j], dist[i - 2][j - 2] + 1); // транспозиция
+				dist[i][j] = min(dist[i][j], dist[i - 2][j - 2] + 1); // С‚СЂР°РЅСЃРїРѕР·РёС†РёСЏ
 			}
 		}
 	}
 	return dist[len_1][len_2];
 }
 
-// Функция для извлечения окончания слова (например, последние 4 символа)
-std::string getSuffix(const std::string &word, int suffix_length = 8)
+// Р¤СѓРЅРєС†РёСЏ РґР»СЏ РёР·РІР»РµС‡РµРЅРёСЏ РѕРєРѕРЅС‡Р°РЅРёСЏ СЃР»РѕРІР° (РЅР°РїСЂРёРјРµСЂ, РїРѕСЃР»РµРґРЅРёРµ 4 СЃРёРјРІРѕР»Р°)
+std::string getSuffix(const std::string& word, int suffix_length = 8)
 {
 	std::vector<std::string> letters = utf8Split(word);
 
@@ -116,10 +116,10 @@ std::string getSuffix(const std::string &word, int suffix_length = 8)
 	return suffix;
 }
 
-// функция проверки наличия причастия в структуре причастий
-bool existence_of_participle(vector<WordData> &data, string &comparing_participle)
+// С„СѓРЅРєС†РёСЏ РїСЂРѕРІРµСЂРєРё РЅР°Р»РёС‡РёСЏ РїСЂРёС‡Р°СЃС‚РёСЏ РІ СЃС‚СЂСѓРєС‚СѓСЂРµ РїСЂРёС‡Р°СЃС‚РёР№
+bool existence_of_participle(vector<WordData>& data, string& comparing_participle)
 {
-	for (const WordData &check : data)
+	for (const WordData& check : data)
 	{
 		if (comparing_participle == check.word)
 			return true;
@@ -127,26 +127,52 @@ bool existence_of_participle(vector<WordData> &data, string &comparing_participl
 	return false;
 };
 
-// Функция для проверки рифмы (сравнение окончаний двух слов)
-bool areWordsRhymed(const string &word_1, const string &word_2, int threshold = 8)
+// Р¤СѓРЅРєС†РёСЏ РґР»СЏ РїСЂРѕРІРµСЂРєРё СЂРёС„РјС‹ (СЃСЂР°РІРЅРµРЅРёРµ РѕРєРѕРЅС‡Р°РЅРёР№ РґРІСѓС… СЃР»РѕРІ)
+bool areWordsRhymed(const std::string& word_1, const std::string& word_2)
 {
+	// Р Р°Р·Р±РёРІР°РµРј СЃР»РѕРІР° РЅР° Unicode-СЃРёРјРІРѕР»С‹
+	std::vector<std::string> letters_1 = utf8Split(word_1);
+	std::vector<std::string> letters_2 = utf8Split(word_2);
 
-	// Извлечение окончаний слов
-	string suffix1 = getSuffix(word_1);
-	string suffix2 = getSuffix(word_2);
+	int len_1 = letters_1.size();
+	int len_2 = letters_2.size();
 
-	// Вычисление расстояния Дамерау-Левенштейна между окончаниями
-	int distance = damerauLevenshteinDistance(suffix1, suffix2);
+	// Р•СЃР»Рё РѕР±Р° СЃР»РѕРІР° РґР»РёРЅРЅРµРµ 4 СЃРёРјРІРѕР»РѕРІ
+	if (len_1 > 4 && len_2 > 4)
+	{
+		int diff_count = 0;
 
-	// Если расстояние меньше порога, слова считаются рифмующимися
-	return distance <= threshold;
+		// РЎСЂР°РІРЅРёРІР°РµРј РїРѕСЃР»РµРґРЅРёРµ 4 СЃРёРјРІРѕР»Р° РїРѕ РїРѕР·РёС†РёСЏРј
+		for (int i = 0; i < 4; ++i)
+		{
+			std::string char1 = letters_1[len_1 - 4 + i];
+			std::string char2 = letters_2[len_2 - 4 + i];
+
+			if (char1 != char2)
+			{
+				diff_count++;
+				if (diff_count > 2) return false;
+			}
+		}
+		return true;
+	}
+	else
+	{
+		// Р‘РµСЂС‘Рј РїРѕСЃР»РµРґРЅРёРµ 2 СЃРёРјРІРѕР»Р°
+		if (len_1 < 2 || len_2 < 2) return false; // Р±РµР·РѕРїР°СЃРЅРѕСЃС‚Рё СЂР°РґРё
+
+		std::string suffix1 = letters_1[len_1 - 2] + letters_1[len_1 - 1];
+		std::string suffix2 = letters_2[len_2 - 2] + letters_2[len_2 - 1];
+
+		return suffix1 == suffix2;
+	}
 }
 
-// функция проверки наличия одинаковых рифмованных причастий
-bool existenceRhymedParticiples(WordData &candidate, const string &word)
+// С„СѓРЅРєС†РёСЏ РїСЂРѕРІРµСЂРєРё РЅР°Р»РёС‡РёСЏ РѕРґРёРЅР°РєРѕРІС‹С… СЂРёС„РјРѕРІР°РЅРЅС‹С… РїСЂРёС‡Р°СЃС‚РёР№
+bool existenceRhymedParticiples(WordData& candidate, const string& word)
 {
 
-	for (const string &check_participle : candidate.rhymed_words)
+	for (const string& check_participle : candidate.rhymed_words)
 	{
 		if (word == check_participle)
 			return true;
@@ -154,31 +180,31 @@ bool existenceRhymedParticiples(WordData &candidate, const string &word)
 	return false;
 }
 
-// основная функция поиска рифм
-vector<WordData> find_rhymes(vector<vector<string>> &words_text_collection, bitset<8> button_flags, vector<string> &word_to_compare)
+// РѕСЃРЅРѕРІРЅР°СЏ С„СѓРЅРєС†РёСЏ РїРѕРёСЃРєР° СЂРёС„Рј
+vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bitset<8> button_flags, vector<string>& word_to_compare)
 {
 
 	vector<WordData> data;
-	// промежуточная переменная, которая будет добавлена в итоговый вектор data
+	// РїСЂРѕРјРµР¶СѓС‚РѕС‡РЅР°СЏ РїРµСЂРµРјРµРЅРЅР°СЏ, РєРѕС‚РѕСЂР°СЏ Р±СѓРґРµС‚ РґРѕР±Р°РІР»РµРЅР° РІ РёС‚РѕРіРѕРІС‹Р№ РІРµРєС‚РѕСЂ data
 	WordData candidate;
 
 	int rhyme_counter = 0;
 
 	int same_words_counter = 0;
 
-	// вариант проверки рифм
+	// РІР°СЂРёР°РЅС‚ РїСЂРѕРІРµСЂРєРё СЂРёС„Рј
 	int variant_of_check = 0;
 
 	for (string& word : word_to_compare)
 	{
-		// однородная проверка всех частей речи без сравниваемого слова
+		// РѕРґРЅРѕСЂРѕРґРЅР°СЏ РїСЂРѕРІРµСЂРєР° РІСЃРµС… С‡Р°СЃС‚РµР№ СЂРµС‡Рё Р±РµР· СЃСЂР°РІРЅРёРІР°РµРјРѕРіРѕ СЃР»РѕРІР°
 		if (button_flags.test(7) == 1 && word.empty()) {
 			variant_of_check = 0;
 			break;
 		}
 
 
-		// однородня проверка всех частей речи со сравниваемым словом
+		// РѕРґРЅРѕСЂРѕРґРЅСЏ РїСЂРѕРІРµСЂРєР° РІСЃРµС… С‡Р°СЃС‚РµР№ СЂРµС‡Рё СЃРѕ СЃСЂР°РІРЅРёРІР°РµРјС‹Рј СЃР»РѕРІРѕРј
 		if (button_flags.test(7) == 1 && !word.empty())
 		{
 			variant_of_check = 1;
@@ -186,7 +212,7 @@ vector<WordData> find_rhymes(vector<vector<string>> &words_text_collection, bits
 		}
 
 
-		// неоднородная проверка всех частей речи без сравниваемого слова
+		// РЅРµРѕРґРЅРѕСЂРѕРґРЅР°СЏ РїСЂРѕРІРµСЂРєР° РІСЃРµС… С‡Р°СЃС‚РµР№ СЂРµС‡Рё Р±РµР· СЃСЂР°РІРЅРёРІР°РµРјРѕРіРѕ СЃР»РѕРІР°
 		if (button_flags.test(7) == 0 && word.empty())
 		{
 			variant_of_check = 2;
@@ -194,7 +220,7 @@ vector<WordData> find_rhymes(vector<vector<string>> &words_text_collection, bits
 		}
 
 
-		// неоднородная проверка всех частей речи co сравниваемым словом
+		// РЅРµРѕРґРЅРѕСЂРѕРґРЅР°СЏ РїСЂРѕРІРµСЂРєР° РІСЃРµС… С‡Р°СЃС‚РµР№ СЂРµС‡Рё co СЃСЂР°РІРЅРёРІР°РµРјС‹Рј СЃР»РѕРІРѕРј
 		if (button_flags.test(7) == 0 && !word.empty())
 		{
 			variant_of_check = 3;
@@ -203,42 +229,42 @@ vector<WordData> find_rhymes(vector<vector<string>> &words_text_collection, bits
 	}
 
 
-	// поиск рифм в зависимости от режима работы
+	// РїРѕРёСЃРє СЂРёС„Рј РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ СЂРµР¶РёРјР° СЂР°Р±РѕС‚С‹
 	switch (variant_of_check)
 	{
-		// нет сравниваемого слова + однородная проверка
+		// РЅРµС‚ СЃСЂР°РІРЅРёРІР°РµРјРѕРіРѕ СЃР»РѕРІР° + РѕРґРЅРѕСЂРѕРґРЅР°СЏ РїСЂРѕРІРµСЂРєР°
 	case 0:
 		for (int i = 0; i < 6; i++)
 		{
 			if (!words_text_collection[i].empty())
 			{
-				for (string &first_word : words_text_collection[i])
+				for (string& first_word : words_text_collection[i])
 				{
 					rhyme_counter = 0;
 					same_words_counter = 0;
 					candidate.word = first_word;
-					for (string &second_word : words_text_collection[i])
+					for (string& second_word : words_text_collection[i])
 					{
-						// проверка на количество одинаковых слов
+						// РїСЂРѕРІРµСЂРєР° РЅР° РєРѕР»РёС‡РµСЃС‚РІРѕ РѕРґРёРЅР°РєРѕРІС‹С… СЃР»РѕРІ
 						if (candidate.word == second_word)
 						{
 							same_words_counter++;
 							continue;
 						}
 
-						// проверка на наличие в векторе структур причастий
+						// РїСЂРѕРІРµСЂРєР° РЅР° РЅР°Р»РёС‡РёРµ РІ РІРµРєС‚РѕСЂРµ СЃС‚СЂСѓРєС‚СѓСЂ РїСЂРёС‡Р°СЃС‚РёР№
 						if (existence_of_participle(data, candidate.word))
 							continue;
 
-						// проверка, рифмуются ли слова
+						// РїСЂРѕРІРµСЂРєР°, СЂРёС„РјСѓСЋС‚СЃСЏ Р»Рё СЃР»РѕРІР°
 						if (areWordsRhymed(second_word, candidate.word))
 						{
 
-							// проверка наличия рифмованного слова (если одинаковых слов несколько, то нет смысла заносить его несколько раз в вектор)
+							// РїСЂРѕРІРµСЂРєР° РЅР°Р»РёС‡РёСЏ СЂРёС„РјРѕРІР°РЅРЅРѕРіРѕ СЃР»РѕРІР° (РµСЃР»Рё РѕРґРёРЅР°РєРѕРІС‹С… СЃР»РѕРІ РЅРµСЃРєРѕР»СЊРєРѕ, С‚Рѕ РЅРµС‚ СЃРјС‹СЃР»Р° Р·Р°РЅРѕСЃРёС‚СЊ РµРіРѕ РЅРµСЃРєРѕР»СЊРєРѕ СЂР°Р· РІ РІРµРєС‚РѕСЂ)
 							if (existenceRhymedParticiples(candidate, second_word))
 								continue;
 
-							// заносим рифмованное причастие в вектор рифмованных причастий
+							// Р·Р°РЅРѕСЃРёРј СЂРёС„РјРѕРІР°РЅРЅРѕРµ РїСЂРёС‡Р°СЃС‚РёРµ РІ РІРµРєС‚РѕСЂ СЂРёС„РјРѕРІР°РЅРЅС‹С… РїСЂРёС‡Р°СЃС‚РёР№
 							candidate.rhymed_words.push_back(second_word);
 						}
 					}
@@ -254,7 +280,7 @@ vector<WordData> find_rhymes(vector<vector<string>> &words_text_collection, bits
 			}
 		}
 		break;
-		// однородная проверка всех слов + сравниваемое слово
+		// РѕРґРЅРѕСЂРѕРґРЅР°СЏ РїСЂРѕРІРµСЂРєР° РІСЃРµС… СЃР»РѕРІ + СЃСЂР°РІРЅРёРІР°РµРјРѕРµ СЃР»РѕРІРѕ
 	case 1:
 
 		for (int i = 0; i < 6; i++)
@@ -264,29 +290,29 @@ vector<WordData> find_rhymes(vector<vector<string>> &words_text_collection, bits
 			{
 				candidate.word = word_to_compare[i];
 
-				for (string &second_word : words_text_collection[i])
+				for (string& second_word : words_text_collection[i])
 				{
 
-					// проверка на количество одинаковых слов
+					// РїСЂРѕРІРµСЂРєР° РЅР° РєРѕР»РёС‡РµСЃС‚РІРѕ РѕРґРёРЅР°РєРѕРІС‹С… СЃР»РѕРІ
 					if (candidate.word == second_word)
 					{
 						same_words_counter++;
 						continue;
 					}
 
-					// проверка на наличие в векторе структур причастий
+					// РїСЂРѕРІРµСЂРєР° РЅР° РЅР°Р»РёС‡РёРµ РІ РІРµРєС‚РѕСЂРµ СЃС‚СЂСѓРєС‚СѓСЂ РїСЂРёС‡Р°СЃС‚РёР№
 					if (existence_of_participle(data, candidate.word))
 						continue;
 
-					// проверка, рифмуются ли слова
+					// РїСЂРѕРІРµСЂРєР°, СЂРёС„РјСѓСЋС‚СЃСЏ Р»Рё СЃР»РѕРІР°
 					if (areWordsRhymed(second_word, candidate.word))
 					{
 
-						// проверка наличия рифмованного слова (если одинаковых слов несколько, то нет смысла заносить его несколько раз в вектор)
+						// РїСЂРѕРІРµСЂРєР° РЅР°Р»РёС‡РёСЏ СЂРёС„РјРѕРІР°РЅРЅРѕРіРѕ СЃР»РѕРІР° (РµСЃР»Рё РѕРґРёРЅР°РєРѕРІС‹С… СЃР»РѕРІ РЅРµСЃРєРѕР»СЊРєРѕ, С‚Рѕ РЅРµС‚ СЃРјС‹СЃР»Р° Р·Р°РЅРѕСЃРёС‚СЊ РµРіРѕ РЅРµСЃРєРѕР»СЊРєРѕ СЂР°Р· РІ РІРµРєС‚РѕСЂ)
 						if (existenceRhymedParticiples(candidate, second_word))
 							continue;
 
-						// заносим рифмованное причастие в вектор рифмованных причастий
+						// Р·Р°РЅРѕСЃРёРј СЂРёС„РјРѕРІР°РЅРЅРѕРµ РїСЂРёС‡Р°СЃС‚РёРµ РІ РІРµРєС‚РѕСЂ СЂРёС„РјРѕРІР°РЅРЅС‹С… РїСЂРёС‡Р°СЃС‚РёР№
 						candidate.rhymed_words.push_back(second_word);
 					}
 				}
@@ -303,14 +329,14 @@ vector<WordData> find_rhymes(vector<vector<string>> &words_text_collection, bits
 		}
 		break;
 
-		// неоднородная проверка всех слов без сравниваемого слова
+		// РЅРµРѕРґРЅРѕСЂРѕРґРЅР°СЏ РїСЂРѕРІРµСЂРєР° РІСЃРµС… СЃР»РѕРІ Р±РµР· СЃСЂР°РІРЅРёРІР°РµРјРѕРіРѕ СЃР»РѕРІР°
 	case 2:
 
 		for (int i = 0; i < 6; i++)
 		{
 			if (!words_text_collection[i].empty())
 			{
-				for (string &first_word : words_text_collection[i])
+				for (string& first_word : words_text_collection[i])
 				{
 					rhyme_counter = 0;
 					same_words_counter = 0;
@@ -318,10 +344,10 @@ vector<WordData> find_rhymes(vector<vector<string>> &words_text_collection, bits
 
 					for (int j = 0; j < 6; j++)
 					{
-						// поиск одинаковых слов
+						// РїРѕРёСЃРє РѕРґРёРЅР°РєРѕРІС‹С… СЃР»РѕРІ
 						if (j == i)
 						{
-							for (string &word : words_text_collection[i])
+							for (string& word : words_text_collection[i])
 							{
 								if (candidate.word == word)
 									same_words_counter++;
@@ -329,22 +355,22 @@ vector<WordData> find_rhymes(vector<vector<string>> &words_text_collection, bits
 							continue;
 						}
 
-						for (string &second_word : words_text_collection[j])
+						for (string& second_word : words_text_collection[j])
 						{
 
-							// проверка на наличие в векторе структур причастий
+							// РїСЂРѕРІРµСЂРєР° РЅР° РЅР°Р»РёС‡РёРµ РІ РІРµРєС‚РѕСЂРµ СЃС‚СЂСѓРєС‚СѓСЂ РїСЂРёС‡Р°СЃС‚РёР№
 							if (existence_of_participle(data, candidate.word))
 								continue;
 
-							// проверка, рифмуются ли слова
+							// РїСЂРѕРІРµСЂРєР°, СЂРёС„РјСѓСЋС‚СЃСЏ Р»Рё СЃР»РѕРІР°
 							if (areWordsRhymed(second_word, candidate.word))
 							{
 
-								// проверка наличия рифмованного слова (если одинаковых слов несколько, то нет смысла заносить его несколько раз в вектор)
+								// РїСЂРѕРІРµСЂРєР° РЅР°Р»РёС‡РёСЏ СЂРёС„РјРѕРІР°РЅРЅРѕРіРѕ СЃР»РѕРІР° (РµСЃР»Рё РѕРґРёРЅР°РєРѕРІС‹С… СЃР»РѕРІ РЅРµСЃРєРѕР»СЊРєРѕ, С‚Рѕ РЅРµС‚ СЃРјС‹СЃР»Р° Р·Р°РЅРѕСЃРёС‚СЊ РµРіРѕ РЅРµСЃРєРѕР»СЊРєРѕ СЂР°Р· РІ РІРµРєС‚РѕСЂ)
 								if (existenceRhymedParticiples(candidate, second_word))
 									continue;
 
-								// заносим рифмованное причастие в вектор рифмованных причастий
+								// Р·Р°РЅРѕСЃРёРј СЂРёС„РјРѕРІР°РЅРЅРѕРµ РїСЂРёС‡Р°СЃС‚РёРµ РІ РІРµРєС‚РѕСЂ СЂРёС„РјРѕРІР°РЅРЅС‹С… РїСЂРёС‡Р°СЃС‚РёР№
 								candidate.rhymed_words.push_back(second_word);
 							}
 						}
@@ -374,10 +400,10 @@ vector<WordData> find_rhymes(vector<vector<string>> &words_text_collection, bits
 
 				for (int j = 0; j < 6; j++)
 				{
-					// поиск одинаковых слов
+					// РїРѕРёСЃРє РѕРґРёРЅР°РєРѕРІС‹С… СЃР»РѕРІ
 					if (j == i)
 					{
-						for (string &word : words_text_collection[i])
+						for (string& word : words_text_collection[i])
 						{
 							if (candidate.word == word)
 								same_words_counter++;
@@ -385,22 +411,22 @@ vector<WordData> find_rhymes(vector<vector<string>> &words_text_collection, bits
 						continue;
 					}
 
-					for (string &second_word : words_text_collection[j])
+					for (string& second_word : words_text_collection[j])
 					{
 
-						// проверка на наличие в векторе структур причастий
+						// РїСЂРѕРІРµСЂРєР° РЅР° РЅР°Р»РёС‡РёРµ РІ РІРµРєС‚РѕСЂРµ СЃС‚СЂСѓРєС‚СѓСЂ РїСЂРёС‡Р°СЃС‚РёР№
 						if (existence_of_participle(data, candidate.word))
 							continue;
 
-						// проверка, рифмуются ли слова
+						// РїСЂРѕРІРµСЂРєР°, СЂРёС„РјСѓСЋС‚СЃСЏ Р»Рё СЃР»РѕРІР°
 						if (areWordsRhymed(second_word, candidate.word))
 						{
 
-							// проверка наличия рифмованного слова (если одинаковых слов несколько, то нет смысла заносить его несколько раз в вектор)
+							// РїСЂРѕРІРµСЂРєР° РЅР°Р»РёС‡РёСЏ СЂРёС„РјРѕРІР°РЅРЅРѕРіРѕ СЃР»РѕРІР° (РµСЃР»Рё РѕРґРёРЅР°РєРѕРІС‹С… СЃР»РѕРІ РЅРµСЃРєРѕР»СЊРєРѕ, С‚Рѕ РЅРµС‚ СЃРјС‹СЃР»Р° Р·Р°РЅРѕСЃРёС‚СЊ РµРіРѕ РЅРµСЃРєРѕР»СЊРєРѕ СЂР°Р· РІ РІРµРєС‚РѕСЂ)
 							if (existenceRhymedParticiples(candidate, second_word))
 								continue;
 
-							// заносим рифмованное причастие в вектор рифмованных причастий
+							// Р·Р°РЅРѕСЃРёРј СЂРёС„РјРѕРІР°РЅРЅРѕРµ РїСЂРёС‡Р°СЃС‚РёРµ РІ РІРµРєС‚РѕСЂ СЂРёС„РјРѕРІР°РЅРЅС‹С… РїСЂРёС‡Р°СЃС‚РёР№
 							candidate.rhymed_words.push_back(second_word);
 						}
 					}
@@ -422,15 +448,15 @@ vector<WordData> find_rhymes(vector<vector<string>> &words_text_collection, bits
 	return data;
 };
 
-// основная функция работы с рифмами частей речи
-void deal_with_words(bitset<8> &button_flags, const vector<vector<string>> &numbered_sentences, string word_to_compare, vector<WordData> &data)
+// РѕСЃРЅРѕРІРЅР°СЏ С„СѓРЅРєС†РёСЏ СЂР°Р±РѕС‚С‹ СЃ СЂРёС„РјР°РјРё С‡Р°СЃС‚РµР№ СЂРµС‡Рё
+void deal_with_words(bitset<8>& button_flags, const vector<vector<string>>& numbered_sentences, string word_to_compare, vector<WordData>& data)
 {
 	vector<vector<string>> sentences = numbered_sentences;
 
-	// количество частей речи, которые можно найти
+	// РєРѕР»РёС‡РµСЃС‚РІРѕ С‡Р°СЃС‚РµР№ СЂРµС‡Рё, РєРѕС‚РѕСЂС‹Рµ РјРѕР¶РЅРѕ РЅР°Р№С‚Рё
 	const int amount_of_parts_of_speech = 6;
 
-	// вектор векторов на каждую часть речи
+	// РІРµРєС‚РѕСЂ РІРµРєС‚РѕСЂРѕРІ РЅР° РєР°Р¶РґСѓСЋ С‡Р°СЃС‚СЊ СЂРµС‡Рё
 	vector<vector<string>> words_text_collection(amount_of_parts_of_speech);
 
 	vector<string> comparing_word_part_of_speech;
@@ -451,11 +477,11 @@ void deal_with_words(bitset<8> &button_flags, const vector<vector<string>> &numb
 			}
 		}
 	}
-	
-	// обозначения частей речи для MyStem
-	const vector<string> parts_of_speech{"V", "ADV", "A", "S", "прич", "деепр"};
 
-	// заполнение вектора векторов конкретными частями речи;
+	// РѕР±РѕР·РЅР°С‡РµРЅРёСЏ С‡Р°СЃС‚РµР№ СЂРµС‡Рё РґР»СЏ MyStem
+	const vector<string> parts_of_speech{ "V", "ADV", "A", "S", "РїСЂРёС‡", "РґРµРµРїСЂ" };
+
+	// Р·Р°РїРѕР»РЅРµРЅРёРµ РІРµРєС‚РѕСЂР° РІРµРєС‚РѕСЂРѕРІ РєРѕРЅРєСЂРµС‚РЅС‹РјРё С‡Р°СЃС‚СЏРјРё СЂРµС‡Рё;
 	for (int i = 0; i < 6; i++)
 	{
 		if (button_flags.test(i))
@@ -464,7 +490,7 @@ void deal_with_words(bitset<8> &button_flags, const vector<vector<string>> &numb
 		}
 	}
 
-	// поиск рифм
+	// РїРѕРёСЃРє СЂРёС„Рј
 	data = find_rhymes(words_text_collection, button_flags, comparing_word_part_of_speech);
 
 };
