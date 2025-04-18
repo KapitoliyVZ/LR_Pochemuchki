@@ -530,4 +530,11 @@ void deal_with_words(bitset<8>& button_flags, const vector<vector<string>>& numb
 	// поиск рифм
 	data = find_rhymes(words_text_collection, button_flags, comparing_word_part_of_speech);
 
+
+	// поднятие всех регистров для красивого вывода и поиска слов по рифмам в
+	for (WordData& record : data)
+		record.word = capitalizeAllLetters(record.word);
+
+
+
 };
