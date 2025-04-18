@@ -263,38 +263,33 @@ vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bits
 	// вариант проверки рифм
 	int variant_of_check = 0;
 
-	for (string& word : word_to_compare)
-	{
+	
 		// однородная проверка всех частей речи без сравниваемого слова
-		if (button_flags.test(7) == 1 && word.empty()) {
+		if (button_flags.test(7) == 1 && word_to_compare.empty()) {
 			variant_of_check = 0;
-			break;
 		}
 
 
 		// однородня проверка всех частей речи со сравниваемым словом
-		if (button_flags.test(7) == 1 && !word.empty())
+		if (button_flags.test(7) == 1 && !word_to_compare.empty())
 		{
 			variant_of_check = 1;
-			break;
 		}
 
 
 		// неоднородная проверка всех частей речи без сравниваемого слова
-		if (button_flags.test(7) == 0 && word.empty())
+		if (button_flags.test(7) == 0 && word_to_compare.empty())
 		{
 			variant_of_check = 2;
-			break;
 		}
 
 
 		// неоднородная проверка всех частей речи co сравниваемым словом
-		if (button_flags.test(7) == 0 && !word.empty())
+		if (button_flags.test(7) == 0 && !word_to_compare.empty())
 		{
 			variant_of_check = 3;
-			break;
 		}
-	}
+	
 
 
 	// поиск рифм в зависимости от режима работы
@@ -389,6 +384,7 @@ vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bits
 				if (existence_of_participle(data, candidate.word))
 					continue;
 
+				candidate.part_of_speech = get_output_part_of_speech(parts_of_speech[i]);
 				candidate.amount = same_words_counter;
 				candidate.rhymed_amount = candidate.rhymed_words.size();
 				data.push_back(candidate);
@@ -448,6 +444,7 @@ vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bits
 					if (existence_of_participle(data, candidate.word))
 						continue;
 
+					candidate.part_of_speech = get_output_part_of_speech(parts_of_speech[i]);
 					candidate.amount = same_words_counter;
 					candidate.rhymed_amount = candidate.rhymed_words.size();
 					data.push_back(candidate);
@@ -456,7 +453,7 @@ vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bits
 			}
 		}
 		break;
-
+		// неоднородная проверка + сравниваемое слово
 	case 3:
 
 		for (int i = 0; i < 6; i++)
@@ -504,6 +501,7 @@ vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bits
 				if (existence_of_participle(data, candidate.word))
 					continue;
 
+				candidate.part_of_speech = get_output_part_of_speech(parts_of_speech[i]);
 				candidate.amount = same_words_counter;
 				candidate.rhymed_amount = candidate.rhymed_words.size();
 				data.push_back(candidate);
@@ -521,7 +519,7 @@ vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bits
 void deal_with_words(bitset<8>& button_flags, const vector<vector<string>>& numbered_sentences, string word_to_compare, vector<WordData>& data)
 {
 	vector<vector<string>> sentences = numbered_sentences;
-	 
+
 	// количество частей речи, которые можно найти
 	const int amount_of_parts_of_speech = 6;
 
@@ -530,8 +528,12 @@ void deal_with_words(bitset<8>& button_flags, const vector<vector<string>>& numb
 
 	vector<string> comparing_word_part_of_speech;
 
+	// подстановка сравниваемого слова на соответствующую позицию в векторе для корректного последующего сравнения
 	if (!word_to_compare.empty())
 	{
+		// перевод слова в UTF-8
+		word_to_compare = ansi_to_utf8(word_to_compare);
+
 		comparing_word_part_of_speech = get_comparing_word_part(word_to_compare);
 
 		for (string& word : comparing_word_part_of_speech)
