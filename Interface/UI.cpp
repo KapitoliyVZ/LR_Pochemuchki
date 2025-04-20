@@ -108,11 +108,21 @@ WNDCLASS NewWindClass(HBRUSH BGColor, HCURSOR Cursor, HINSTANCE hInst, HICON Ico
 void CheckAndUpdateCheckbox(HWND hWnd)
 {
 	// Проверяем состояние чекбокса
-	if (SendMessage(buttons::widgets.hCheckBox1, BM_GETCHECK, 0, 0) == BST_CHECKED)
+	if (buttons::ButtonFlags[7] == true)
 	{
+		if (buttons::ButtonFlags.count() == 1)
+		{
+            SendMessage(buttons::widgets.hCheckBox1, BM_SETCHECK, BST_CHECKED, 0);
+            UpdateWindow(buttons::widgets.hCheckBox1);
+		}
+        else
+        {
+            SendMessage(buttons::widgets.hCheckBox1, BM_SETCHECK, BST_UNCHECKED, 0);
+            UpdateWindow(buttons::widgets.hCheckBox1);
+        }
 		// Если чекбокс отмечен, выполняем действия
 		// Например, можно изменить цвет текста или выполнить другие действия
-		SetWindowTextA(buttons::widgets.hOutputStatusText, "Чекбокс отмечен");
+		
 	}
 	else
 	{
@@ -166,13 +176,6 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             UpdateWindow(buttons::widgets.hCheckBox2);
         }
 
-        if ((buttons::ButtonFlags.count() >= 2 and
-            buttons::ButtonFlags.test(7) == 0) or (buttons::ButtonFlags.count() == 1 and
-                buttons::ButtonFlags.test(7) == 1))
-        {
-            SendMessage(buttons::widgets.hCheckBox1, BM_SETCHECK, BST_CHECKED, 0);
-            UpdateWindow(buttons::widgets.hCheckBox1);
-        }
 
         // Проверяем, если уведомление пришло от поля редактирования
         if (HIWORD(wp) == EN_CHANGE && (HWND)lp == buttons::widgets.hEditInputWord)
@@ -329,15 +332,11 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 
                 wordInfo += output.word;
 
-                // Вывод части речи
-				string part_of_speech ="\r\nЧасть речи: " + output.part_of_speech;
+				string part_of_speech = " (" + output.part_of_speech + ")";
 
-                //wordInfo = wordInfo + part_of_speech;
-               
+				wordInfo += utf8_to_ansi(part_of_speech);
+
                 SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)wordInfo.c_str());
-
-                // TMP на обсуждении. СДЕЛАЛ САБИНИН
-                SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)part_of_speech.c_str());
 
                 // Если есть рифмы, добавляем их
                 if (!output.rhymed_words.empty())
