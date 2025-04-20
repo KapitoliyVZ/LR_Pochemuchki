@@ -105,30 +105,42 @@ WNDCLASS NewWindClass(HBRUSH BGColor, HCURSOR Cursor, HINSTANCE hInst, HICON Ico
     return NWC;
 }
 
-void CheckAndUpdateCheckbox(HWND hWnd)
+void UpdateCheckboxStates()
 {
-	// Проверяем состояние чекбокса
-	if (buttons::ButtonFlags[7] == true)
-	{
-		if (buttons::ButtonFlags.count() == 1)
-		{
-            SendMessage(buttons::widgets.hCheckBox1, BM_SETCHECK, BST_CHECKED, 0);
-            UpdateWindow(buttons::widgets.hCheckBox1);
-		}
-        else
-        {
-            SendMessage(buttons::widgets.hCheckBox1, BM_SETCHECK, BST_UNCHECKED, 0);
-            UpdateWindow(buttons::widgets.hCheckBox1);
-        }
-		// Если чекбокс отмечен, выполняем действия
-		// Например, можно изменить цвет текста или выполнить другие действия
-		
-	}
-	else
-	{
-		// Если чекбокс не отмечен, выполняем другие действия
-		SetWindowTextA(buttons::widgets.hOutputStatusText, "Чекбокс не отмечен");
-	}
+    // Проверка первого чекбокса
+    bool isHomogeneousMode = buttons::ButtonFlags[7]; // Флаг однородного режима
+    int selectedPartsOfSpeech = buttons::ButtonFlags.test(0) + buttons::ButtonFlags.test(1) +
+        buttons::ButtonFlags.test(2) + buttons::ButtonFlags.test(3) +
+        buttons::ButtonFlags.test(4) + buttons::ButtonFlags.test(5);
+
+    if (isHomogeneousMode || selectedPartsOfSpeech > 1) {
+        SendMessage(buttons::widgets.hCheckBox3, BM_SETCHECK, BST_CHECKED, 0);
+    }
+    else {
+        SendMessage(buttons::widgets.hCheckBox3, BM_SETCHECK, BST_UNCHECKED, 0);
+    }
+
+    // Проверка второго чекбокса
+    bool isFileSelected = !filename_str.empty(); // Проверяем, выбран ли файл
+    if (isFileSelected) {
+        SendMessage(buttons::widgets.hCheckBox2, BM_SETCHECK, BST_CHECKED, 0);
+    }
+    else {
+        SendMessage(buttons::widgets.hCheckBox2, BM_SETCHECK, BST_UNCHECKED, 0);
+    }
+
+    // Проверка третьего чекбокса
+    if (selectedPartsOfSpeech > 0) {
+        SendMessage(buttons::widgets.hCheckBox1, BM_SETCHECK, BST_CHECKED, 0);
+    }
+    else {
+        SendMessage(buttons::widgets.hCheckBox1, BM_SETCHECK, BST_UNCHECKED, 0);
+    }
+
+    // Обновляем окна для применения изменений
+    UpdateWindow(buttons::widgets.hCheckBox1);
+    UpdateWindow(buttons::widgets.hCheckBox2);
+    UpdateWindow(buttons::widgets.hCheckBox3);
 }
 
 // Основной цикл программы
@@ -217,7 +229,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         {
             buttons::ButtonFlags.flip(7);
             UpdateButtonStatesAndColors();
-
+            UpdateCheckboxStates();
         }
         else if (LOWORD(wp) == buttons::buttonIDs.ButVerb)
         {
@@ -225,6 +237,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             SetWindowText(buttons::widgets.hVerbButton, L"");
             InvalidateRect(buttons::widgets.hVerbButton, NULL, TRUE); // Перерисовываем кнопку
             UpdateWindow(buttons::widgets.hVerbButton);
+            UpdateCheckboxStates();
         }
         else if (LOWORD(wp) == buttons::buttonIDs.ButAdverb)
         {
@@ -232,6 +245,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             SetWindowText(buttons::widgets.hAdverbButton, L"");
             InvalidateRect(buttons::widgets.hAdverbButton, NULL, TRUE); // Перерисовываем кнопку
             UpdateWindow(buttons::widgets.hAdverbButton);
+            UpdateCheckboxStates();
         }
         else if (LOWORD(wp) == buttons::buttonIDs.ButAdjective)
         {
@@ -239,6 +253,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             SetWindowText(buttons::widgets.hAdjectiveButton, L"");
             InvalidateRect(buttons::widgets.hAdjectiveButton, NULL, TRUE); // Перерисовываем кнопку
             UpdateWindow(buttons::widgets.hAdjectiveButton);
+            UpdateCheckboxStates();
         }
         else if (LOWORD(wp) == buttons::buttonIDs.ButNoun)
         {
@@ -246,6 +261,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             SetWindowText(buttons::widgets.hNounButton, L"");
             InvalidateRect(buttons::widgets.hNounButton, NULL, TRUE); // Перерисовываем кнопку
             UpdateWindow(buttons::widgets.hNounButton);
+            UpdateCheckboxStates();
         }
         else if (LOWORD(wp) == buttons::buttonIDs.ButParticiple)
         {
@@ -253,6 +269,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             SetWindowText(buttons::widgets.hParticipleButton, L"");
             InvalidateRect(buttons::widgets.hParticipleButton, NULL, TRUE); // Перерисовываем кнопку
             UpdateWindow(buttons::widgets.hParticipleButton);
+            UpdateCheckboxStates();
         }
         else if (LOWORD(wp) == buttons::buttonIDs.ButAdverbial)
         {
@@ -260,6 +277,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             SetWindowText(buttons::widgets.hAdverbialButton, L"");
             InvalidateRect(buttons::widgets.hAdverbialButton, NULL, TRUE); // Перерисовываем кнопку
             UpdateWindow(buttons::widgets.hAdverbialButton);
+            UpdateCheckboxStates();
         }
         else if (LOWORD(wp) == buttons::buttonIDs.OnExitSoftware)
         {
@@ -358,69 +376,30 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             InvalidateRect(buttons::widgets.hEditText, NULL, TRUE);
             UpdateWindow(buttons::widgets.hEditText);
             buttons::ButtonFlags.reset();
-            SendMessage(buttons::widgets.hCheckBox1, BM_SETCHECK, BST_UNCHECKED, 0);
-            SendMessage(buttons::widgets.hCheckBox2, BM_SETCHECK, BST_UNCHECKED, 0);
-            SendMessage(buttons::widgets.hCheckBox3, BM_SETCHECK, BST_UNCHECKED, 0);
             UpdateButtonStatesAndColors();
+            UpdateCheckboxStates();
         }
         // Нажатие кнопки "чтение файла"
         
         else if (LOWORD(wp) == buttons::buttonIDs.OnReadFile)
         {
-            
-            
-            
-            ////////////////////////////
-            // штука для буфера
-            /*
-            OPENFILENAMEW OFN = { 0 };
-            OFN.lStructSize = sizeof(OPENFILENAMEW);
-            OFN.hwndOwner = nullptr; // или HWND твоего окна
-            OFN.lpstrFile = filePath;
-            OFN.nMaxFile = MAX_PATH;
-            OFN.lpstrFilter = L"Text Files\0*.txt\0All Files\0*.*\0";
-            OFN.nFilterIndex = 1;
-            OFN.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;*/
-            ///////////////////////////////////
-         
-
+          
             // Проверка успешности выбора файла
             if (GetOpenFileNameA(&OFN)) // Вызов GetOpenFileNameW
             {
                 filename_str = filename;
                 read_data(filename_str);
-                //filename = ConvertLPWSTRToString(OFN.lpstrFile); // Сохраняем выбранный файл
-                /*
-                if (checkName_openFile(filename)) // Проверка файла
-                {
-                    if (IsWindow(hWnd))
-                    {
-                        SetWinStatus(filename);
-                    }
-                    else
-                    {
-                        MessageBoxA(NULL, "Ошибка: недействительное окно!", "Ошибка", MB_OK | MB_ICONERROR);
-                    }
-                }
-                else
-                {
-                    MessageBoxA(hWnd, "Файл не прошел проверку.", "Ошибка", MB_OK | MB_ICONERROR);
-                }*/
+                UpdateCheckboxStates();
             }
             else
             {
                 MessageBoxA(hWnd, "Ошибка открытия файла.", "Ошибка", MB_OK | MB_ICONERROR);
             }
-            SendMessage(buttons::widgets.hCheckBox2, BM_SETCHECK, BST_CHECKED, 0);
-            UpdateWindow(buttons::widgets.hCheckBox2);
+
+
             break;
         }
-        else if (LOWORD(wp) == buttons::buttonIDs.OnSaveFile)
-        {
-            if (GetSaveFileNameA(&OFN))
-            {
-            }
-        }
+
         else if (LOWORD(wp) == buttons::buttonIDs.OnInfoClicked)
         {
             MessageBox(hWnd, L"Информация о программе и ее разработчиках:", L"Инфо", MB_OK | MB_ICONINFORMATION);
@@ -775,7 +754,7 @@ void MainWndAddWidget(HWND hWnd)
     buttons::widgets.hParticipleButton = CreateButton("Причастие", marginX, marginY + 5 * (buttonHeight + marginY) + 20, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.ButParticiple);
     buttons::widgets.hAdverbButton = CreateButton("Наречие", marginX, marginY + 6 * (buttonHeight + marginY) + 20, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.ButAdverb);
     buttons::widgets.hSearchType = CreateButton("Тип поиска", marginX, marginY + 7 * (buttonHeight + marginY) + 20, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.ButSearchType);
-    buttons::widgets.hSearch = CreateButton("Поиск", marginX, screenHeight - 2 * (buttonHeight + marginY) - 100, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.Search);
+    buttons::widgets.hSearch = CreateButton("Поиск", marginX, screenHeight - 2 * (buttonHeight + marginY) - 120, buttonWidth, buttonHeight, hWnd, buttons::buttonIDs.Search);
 
 
     // Статические элементы
@@ -786,58 +765,22 @@ void MainWndAddWidget(HWND hWnd)
 
     // Поля редактирования
     buttons::widgets.hOutputStatus = CreateStatic("",marginX + buttonWidth + marginX + buttonWidth - 99, marginY, buttonWidth*4, 20, hWnd);
-    buttons::widgets.hEditInputWord = CreateEdit(
-        marginX,
-        marginY + 7 * (buttonHeight + marginY) + 30 + buttonHeight + 32, // Позиция сразу под hInputWord с зазором в 1 пиксель
-        buttonWidth,
-        60, // Высота поля
-        hWnd,
-        false
-    );
+    buttons::widgets.hEditInputWord = CreateEdit(marginX, marginY + 7 * (buttonHeight + marginY) + 30 + buttonHeight + 32, buttonWidth, 60, hWnd, false);
     // Поля редактирования
     int editTopMargin = marginY + buttonHeight + marginY + buttonHeight + 1; // Верхняя граница для полей редактирования (вплотную с hOutputRhymes и hOutputText)
     int editHeight = screenHeight - editTopMargin - 2 * (buttonHeight + marginY) - 1; // Высота полей с учетом зазоров
     
-    buttons::widgets.hEditRhymes = CreateEdit(
-        marginX + buttonWidth + marginX,
-        editTopMargin,
-        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2 - 1, // Ширина с учетом зазора
-        editHeight,
-        hWnd,
-        true
-    );
+    buttons::widgets.hEditRhymes = CreateEdit(marginX + buttonWidth + marginX, editTopMargin, (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2 - 1, editHeight, hWnd, true);
 
-    buttons::widgets.hEditText = CreateEdit(
-        marginX + buttonWidth + marginX + (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2 , // Сдвиг вправо с учетом зазора
-        editTopMargin,
-        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, // Ширина с учетом зазора
-        editHeight,
-        hWnd,
-        true
-    );
+    buttons::widgets.hEditText = CreateEdit(marginX + buttonWidth + marginX + (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, editTopMargin, (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, editHeight, hWnd, true);
 
 
-    buttons::widgets.hCheckBox1 = CreateWindowA(
-        "BUTTON", "", WS_VISIBLE | WS_CHILD | BS_CHECKBOX | WS_DISABLED,
-        marginX, screenHeight - 2 * (buttonHeight + marginY) - 130, // Позиция под поясняющим текстом
-        12, buttonHeight-10, // Размеры
-        hWnd, (HMENU)buttons::buttonIDs.CheckBox1, NULL, NULL
-    );
-	buttons::widgets.hStaticCheckBox1Info = CreateStatic("Выберите часть речи", marginX+15, screenHeight - 2 * (buttonHeight + marginY) - 128, buttonWidth-10, 20, hWnd);
-    buttons::widgets.hCheckBox2 = CreateWindowA(
-        "BUTTON", "", WS_VISIBLE | WS_CHILD | BS_CHECKBOX | WS_DISABLED,
-        marginX, screenHeight - 2 * (buttonHeight + marginY) - 150, // Позиция под поясняющим текстом
-        12, buttonHeight - 10, // Размеры
-        hWnd, (HMENU)buttons::buttonIDs.CheckBox2, NULL, NULL
-    );
-    buttons::widgets.hStaticCheckBox2Info = CreateStatic("Выберите файл", marginX + 15, screenHeight - 2 * (buttonHeight + marginY) - 148, buttonWidth - 10, 20, hWnd);
-    buttons::widgets.hCheckBox3 = CreateWindowA(
-        "BUTTON", "", WS_VISIBLE | WS_CHILD | BS_CHECKBOX | WS_DISABLED,
-        marginX, screenHeight - 2 * (buttonHeight + marginY) - 170, // Позиция под поясняющим текстом
-        12, buttonHeight - 10, // Размеры
-        hWnd, (HMENU)buttons::buttonIDs.CheckBox3, NULL, NULL
-    );
-	buttons::widgets.hStaticCheckBox3Info = CreateStatic("Выберите тип поиска", marginX + 15, screenHeight - 2 * (buttonHeight + marginY) - 168, buttonWidth - 10, 20, hWnd);
+    buttons::widgets.hCheckBox1 = CreateWindowA("BUTTON", "", WS_VISIBLE | WS_CHILD | BS_CHECKBOX,marginX, screenHeight - 2 * (buttonHeight + marginY) - 150,12, buttonHeight-10,hWnd, (HMENU)buttons::buttonIDs.CheckBox1, NULL, NULL);
+	buttons::widgets.hStaticCheckBox1Info = CreateStatic("Выберите часть речи", marginX+15, screenHeight - 2 * (buttonHeight + marginY) - 143, buttonWidth-10, 20, hWnd);
+    buttons::widgets.hCheckBox2 = CreateWindowA("BUTTON", "", WS_VISIBLE | WS_CHILD | BS_CHECKBOX,marginX, screenHeight - 2 * (buttonHeight + marginY) - 170,12, buttonHeight - 10, hWnd, (HMENU)buttons::buttonIDs.CheckBox2, NULL, NULL);
+    buttons::widgets.hStaticCheckBox2Info = CreateStatic("Выберите файл", marginX + 15, screenHeight - 2 * (buttonHeight + marginY) - 163, buttonWidth - 10, 20, hWnd);
+    buttons::widgets.hCheckBox3 = CreateWindowA("BUTTON", "", WS_VISIBLE | WS_CHILD | BS_CHECKBOX, marginX, screenHeight - 2 * (buttonHeight + marginY) - 190,12, buttonHeight - 10,hWnd, (HMENU)buttons::buttonIDs.CheckBox3, NULL, NULL);
+	buttons::widgets.hStaticCheckBox3Info = CreateStatic("Выберите тип поиска", marginX + 15, screenHeight - 2 * (buttonHeight + marginY) - 183, buttonWidth - 10, 20, hWnd);
 }
 
 // Функция для создания кнопки
