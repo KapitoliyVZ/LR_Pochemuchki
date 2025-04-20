@@ -350,11 +350,14 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 
                 wordInfo += output.word;
 
-				string part_of_speech = " (" + output.part_of_speech + ")";
+                // Вывод части речи
+                string part_of_speech = "\r\nЧасть речи: " + output.part_of_speech;
+
+				
 
 				wordInfo += utf8_to_ansi(part_of_speech);
-
                 SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)wordInfo.c_str());
+                SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)part_of_speech.c_str());
 
                 // Если есть рифмы, добавляем их
                 if (!output.rhymed_words.empty())
