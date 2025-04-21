@@ -245,6 +245,7 @@ std::vector<std::string> findWordsByPartOfSpeech(std::vector<std::vector<std::st
                 foundWords.push_back(word); // Сохраняем найденное слово с обработкой регистра
 
                 word = capitalizeAllLetters(word); // Обновляем слово в предложении
+
             }
         }
     }

@@ -516,9 +516,9 @@ vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bits
 };
 
 // основная функция работы с рифмами частей речи
-void deal_with_words(bitset<8>& button_flags, const vector<vector<string>>& numbered_sentences, string word_to_compare, vector<WordData>& data)
+void deal_with_words(bitset<8>& button_flags, vector<vector<string>>& numbered_sentences, string word_to_compare, vector<WordData>& data)
 {
-	vector<vector<string>> sentences = numbered_sentences;
+	
 
 	// количество частей речи, которые можно найти
 	const int amount_of_parts_of_speech = 6;
@@ -557,7 +557,7 @@ void deal_with_words(bitset<8>& button_flags, const vector<vector<string>>& numb
 	{
 		if (button_flags.test(i))
 		{
-			words_text_collection[i] = findWordsByPartOfSpeech(sentences, parts_of_speech[i]);
+			words_text_collection[i] = findWordsByPartOfSpeech(numbered_sentences, parts_of_speech[i]);
 		}
 	}
 
