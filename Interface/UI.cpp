@@ -743,7 +743,7 @@ BOOL MakeRoundButton(LPDRAWITEMSTRUCT lpDrawItem)
     else if (lpDrawItem->hwndItem == buttons::widgets.hSearchType)
     {
         isActive = buttons::ButtonFlags.test(7);
-        hBrushes = isActive ? buttons::graphics.hBrushGreen : buttons::graphics.hBrushGrey;
+        hBrushes = isActive ? buttons::graphics.hBrushGreen : buttons::graphics.hBrushNeutral;
         buttonText = isActive ? "Режим поиска: однородный" : "Режим поиска: неоднородный";
     }
 
