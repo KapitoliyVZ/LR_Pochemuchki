@@ -105,6 +105,8 @@ WNDCLASS NewWindClass(HBRUSH BGColor, HCURSOR Cursor, HINSTANCE hInst, HICON Ico
     return NWC;
 }
 
+
+
 void UpdateCheckboxStates()
 {
     // Проверка первого чекбокса
@@ -342,13 +344,18 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             }
 
             // Найденные рифмы к данному слову
-            vector<WordData> rhymes_data;     
+            static vector<WordData> rhymes_data;     
 
             // Текст с разделенными предложениями
-            vector<vector<string>> sentences; 
+            static vector<vector<string>> sentences; 
 
-			// Получаем найденные рифмы, разделенные предложения и флаги 
-            unite_functions(rhymes_data, sentences, word_to_compare, buttons::ButtonFlags);
+			if (rhymes_data.empty())
+			{			
+                // Получаем найденные рифмы, разделенные предложения и флаги 
+                unite_functions(rhymes_data, sentences, word_to_compare, buttons::ButtonFlags);
+			}
+
+           
 
 
             // Очищаем содержимое поля перед добавлением нового текста
@@ -360,6 +367,34 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             {
                 MessageBoxA(hWnd, "Не найдено рифм", "Ошибка", MB_OK | MB_ICONERROR);
                 break;
+            }
+            if (sentences.empty())
+            {
+				MessageBoxA(hWnd, "Не найдено предложений", "Ошибка", MB_OK | MB_ICONERROR);
+				break;
+            }
+            // Выводим текст в поле
+            for (vector<string>& sentence : sentences)
+            {
+                bool firstWord = true;
+                for (string& word : sentence)
+                {
+                    string tmp_word = utf8_to_ansi(word);
+                    static const set<string> punctuationMarks = { ".", ",", "!", "?", ":", ";", "-", "(", ")", "\"", "'" };
+
+                    if (!firstWord && punctuationMarks.find(tmp_word) == punctuationMarks.end())
+                    {
+                        // Добавляем пробел перед словом (если это не пунктуация и не первое слово)
+                        SendMessageA(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)" ");
+                    }
+
+                    SendMessageA(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)tmp_word.c_str());
+
+                    firstWord = false;
+                }
+
+                // Перенос строки после предложения
+                SendMessageA(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)"\r\n");
             }
             int counter = 0;
             // Проходим по всем словам
@@ -983,3 +1018,4 @@ void SetWinStatus(string status)
 {
     SetWindowTextA(buttons::widgets.hOutputStatus, status.c_str());
 }
+

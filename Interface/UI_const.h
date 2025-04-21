@@ -5,8 +5,8 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <set>
 #include "Buttons.h"
-
 
 
 // Размер буфера
@@ -62,5 +62,6 @@ HWND CreateEdit(int x, int y, int width, int height, HWND hWnd, bool readOnly = 
 HWND CreateStatic(const char* text, int x, int y, int width, int height, HWND hWnd);
 HWND CreateButton(const char* text, int x, int y, int width, int height, HWND hWnd, int id);
 void UpdateButtonStatesAndColors();
+
 
 #endif // UI_CONST_H
