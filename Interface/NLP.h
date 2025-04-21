@@ -235,7 +235,7 @@ std::vector<std::string> findWordsByPartOfSpeech(std::vector<std::vector<std::st
 
     for (auto& sentence : sentences) {
         for (auto& word : sentence) {
-            word = removePunctuation(word); // Удаляем пунктуацию
+            //word = removePunctuation(word); // Удаляем пунктуацию
             std::string partOfSpeech = getPartOfSpeech(word);
             if (partOfSpeech == targetPartOfSpeech) {
                 
