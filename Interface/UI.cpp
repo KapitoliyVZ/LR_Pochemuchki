@@ -115,13 +115,20 @@ void UpdateCheckboxStates()
         buttons::ButtonFlags.test(2) + buttons::ButtonFlags.test(3) +
         buttons::ButtonFlags.test(4) + buttons::ButtonFlags.test(5);
 
-    if (isHomogeneousMode || selectedPartsOfSpeech > 1) {
+    if (isHomogeneousMode and selectedPartsOfSpeech > 1) {
         SendMessage(buttons::widgets.hCheckBox3, BM_SETCHECK, BST_CHECKED, 0);
     }
     else {
         SendMessage(buttons::widgets.hCheckBox3, BM_SETCHECK, BST_UNCHECKED, 0);
     }
-
+    if (!isHomogeneousMode and selectedPartsOfSpeech < 2)
+    {
+		SendMessage(buttons::widgets.hCheckBox3, BM_SETCHECK, BST_UNCHECKED, 0);
+	}
+    else 
+    {
+        SendMessage(buttons::widgets.hCheckBox3, BM_SETCHECK, BST_CHECKED, 0);
+    }
     // Проверка второго чекбокса
     bool isFileSelected = !filename_str.empty(); // Проверяем, выбран ли файл
     if (isFileSelected) {
@@ -743,7 +750,7 @@ BOOL MakeRoundButton(LPDRAWITEMSTRUCT lpDrawItem)
     else if (lpDrawItem->hwndItem == buttons::widgets.hSearchType)
     {
         isActive = buttons::ButtonFlags.test(7);
-        hBrushes = isActive ? buttons::graphics.hBrushGreen : buttons::graphics.hBrushNeutral;
+        hBrushes = buttons::graphics.hBrushNeutral;
         buttonText = isActive ? "Режим поиска: однородный" : "Режим поиска: неоднородный";
     }
 
@@ -820,7 +827,6 @@ void MainWndAddMenus(HWND hWnd)
     // Создание основного меню
     AppendMenu(RootMenu, MF_POPUP, (UINT_PTR)SubMenu, L"Файл");
     AppendMenu(RootMenu, MF_STRING, buttons::buttonIDs.OnReadFile, L"Чтение файла");
-    AppendMenu(RootMenu, MF_STRING, buttons::buttonIDs.OnSaveFile, L"Запись файла");
 
     // Создание подменю Файл
     AppendMenu(SubMenu, MF_STRING, buttons::buttonIDs.OnInfoClicked, L"Инфо");
