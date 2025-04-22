@@ -45,7 +45,6 @@ struct InitialDimensions {
 
 // Прототипы функций
 void SetOpenFileParams(HWND hWnd); 
-void read_data(string& path);
 void save_data(LPCSTR path);
 BOOL MakeRoundButton(LPDRAWITEMSTRUCT lpDrawItem);
 void ExitSoftware();

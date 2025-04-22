@@ -115,20 +115,13 @@ void UpdateCheckboxStates()
         buttons::ButtonFlags.test(2) + buttons::ButtonFlags.test(3) +
         buttons::ButtonFlags.test(4) + buttons::ButtonFlags.test(5);
 
-    if (isHomogeneousMode and selectedPartsOfSpeech > 1) {
+    if (isHomogeneousMode || selectedPartsOfSpeech > 1) {
         SendMessage(buttons::widgets.hCheckBox3, BM_SETCHECK, BST_CHECKED, 0);
     }
     else {
         SendMessage(buttons::widgets.hCheckBox3, BM_SETCHECK, BST_UNCHECKED, 0);
     }
-    if (!isHomogeneousMode and selectedPartsOfSpeech < 2)
-    {
-		SendMessage(buttons::widgets.hCheckBox3, BM_SETCHECK, BST_UNCHECKED, 0);
-	}
-    else 
-    {
-        SendMessage(buttons::widgets.hCheckBox3, BM_SETCHECK, BST_CHECKED, 0);
-    }
+
     // Проверка второго чекбокса
     bool isFileSelected = !filename_str.empty(); // Проверяем, выбран ли файл
     if (isFileSelected) {
@@ -155,6 +148,10 @@ void UpdateCheckboxStates()
 // Основной цикл программы
 LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 {
+	static string str_sentences;                        // Строка для хранения текста
+    static vector<vector<string>> sentences;    // Вектор текста с разделенными предложениями
+    static vector<WordData> rhymes_data;        // Найденные рифмы к данному слову
+
     switch (msg)
     {
 		// Создание окна
@@ -194,6 +191,9 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
     }
     case WM_COMMAND:
     {
+        
+
+
         // Проверяем, если есть используемый файл
         if (filename_str == "")
         {
@@ -350,19 +350,9 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 break;
             }
 
-            // Найденные рифмы к данному слову
-            static vector<WordData> rhymes_data;     
 
-            // Текст с разделенными предложениями
-            static vector<vector<string>> sentences; 
-
-			if (rhymes_data.empty())
-			{			
-                // Получаем найденные рифмы, разделенные предложения и флаги 
-                unite_functions(rhymes_data, sentences, word_to_compare, buttons::ButtonFlags);
-			}
-
-           
+            // Получаем найденные рифмы, разделенные предложения и флаги 
+            unite_functions(rhymes_data, sentences, str_sentences, word_to_compare, buttons::ButtonFlags);
 
 
             // Очищаем содержимое поля перед добавлением нового текста
@@ -380,6 +370,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 				MessageBoxA(hWnd, "Не найдено предложений", "Ошибка", MB_OK | MB_ICONERROR);
 				break;
             }
+
             // Выводим текст в поле
             for (vector<string>& sentence : sentences)
             {
@@ -463,12 +454,26 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             if (GetOpenFileNameA(&OFN)) // Вызов GetOpenFileNameW
             {
                 filename_str = filename;
-                read_data(filename_str);
+                pair<bool, string> fromFunct = checkName_openFile(filename_str);
+                bool fromFunctStatus = fromFunct.first;         // статус проверки файла
+                string fromFunctText = fromFunct.second;        // текст в строковой записи или ошибка файла
+
+
+				if (fromFunctStatus == false)
+				{
+					MessageBoxA(hWnd, fromFunctText.c_str(), "Ошибка", MB_OK | MB_ICONERROR);
+					break;
+				}
+                
+				str_sentences = fromFunctText; // Получаем текст из функции
+                SetWindowTextA(buttons::widgets.hOutputStatus, filename_str.c_str());
+
+                // open_file(filename_str);
                 UpdateCheckboxStates();
             }
             else
             {
-                MessageBoxA(hWnd, "Ошибка открытия файла.", "Ошибка", MB_OK | MB_ICONERROR);
+                MessageBoxA(hWnd, "Ошибка выбора файла.", "Ошибка", MB_OK | MB_ICONERROR);
             }
 
 
@@ -598,28 +603,7 @@ void FreeLPWSTR(LPWSTR lpwstr)
 {
     delete[] lpwstr;
 }
-// Функция для проверки имени файла и открытия его
-void read_data(string& path)
-{
-    std::thread([path]()
-        { // Запускаем в новом потоке
-            if (!checkName_openFile(path))
-            {
-                return;
-            }
-            else
-            {
-                SetWindowTextA(buttons::widgets.hOutputStatus, path.c_str());
-            }
-            // Позволяем Windows обрабатывать сообщения
-            MSG msg;
-            while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-            {
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
-            }
-        }).detach();
-}
+
 
 // Функция для преобразования LPWSTR в std::string
 std::string ConvertLPWSTRToString(LPWSTR lpwstr)
@@ -750,7 +734,7 @@ BOOL MakeRoundButton(LPDRAWITEMSTRUCT lpDrawItem)
     else if (lpDrawItem->hwndItem == buttons::widgets.hSearchType)
     {
         isActive = buttons::ButtonFlags.test(7);
-        hBrushes = buttons::graphics.hBrushNeutral;
+        hBrushes = isActive ? buttons::graphics.hBrushGreen : buttons::graphics.hBrushGrey;
         buttonText = isActive ? "Режим поиска: однородный" : "Режим поиска: неоднородный";
     }
 
@@ -827,6 +811,7 @@ void MainWndAddMenus(HWND hWnd)
     // Создание основного меню
     AppendMenu(RootMenu, MF_POPUP, (UINT_PTR)SubMenu, L"Файл");
     AppendMenu(RootMenu, MF_STRING, buttons::buttonIDs.OnReadFile, L"Чтение файла");
+    AppendMenu(RootMenu, MF_STRING, buttons::buttonIDs.OnSaveFile, L"Запись файла");
 
     // Создание подменю Файл
     AppendMenu(SubMenu, MF_STRING, buttons::buttonIDs.OnInfoClicked, L"Инфо");
