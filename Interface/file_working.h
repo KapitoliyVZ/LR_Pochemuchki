@@ -5,12 +5,12 @@
 #include <string>
 #include "UI_const.h"
 
-int len_txt = 4;               // длина расширения .txt
-string extension_txt = ".txt"; // расширение .txt
-
 // Проверка наличия расширения .txt у файла
 bool check_txt_extension(string file_name)
 {
+    int len_txt = 4;               // длина расширения .txt
+    string extension_txt = ".txt"; // расширение .txt
+
     if (file_name.length() >= len_txt && file_name.substr(file_name.length() - len_txt) == extension_txt)
         return true; // если есть расширение
     else
@@ -34,10 +34,13 @@ bool check_inputFile_is_empty(string file_name)
 }
 
 // Проверка файла на наличие в пути (имени) расширения .txt и его существование
-bool checkName_openFile(const string &filePath) // filePath - путь к файлу
+
+// Функция проверки имени и открытия файла, возвращает:
+// {false, Error_text} или {true, text_in_file)
+pair <bool, string> checkName_openFile(const string &filePath) // filePath - путь к файлу
 {
     if (filePath.empty())
-        return false; // Путь к файлу пустой
+        return {false, "Error!: FilePath is empty!"}; // Путь к файлу пустой
 
     string path = filePath;
     // Удаление кавычек в начале и конце строки, если они есть
@@ -45,18 +48,24 @@ bool checkName_openFile(const string &filePath) // filePath - путь к фай
         path = path.substr(1, path.size() - 2);
 
     if (!check_txt_extension(path))
-        return false; // Неверное расширение
+        return {false, "Error!: Wrong extension!"}; // Неверное расширение
 
     // Открытие файла через глобальный ifstream file_input
     file_input.open(path, ios_base::in);
 
     if (!file_input.is_open())
-        return false; // Не удалось открыть файл
+        return { false, "Error!: Fail in opening!" }; // Не удалось открыть файл
 
     if (check_inputFile_is_empty(path))
-        return false; // файл пустой
+        return { false, "Error!: File is empty!" }; // файл пустой
 
-    return true; // Файл прошел все проверки
+    string text_in_string; // текст файла
+
+    // Чтение всего текста из файла
+    getline(file_input, text_in_string, '\0'); // Чтение до конца файла
+    file_input.close();                        // Закрываем файл
+
+	return { true, text_in_string }; // Файл прошел все проверки
 }
 
 #endif // FILE_WORKING_H
