@@ -58,26 +58,12 @@ vector<string> tokenizeTextUTF8(const string& text) {
 }
 
 // функция разделения текста на предложения
-vector<vector<string>> splitTextIntoSentences() 
+vector<vector<string>> splitTextIntoSentences(string str_text) 
 {
     vector<vector<string>> sentences;
-    string text, line;
 
-
-    // Где открытие файла???????????
-
-
-    // Чтение текста из файла
-    if (!file_input.eof())
-    {
-        while (getline(file_input, line)) {
-            text += line + " ";
-        }
-    }
-    file_input.close();
-    //text = "Лес стоял таинственный, Дом был давно забытый. Ветер дул молчаливый, Огонь был еле укрытый. Путь лежал опасный, След был давно оставленный, забытый. Мир казался ясный, Но голос — кем-то сказанный. Свет был тёплый, нежный, Взгляд — невольно пойманный. Сад рос пышный, душный, И лист — дождём умытый.";
     // Токенизация текста
-    vector<string> tokens = tokenizeTextUTF8(text);
+    vector<string> tokens = tokenizeTextUTF8(str_text);
 
     // Разделение на предложения
     vector<string> current_sentence;
