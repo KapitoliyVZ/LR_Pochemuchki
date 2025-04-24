@@ -6,27 +6,30 @@
 #include <windows.h>
 #include <unordered_map>
 #include <vector>
+#include "MyStemProcess.h"
 
-// получение пути к mystem.exe
-std::string getMystemPath() {
-    char buffer[MAX_PATH];
-    DWORD length = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
-    if (length == 0) {
-        return "\"mystem.exe\"";  // fallback с кавычками
-    }
+MystemProcess mystem;
+//// получение пути к mystem.exe
+//std::string getMystemPath() {
+//    char buffer[MAX_PATH];
+//    DWORD length = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
+//    if (length == 0) {
+//        return "\"mystem.exe\"";  // fallback с кавычками
+//    }
+//
+//    std::string fullPath(buffer, length);
+//
+//    // Найдём позицию последнего слэша
+//    size_t pos = fullPath.find_last_of("\\/");
+//    if (pos == std::string::npos) {
+//        return "\"mystem.exe\"";
+//    }
+//
+//    // Соберём путь и добавим кавычки
+//    std::string mystemPath = fullPath.substr(0, pos + 1) + "mystem.exe";
+//    return "\"" + mystemPath + "\"";
+//}
 
-    std::string fullPath(buffer, length);
-
-    // Найдём позицию последнего слэша
-    size_t pos = fullPath.find_last_of("\\/");
-    if (pos == std::string::npos) {
-        return "\"mystem.exe\"";
-    }
-
-    // Соберём путь и добавим кавычки
-    std::string mystemPath = fullPath.substr(0, pos + 1) + "mystem.exe";
-    return "\"" + mystemPath + "\"";
-}
 
 
 // функция перевода ANSI в UTF-8
@@ -74,6 +77,25 @@ std::string wstring_to_utf8(const std::wstring& wstr) {
     return str;
 }
 
+// TMP 24.04.25
+std::wstring keepOnlyRussianLetters(const std::wstring& input) {
+    std::wstring result;
+    for (wchar_t wc : input) {
+        // Проверяем диапазоны русских букв: А-Я, а-я, Ё, ё
+        if ((wc >= L'А' && wc <= L'я') || wc == L'Ё' || wc == L'ё') {
+            result += wc;
+        }
+    }
+    return result;
+}
+
+std::string cleanRussianOnly(const std::string& utf8_input) {
+    std::wstring wide = utf8_to_wstring(utf8_input);
+    std::wstring cleaned = keepOnlyRussianLetters(wide);
+    return wstring_to_utf8(cleaned);
+}
+// TMP 24.04.25
+
 // Преобразует первую букву строки в нижний регистр
 std::string lowFirstLetter(const std::string& input) {
     std::unordered_map<char, char> to_lower = {
@@ -110,13 +132,29 @@ std::string capitalizeAllLetters(const std::string& input) {
 
 // Удаляет знаки пунктуации из слова
 std::string removePunctuation(const std::string& word) {
-    std::string result;
-    for (char ch : word) {
-        if (!std::ispunct(static_cast<unsigned char>(ch))) {
-            result += ch;
+    // Преобразуем UTF-8 → UTF-16
+    int wideSize = MultiByteToWideChar(CP_UTF8, 0, word.c_str(), -1, nullptr, 0);
+    std::wstring wideStr(wideSize, 0);
+    MultiByteToWideChar(CP_UTF8, 0, word.c_str(), -1, &wideStr[0], wideSize);
+    if (!wideStr.empty()) wideStr.pop_back(); // Удаляем завершающий ноль
+
+    // Фильтруем только символы, которые НЕ являются пунктуацией/разделителями
+    std::wstring filtered;
+    for (wchar_t wc : wideStr) {
+        if (!iswpunct(wc) && !iswspace(wc) && !iswcntrl(wc) &&
+            wc != L'«' && wc != L'»' && wc != L'“' && wc != L'”' &&
+            wc != L'–' && wc != L'—' && wc != L'…') {
+            filtered += wc;
         }
     }
-    return result;
+
+    // Преобразуем обратно UTF-16 → UTF-8
+    int utf8Size = WideCharToMultiByte(CP_UTF8, 0, filtered.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    std::string utf8Str(utf8Size, 0);
+    WideCharToMultiByte(CP_UTF8, 0, filtered.c_str(), -1, &utf8Str[0], utf8Size, nullptr, nullptr);
+    if (!utf8Str.empty()) utf8Str.pop_back(); // Удаляем завершающий ноль
+
+    return utf8Str;
 }
 
 // Создаёт временный файл с заданным содержимым и возвращает его путь
@@ -140,47 +178,47 @@ std::string read_file(const std::string& path) {
     return std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
 }
 
-// Запуск mystem.exe на слове через временные файлы
-std::string run_mystem_on_word(const std::string& word) {
-    std::string inputFile = create_temp_file("in", word); // Создаём входной файл
-    std::string outputFile = create_temp_file("out", ""); // Создаём пустой выходной файл
-
-    // есть функция подмены пути к mystem, нужна проверка
-    // Формируем команду для запуска mystem
-
-    // добавление пути к mystem
-    string mystem_file_path = getMystemPath();
-
-    //std::string command = "\"C:\\Study\\MyStem\\mystem.exe\" -i \"" + inputFile + "\" \"" + outputFile + "\"";
-
-    std::string command = mystem_file_path + " -i " + inputFile + " " + outputFile;
-
-    STARTUPINFOA si = { sizeof(si) };
-
-    PROCESS_INFORMATION pi;
-    ZeroMemory(&pi, sizeof(pi));
-    std::vector<char> cmd(command.begin(), command.end());
-    cmd.push_back('\0'); // Завершающий ноль обязателен для CreateProcess
-
-    // Запускаем mystem.exe через CreateProcessAЫ
-    BOOL success = CreateProcessA(NULL, cmd.data(), NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
-    if (!success) 
-    {
-        DWORD errorCode = GetLastError();
-        throw std::runtime_error("CreateProcessA failed with error code: " + std::to_string(errorCode));
-    }
-    WaitForSingleObject(pi.hProcess, INFINITE); // Ждём завершения
-    CloseHandle(pi.hProcess);
-    CloseHandle(pi.hThread);
-
-    std::string result = read_file(outputFile); // Читаем результат
-
-    // Удаляем временные файлы
-    DeleteFileA(inputFile.c_str());
-    DeleteFileA(outputFile.c_str());
-
-    return result;
-}
+//// Запуск mystem.exe на слове через временные файлы
+//std::string run_mystem_on_word(const std::string& word) {
+//    std::string inputFile = create_temp_file("in", word); // Создаём входной файл
+//    std::string outputFile = create_temp_file("out", ""); // Создаём пустой выходной файл
+//
+//    // есть функция подмены пути к mystem, нужна проверка
+//    // Формируем команду для запуска mystem
+//
+//    // добавление пути к mystem
+//    string mystem_file_path = getMystemPath();
+//
+//    //std::string command = "\"C:\\Study\\MyStem\\mystem.exe\" -i \"" + inputFile + "\" \"" + outputFile + "\"";
+//
+//    std::string command = mystem_file_path + " -i " + inputFile + " " + outputFile;
+//
+//    STARTUPINFOA si = { sizeof(si) };
+//
+//    PROCESS_INFORMATION pi;
+//    ZeroMemory(&pi, sizeof(pi));
+//    std::vector<char> cmd(command.begin(), command.end());
+//    cmd.push_back('\0'); // Завершающий ноль обязателен для CreateProcess
+//
+//    // Запускаем mystem.exe через CreateProcessAЫ
+//    BOOL success = CreateProcessA(NULL, cmd.data(), NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
+//    if (!success) 
+//    {
+//        DWORD errorCode = GetLastError();
+//        throw std::runtime_error("CreateProcessA failed with error code: " + std::to_string(errorCode));
+//    }
+//    WaitForSingleObject(pi.hProcess, INFINITE); // Ждём завершения
+//    CloseHandle(pi.hProcess);
+//    CloseHandle(pi.hThread);
+//
+//    std::string result = read_file(outputFile); // Читаем результат
+//
+//    // Удаляем временные файлы
+//    DeleteFileA(inputFile.c_str());
+//    DeleteFileA(outputFile.c_str());
+//
+//    return result;
+//}
 
 // Кэш, чтобы не вызывать повторно mystem для одного и того же слова
 std::unordered_map<std::string, std::string> cache;
@@ -189,7 +227,7 @@ std::unordered_map<std::string, std::string> cache;
 std::string getPartOfSpeech(const std::string& word) {
     if (cache.find(word) != cache.end()) return cache[word]; // Используем кэш
 
-    std::string result = run_mystem_on_word(word); // Запускаем mystem
+    std::string result = mystem.analyze(word); // Запускаем mystem
     result = utf8_to_ansi(result); // Перекодируем результат в ANSI
 
     // Ищем разбор в фигурных скобках
@@ -235,7 +273,14 @@ std::vector<std::string> findWordsByPartOfSpeech(std::vector<std::vector<std::st
 
     for (auto& sentence : sentences) {
         for (auto& word : sentence) {
+
+            // TMP 24.04.2025
             //word = removePunctuation(word); // Удаляем пунктуацию
+
+            word = cleanRussianOnly(word);
+            if (word.empty())
+                continue;
+
             std::string partOfSpeech = getPartOfSpeech(word);
             if (partOfSpeech == targetPartOfSpeech) {
                 

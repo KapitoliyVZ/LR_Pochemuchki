@@ -136,6 +136,7 @@
     <ClInclude Include="general_search.h" />
     <ClInclude Include="Heart_of_program.h" />
     <ClInclude Include="kulik_search.h" />
+    <ClInclude Include="MyStemProcess.h" />
     <ClInclude Include="NLP.h" />
     <ClInclude Include="parse_sentences.h" />
     <ClInclude Include="rhymes.h" />
