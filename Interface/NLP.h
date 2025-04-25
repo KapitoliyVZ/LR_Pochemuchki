@@ -271,15 +271,21 @@ std::string getPartOfSpeech(const std::string& word) {
 std::vector<std::string> findWordsByPartOfSpeech(std::vector<std::vector<std::string>>& sentences, const std::string& targetPartOfSpeech) {
     std::vector<std::string> foundWords;
 
+    // переменная для проверки наличия пунктуации на месте части вектора векторов предложений
+    string tmp_word;
+
     for (auto& sentence : sentences) {
         for (auto& word : sentence) {
 
             // TMP 24.04.2025
             //word = removePunctuation(word); // Удаляем пунктуацию
 
-            word = cleanRussianOnly(word);
-            if (word.empty())
+            // с помощью вспомогательной переменной проверяем, не является ли слово знаком пунктуации
+            tmp_word = word;
+            tmp_word = cleanRussianOnly(tmp_word);
+            if (tmp_word.empty())
                 continue;
+
 
             std::string partOfSpeech = getPartOfSpeech(word);
             if (partOfSpeech == targetPartOfSpeech) {
