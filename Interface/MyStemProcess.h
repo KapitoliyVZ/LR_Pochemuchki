@@ -79,7 +79,13 @@ public:
     std::string analyze(const std::string& text) {
         DWORD written;
         std::string input = text + "\n";
+
+        // Записываем в пайп
         WriteFile(hChildStd_IN_Wr, input.c_str(), static_cast<DWORD>(input.size()), &written, NULL);
+
+
+        // Добавляем задержку перед чтением данных, чтобы процесс успел записать их в выходной поток
+        std::this_thread::sleep_for(std::chrono::microseconds(1));  // Задержка в 0.1 миллисекунд
 
         // Чтение вывода
         char buffer[4096];
@@ -98,6 +104,7 @@ public:
 
         return result;
     }
+
 
     ~MystemProcess() {
         CloseHandle(hChildStd_IN_Wr);
