@@ -501,13 +501,17 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 
                 // Вывод части речи
                 string part_of_speech = "\r\nЧасть речи: " + output.part_of_speech;
-
+				string amount_number = "\r\nКоличество найденных слов: " + to_string(output.amount);
+				string rhymes_number = "\r\nКоличество рифм: " + to_string(output.rhymed_amount);
+				wordInfo += utf8_to_ansi(amount_number);
+				wordInfo += utf8_to_ansi(rhymes_number);
 				
 
 				wordInfo += utf8_to_ansi(part_of_speech);
                 SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)wordInfo.c_str());
                 SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)part_of_speech.c_str());
-
+                SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)amount_number.c_str());
+                SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)rhymes_number.c_str());
                 // Если есть рифмы, добавляем их
                 if (!output.rhymed_words.empty())
                 {
