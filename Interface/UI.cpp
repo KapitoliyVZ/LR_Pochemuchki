@@ -544,7 +544,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             if (GetOpenFileNameA(&OFN)) // Вызов GetOpenFileNameW
             {
                 filename_str = filename;
-                pair<bool, string> fromFunct = checkName_openFile(filename_str);
+                pair<bool, string> fromFunct = inputFile_working(filename_str);
                 bool fromFunctStatus = fromFunct.first;         // статус проверки файла
                 string fromFunctText = fromFunct.second;        // текст в строковой записи или ошибка файла
 
