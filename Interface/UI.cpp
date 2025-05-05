@@ -7,7 +7,7 @@
 
 void ShowLoadingWindow(HWND hWnd) {
     // Создаем кисть для фона окна
-    HBRUSH hBrush = CreateSolidBrush(RGB(255, 255, 0)); // Устанавливаем белый цвет фона
+    HBRUSH hBrush = CreateSolidBrush(RGB(0, 255, 0)); // Устанавливаем белый цвет фона
     // Устанавливаем кисть в качестве фона окна
     SetClassLongPtr(buttons::widgets.hLoadingWnd, GCLP_HBRBACKGROUND, (LONG_PTR)hBrush);
     HDC hdc = GetDC(buttons::widgets.hLoadingWnd);
@@ -99,7 +99,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdsho
     int screenHeight = GetSystemMetrics(SM_CYSCREEN) - 45;
 
     // Само создание с заложенными параметрами
-    HWND hMainWnd = CreateWindow(L"MainClass", L"ТРПО лабораторная", WS_OVERLAPPED | WS_VISIBLE,
+    HWND hMainWnd = CreateWindow(L"MainClass", L"ТРПО лабораторная", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
                                  0, 0, screenWidth, screenHeight, NULL, NULL, NULL, NULL);
     if (!hMainWnd) {
         MessageBox(NULL, L"Не удалось создать главное окно", L"Ошибка", MB_OK | MB_ICONERROR);
