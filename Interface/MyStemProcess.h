@@ -85,7 +85,7 @@ public:
 
 
         // Добавляем задержку перед чтением данных, чтобы процесс успел записать их в выходной поток
-        std::this_thread::sleep_for(std::chrono::microseconds(1));  // Задержка в 0.1 миллисекунд
+        std::this_thread::sleep_for(std::chrono::microseconds(1));  // Задержка в 1 микросекунду
 
         // Чтение вывода
         char buffer[4096];

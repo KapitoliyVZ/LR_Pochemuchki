@@ -3,6 +3,11 @@
 #include "NLP.h"
 #include "rhymes.h"
 #include "kulik_search.h"
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+#include <string>
+#include <algorithm>
 
 
 // структура для хранения данных о найденном причастии
@@ -248,7 +253,9 @@ std::string get_output_part_of_speech(string part_of_speech)
 	
 };
 
+
 // основная функция поиска рифм
+/*
 vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bitset<8> button_flags, vector<string>& word_to_compare,const vector<string>& parts_of_speech)
 {
 
@@ -514,6 +521,286 @@ vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bits
 
 	return data;
 };
+*/
+
+
+// оптимизированная функция поиска рифм
+vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bitset<8> button_flags, vector<string>& word_to_compare, const vector<string>& parts_of_speech) {
+	vector<WordData> data;
+	WordData candidate;
+
+	// Кэширование информации
+	std::unordered_map<std::string, std::vector<std::string>> rhyme_cache;
+	std::unordered_map<std::string, int> word_count_cache;
+	std::unordered_map<std::string, int> unique_words_map; // Кэш для уникальных слов и их счётчиков
+
+	int same_words_counter = 0;
+
+	// Определяем, какой вариант проверки рифм использовать
+	int variant_of_check = 0;
+	if (button_flags.test(7) == 1) {
+		variant_of_check = word_to_compare.empty() ? 0 : 1;  // Однородная проверка
+	}
+	else {
+		variant_of_check = word_to_compare.empty() ? 2 : 3;  // Неоднородная проверка
+	}
+
+	switch (variant_of_check) {
+	case 0:  // Однородная проверка без сравниваемого слова
+		for (int i = 0; i < 6; i++) {
+			if (!words_text_collection[i].empty()) {
+				std::unordered_set<std::string> word_set(words_text_collection[i].begin(), words_text_collection[i].end());
+				for (const string& first_word : words_text_collection[i]) {
+					candidate.word = first_word;
+
+					// Проверка на наличие слова в unique_words_map
+					if (unique_words_map.find(first_word) != unique_words_map.end()) {
+						// Если слово уже есть, увеличиваем счетчик
+						unique_words_map[first_word]++;
+						same_words_counter = unique_words_map[first_word];
+					}
+					else {
+						// Если слово новое, добавляем его в map с начальным счётчиком
+						unique_words_map[first_word] = 1;
+						same_words_counter = 1;
+					}
+
+					// Проверка рифм
+					if (rhyme_cache.find(first_word) == rhyme_cache.end()) {
+						std::unordered_set<std::string> seen_rhymes;
+						std::vector<std::string> rhymed_words;
+						for (const string& second_word : words_text_collection[i]) {
+							if (first_word != second_word && areWordsRhymed(first_word, second_word) && seen_rhymes.find(second_word) == seen_rhymes.end()) {
+								rhymed_words.push_back(second_word);
+								seen_rhymes.insert(second_word); // Добавляем слово в набор рифм
+							}
+						}
+						rhyme_cache[first_word] = rhymed_words;
+						candidate.rhymed_words = rhymed_words;
+					}
+					else {
+						candidate.rhymed_words = rhyme_cache[first_word];
+					}
+
+					candidate.part_of_speech = get_output_part_of_speech(parts_of_speech[i]);
+					candidate.amount = same_words_counter;
+					candidate.rhymed_amount = candidate.rhymed_words.size();
+
+					// Проверяем, не было ли это слово добавлено ранее в data
+					bool word_found = false;
+					for (const WordData& existing_word : data) {
+						if (existing_word.word == candidate.word) {
+							word_found = true;
+							break;
+						}
+					}
+
+					// Если слово не найдено, добавляем в data
+					if (!word_found) {
+						data.push_back(candidate);
+					}
+					else {
+						// Если слово найдено, увеличиваем его счётчик
+						for (WordData& existing_word : data) {
+							if (existing_word.word == candidate.word) {
+								existing_word.amount += same_words_counter;
+								existing_word.rhymed_amount += candidate.rhymed_words.size();
+								break;
+							}
+						}
+					}
+
+					candidate.rhymed_words.clear();
+				}
+			}
+		}
+		break;
+
+	case 1:  // Однородная проверка со сравниваемым словом
+		for (int i = 0; i < 6; i++) {
+			if (!word_to_compare[i].empty()) {
+				candidate.word = word_to_compare[i];
+				// Проверка на количество одинаковых слов в коллекции
+				same_words_counter = std::count(words_text_collection[i].begin(), words_text_collection[i].end(), candidate.word);
+
+				// Проверка рифм
+				if (rhyme_cache.find(candidate.word) == rhyme_cache.end()) {
+					std::unordered_set<std::string> seen_rhymes;
+					std::vector<std::string> rhymed_words;
+					for (const string& second_word : words_text_collection[i]) {
+						if (candidate.word != second_word && areWordsRhymed(candidate.word, second_word) && seen_rhymes.find(second_word) == seen_rhymes.end()) {
+							rhymed_words.push_back(second_word);
+							seen_rhymes.insert(second_word); // Добавляем слово в набор рифм
+						}
+					}
+					rhyme_cache[candidate.word] = rhymed_words;
+					candidate.rhymed_words = rhymed_words;
+				}
+				else {
+					candidate.rhymed_words = rhyme_cache[candidate.word];
+				}
+
+				candidate.part_of_speech = get_output_part_of_speech(parts_of_speech[i]);
+				candidate.amount = same_words_counter;
+				candidate.rhymed_amount = candidate.rhymed_words.size();
+
+				// Проверяем, не было ли это слово добавлено ранее в data
+				bool word_found = false;
+				for (const WordData& existing_word : data) {
+					if (existing_word.word == candidate.word) {
+						word_found = true;
+						break;
+					}
+				}
+
+				// Если слово не найдено, добавляем в data
+				if (!word_found) {
+					data.push_back(candidate);
+				}
+				else {
+					// Если слово найдено, увеличиваем его счётчик
+					for (WordData& existing_word : data) {
+						if (existing_word.word == candidate.word) {
+							existing_word.amount += same_words_counter;
+							existing_word.rhymed_amount += candidate.rhymed_words.size();
+							break;
+						}
+					}
+				}
+
+				candidate.rhymed_words.clear();
+			}
+		}
+		break;
+
+	case 2:  // Неоднородная проверка без сравниваемого слова
+		for (int i = 0; i < 6; i++) {
+			if (!words_text_collection[i].empty()) {
+				std::unordered_set<std::string> word_set(words_text_collection[i].begin(), words_text_collection[i].end());
+				for (const string& first_word : words_text_collection[i]) {
+					same_words_counter = 0;
+					same_words_counter = std::count(words_text_collection[i].begin(), words_text_collection[i].end(), first_word);
+
+					// Проверка рифм для всех других частей речи
+					if (rhyme_cache.find(first_word) == rhyme_cache.end()) {
+						std::unordered_set<std::string> seen_rhymes;
+						std::vector<std::string> rhymed_words;
+						for (int j = 0; j < 6; j++) {
+							if (j != i) {
+								for (const string& second_word : words_text_collection[j]) {
+									if (areWordsRhymed(first_word, second_word) && seen_rhymes.find(second_word) == seen_rhymes.end()) {
+										rhymed_words.push_back(second_word);
+										seen_rhymes.insert(second_word); // Добавляем слово в набор рифм
+									}
+								}
+							}
+						}
+						rhyme_cache[first_word] = rhymed_words;
+						candidate.rhymed_words = rhymed_words;
+					}
+					else {
+						candidate.rhymed_words = rhyme_cache[first_word];
+					}
+
+					candidate.word = first_word;
+					candidate.part_of_speech = get_output_part_of_speech(parts_of_speech[i]);
+					candidate.amount = same_words_counter;
+					candidate.rhymed_amount = candidate.rhymed_words.size();
+
+					// Проверяем, не было ли это слово добавлено ранее в data
+					bool word_found = false;
+					for (const WordData& existing_word : data) {
+						if (existing_word.word == candidate.word) {
+							word_found = true;
+							break;
+						}
+					}
+
+					// Если слово не найдено, добавляем в data
+					if (!word_found) {
+						data.push_back(candidate);
+					}
+					else {
+						// Если слово найдено, увеличиваем его счётчик
+						for (WordData& existing_word : data) {
+							if (existing_word.word == candidate.word) {
+								existing_word.amount += same_words_counter;
+								existing_word.rhymed_amount += candidate.rhymed_words.size();
+								break;
+							}
+						}
+					}
+
+					candidate.rhymed_words.clear();
+				}
+			}
+		}
+		break;
+
+	case 3:  // Неоднородная проверка со сравниваемым словом
+		for (int i = 0; i < 6; i++) {
+			if (!word_to_compare[i].empty()) {
+				candidate.word = word_to_compare[i];
+				same_words_counter = std::count(words_text_collection[i].begin(), words_text_collection[i].end(), candidate.word);
+
+				// Проверка рифм для всех других частей речи
+				if (rhyme_cache.find(candidate.word) == rhyme_cache.end()) {
+					std::unordered_set<std::string> seen_rhymes;
+					std::vector<std::string> rhymed_words;
+					for (int j = 0; j < 6; j++) {
+						if (j != i) {
+							for (const string& second_word : words_text_collection[j]) {
+								if (areWordsRhymed(candidate.word, second_word) && seen_rhymes.find(second_word) == seen_rhymes.end()) {
+									rhymed_words.push_back(second_word);
+									seen_rhymes.insert(second_word); // Добавляем слово в набор рифм
+								}
+							}
+						}
+					}
+					rhyme_cache[candidate.word] = rhymed_words;
+					candidate.rhymed_words = rhymed_words;
+				}
+				else {
+					candidate.rhymed_words = rhyme_cache[candidate.word];
+				}
+
+				candidate.part_of_speech = get_output_part_of_speech(parts_of_speech[i]);
+				candidate.amount = same_words_counter;
+				candidate.rhymed_amount = candidate.rhymed_words.size();
+
+				// Проверяем, не было ли это слово добавлено ранее в data
+				bool word_found = false;
+				for (const WordData& existing_word : data) {
+					if (existing_word.word == candidate.word) {
+						word_found = true;
+						break;
+					}
+				}
+
+				// Если слово не найдено, добавляем в data
+				if (!word_found) {
+					data.push_back(candidate);
+				}
+				else {
+					// Если слово найдено, увеличиваем его счётчик
+					for (WordData& existing_word : data) {
+						if (existing_word.word == candidate.word) {
+							existing_word.amount += same_words_counter;
+							existing_word.rhymed_amount += candidate.rhymed_words.size();
+							break;
+						}
+					}
+				}
+
+				candidate.rhymed_words.clear();
+			}
+		}
+		break;
+	}
+
+	return data;
+}
+
 
 // основная функция работы с рифмами частей речи
 void deal_with_words(bitset<8>& button_flags, vector<vector<string>>& numbered_sentences, string word_to_compare, vector<WordData>& data)
