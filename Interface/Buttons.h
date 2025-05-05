@@ -11,7 +11,6 @@ namespace buttons
     {
         int OnInfoClicked = 1;
         int OnExitSoftware = 2;
-        int OnSaveFile = 3;
         int OnReadFile = 4;
         int Search = 5;
         int ClearRhymes = 6;

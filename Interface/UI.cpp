@@ -519,6 +519,22 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)part_of_speech.c_str());
                 SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)amount_number.c_str());
                 SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)rhymes_number.c_str());
+
+				string setence_counter = "\r\nНайдено в следующих предложениях: ";
+                SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)setence_counter.c_str());
+                string buffer;
+				for (int& word : output.sentence_counter)
+				{
+					buffer += to_string(word);
+					buffer += ", ";
+				}
+				// Удаляем последний символ ", "
+				if (!buffer.empty())
+				{
+					buffer.erase(buffer.length() - 2);
+				}
+				
+                SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)buffer.c_str());
                 // Если есть рифмы, добавляем их
                 if (!output.rhymed_words.empty())
                 {
@@ -916,7 +932,6 @@ void MainWndAddMenus(HWND hWnd)
     // Создание основного меню
     AppendMenu(RootMenu, MF_POPUP, (UINT_PTR)SubMenu, L"Файл");
     AppendMenu(RootMenu, MF_STRING, buttons::buttonIDs.OnReadFile, L"Чтение файла");
-    AppendMenu(RootMenu, MF_STRING, buttons::buttonIDs.OnSaveFile, L"Запись файла");
     AppendMenu(RootMenu, MF_STRING, buttons::buttonIDs.OnHelp, L"Справка"); // Пункт справки
 
     // Создание подменю Файл
