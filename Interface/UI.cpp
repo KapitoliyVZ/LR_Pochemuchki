@@ -424,7 +424,14 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 
             // Получаем найденные рифмы, разделенные предложения и флаги 
             unite_functions(rhymes_data, sentences, str_sentences, word_to_compare, buttons::ButtonFlags);
-           
+
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            // ВЫЗОВ ФУНКЦИИ ДЛЯ ВЫВОДА В ФАЙЛ
+            string outputFileName_numbered; // имя выходного файла-текста
+            string outputFileName_rhymes; // имя выходного файла-рифм
+            outputFiles_working(filename_str, outputFileName_numbered, outputFileName_rhymes, sentences, rhymes_data);
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
             // Скрываем окно загрузки
             HideLoadingWindow(hWnd);
 
