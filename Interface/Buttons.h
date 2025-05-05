@@ -27,6 +27,7 @@ namespace buttons
 		int CheckBox1 = 16;
 		int CheckBox2 = 17;
 		int CheckBox3 = 18;
+        int OnHelp = 19;
     };
 
     // Структура для хранения виджетов
@@ -59,6 +60,8 @@ namespace buttons
 		HWND hCheckBox1 = nullptr;
 		HWND hCheckBox2 = nullptr;
 		HWND hCheckBox3 = nullptr;
+        HWND hHelpButton = nullptr;
+        HWND hLoadingWnd = NULL;
     };
 
     // Структура для хранения графических ресурсов

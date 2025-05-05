@@ -5,13 +5,81 @@
 
 
 
+void ShowLoadingWindow(HWND hWnd) {
+    // Создаем кисть для фона окна
+    HBRUSH hBrush = CreateSolidBrush(RGB(255, 255, 0)); // Устанавливаем белый цвет фона
+    // Устанавливаем кисть в качестве фона окна
+    SetClassLongPtr(buttons::widgets.hLoadingWnd, GCLP_HBRBACKGROUND, (LONG_PTR)hBrush);
+    HDC hdc = GetDC(buttons::widgets.hLoadingWnd);
+    SetTextColor(hdc, RGB(0, 255, 0)); // Устанавливаем черный цвет текста
+    // Получаем координаты окон "Найденные рифмы" и "Текст с найденными рифмами"
+    if (buttons::widgets.hLoadingWnd == NULL) {
+        buttons::widgets.hLoadingWnd = CreateWindowEx(
+            0,
+            L"STATIC",
+            L"Поиск рифм... Пожалуйста, подождите.",
+            WS_POPUP | WS_VISIBLE ,
+            CW_USEDEFAULT, CW_USEDEFAULT, 300, 100,
+            hWnd,
+            NULL,
+            GetModuleHandle(NULL),
+            NULL
+        );
+
+        RECT rectInputWord;
+        GetWindowRect(buttons::widgets.hEditInputWord, &rectInputWord);
+
+        // Получаем координаты окон "Найденные рифмы" и "Текст с найденными рифмами"
+        RECT rectRhymes, rectText;
+        GetWindowRect(buttons::widgets.hEditRhymes, &rectRhymes);
+        GetWindowRect(buttons::widgets.hEditText, &rectText);
+
+        // Вычисляем среднюю точку между этими окнами
+        int centerX = (rectRhymes.left + rectRhymes.right + rectText.left + rectText.right) / 4;
+        int centerY = (rectRhymes.top + rectRhymes.bottom + rectText.top + rectText.bottom) / 4;
+
+        // Центрируем окно загрузки относительно средней точки
+        int x = centerX - 150; // 150 - половина ширины окна загрузки
+        int y = centerY - 50;  // 50 - половина высоты окна загрузки
+        SetWindowPos(buttons::widgets.hLoadingWnd, HWND_TOPMOST, x, y, 300, 100, SWP_SHOWWINDOW);
+
+        //// Позиционируем окно загрузки под виджетом "Введите слово для поиска рифм"
+        //int x = rectInputWord.left;
+        //int y = rectInputWord.bottom + 10; // 10 - отступ от нижней границы виджета
+        //SetWindowPos(buttons::widgets.hLoadingWnd, HWND_TOPMOST, x, y, 290, 100, SWP_SHOWWINDOW);
+
+    }
+    else {
+        ShowWindow(buttons::widgets.hLoadingWnd, SW_SHOW);
+    }
+    UpdateWindow(buttons::widgets.hLoadingWnd);
+    // Блокируем основное окно
+    EnableWindow(hWnd, FALSE);
+}
+
+void HideLoadingWindow(HWND hWnd) {
+    if (buttons::widgets.hLoadingWnd != NULL) {
+        ShowWindow(buttons::widgets.hLoadingWnd, SW_HIDE);
+        // Разблокируем основное окно
+        EnableWindow(hWnd, TRUE);
+        SetFocus(hWnd);
+    }
+}
+
+
+
 // Старт приложения и создание стартовых процедур
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdshow)
 {
     
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
-    
+
+    if (!LoadLibraryA("Msftedit.dll")) 
+    {
+        MessageBoxA(NULL, "Не удалось загрузить Msftedit.dll", "Ошибка", MB_OK | MB_ICONERROR);
+        return 0;
+    }
     /*
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
@@ -31,7 +99,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdsho
     int screenHeight = GetSystemMetrics(SM_CYSCREEN) - 45;
 
     // Само создание с заложенными параметрами
-    HWND hMainWnd = CreateWindow(L"MainClass", L"ТРПО лабораторная", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+    HWND hMainWnd = CreateWindow(L"MainClass", L"ТРПО лабораторная", WS_OVERLAPPED | WS_VISIBLE,
                                  0, 0, screenWidth, screenHeight, NULL, NULL, NULL, NULL);
     if (!hMainWnd) {
         MessageBox(NULL, L"Не удалось создать главное окно", L"Ошибка", MB_OK | MB_ICONERROR);
@@ -186,7 +254,8 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         buttons::graphics.hBrushGreen = CreateSolidBrush(RGB(129, 255, 129));
         buttons::graphics.hBrushGrey = CreateSolidBrush(RGB(178, 178, 178));
         buttons::graphics.hPenBlack = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
-        buttons::graphics.hBrushNeutral = CreateSolidBrush(RGB(127, 255, 212));
+        buttons::graphics.hBrushNeutral = CreateSolidBrush(RGB(127, 255, 212)); 
+        // Показываем всплывающие подсказки
         break;
     }
     case WM_COMMAND:
@@ -350,10 +419,14 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 break;
             }
 
+            // Показываем окно загрузки
+            ShowLoadingWindow(hWnd);
 
             // Получаем найденные рифмы, разделенные предложения и флаги 
             unite_functions(rhymes_data, sentences, str_sentences, word_to_compare, buttons::ButtonFlags);
-
+           
+            // Скрываем окно загрузки
+            HideLoadingWindow(hWnd);
 
             // Очищаем содержимое поля перед добавлением нового текста
             SetWindowTextA(buttons::widgets.hEditRhymes, "");
@@ -370,29 +443,47 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 				MessageBoxA(hWnd, "Не найдено предложений", "Ошибка", MB_OK | MB_ICONERROR);
 				break;
             }
+            vector<vector<wstring>> Wsentences;
 
+            // Лямбда-функция для преобразования строки string в wstring
+            auto utf8_to_unicode_lambda = [](const string& str) -> wstring {
+                wstring_convert<codecvt_utf8<wchar_t>> converter;
+                return converter.from_bytes(str);
+                };
+
+            // Копирование с преобразованием через лямбда-функцию
+            for (const vector<string>& sentence : sentences)
+            {
+                vector<wstring> wsentence;
+                for (const string& word : sentence)
+                {
+                    wsentence.push_back(utf8_to_unicode_lambda(word)); // Используем лямбда-функцию для преобразования
+                }
+                Wsentences.push_back(wsentence);
+            }
             // Выводим текст в поле
-            for (vector<string>& sentence : sentences)
+            for (vector<wstring>& sentence : Wsentences)
             {
                 bool firstWord = true;
-                for (string& word : sentence)
+                for (wstring& word : sentence)
                 {
-                    string tmp_word = utf8_to_ansi(word);
-                    static const set<string> punctuationMarks = { ".", ",", "!", "?", ":", ";", "-", "(", ")", "\"", "'" };
+                    
+                    wstring tmp_word = word;
+                    static const set<wstring> punctuationMarks = { L".", L",", L"!", L"?", L":", L";", L"-", L"(", L")", L"\"", L"'" };
 
                     if (!firstWord && punctuationMarks.find(tmp_word) == punctuationMarks.end())
                     {
                         // Добавляем пробел перед словом (если это не пунктуация и не первое слово)
-                        SendMessageA(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)" ");
+                        SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)L" ");
                     }
 
-                    SendMessageA(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)tmp_word.c_str());
+                    SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)tmp_word.c_str());
 
                     firstWord = false;
                 }
 
                 // Перенос строки после предложения
-                SendMessageA(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)"\r\n");
+                SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)L"\r\n");
             }
             int counter = 0;
             // Проходим по всем словам
@@ -484,6 +575,14 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         {
             MessageBox(hWnd, L"Информация о программе и ее разработчиках:", L"Инфо", MB_OK | MB_ICONINFORMATION);
         }
+        // Нажатие кнопки "Справка"
+        else if (LOWORD(wp) == buttons::buttonIDs.OnHelp) {
+            MessageBox(hWnd, L"Инструкции по использованию программы:\n"
+                L"1. Выберите часть речи или введите слово для поиска.\n"
+                L"2. Нажмите кнопку 'Поиск' для начала поиска рифм.\n"
+                L"3. Результаты поиска будут отображены в соответствующих полях.",
+                L"Справка", MB_OK | MB_ICONINFORMATION);
+        }
         break;
     }
 	// Отработка визуализации кнопок
@@ -555,7 +654,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         HWND hStatic = (HWND)lp;
 
         if (hStatic == buttons::widgets.hOutputStatus || hStatic == buttons::widgets.hOutputStatusText || hStatic == buttons::widgets.hOutputStatus ||
-            hStatic == buttons::widgets.hOutputRhymes || hStatic == buttons::widgets.hOutputText)
+            hStatic == buttons::widgets.hOutputRhymes || hStatic == buttons::widgets.hOutputText || hStatic == buttons::widgets.hLoadingWnd)
         {
             SetBkColor(hdcStatic, RGB(255, 255, 255)); // Устанавливаем цвет фона (белый)
             SetTextColor(hdcStatic, RGB(0, 0, 0));     // Устанавливаем цвет текста (черный)
@@ -812,6 +911,7 @@ void MainWndAddMenus(HWND hWnd)
     AppendMenu(RootMenu, MF_POPUP, (UINT_PTR)SubMenu, L"Файл");
     AppendMenu(RootMenu, MF_STRING, buttons::buttonIDs.OnReadFile, L"Чтение файла");
     AppendMenu(RootMenu, MF_STRING, buttons::buttonIDs.OnSaveFile, L"Запись файла");
+    AppendMenu(RootMenu, MF_STRING, buttons::buttonIDs.OnHelp, L"Справка"); // Пункт справки
 
     // Создание подменю Файл
     AppendMenu(SubMenu, MF_STRING, buttons::buttonIDs.OnInfoClicked, L"Инфо");
@@ -852,6 +952,8 @@ void MainWndAddWidget(HWND hWnd)
         hWnd, buttons::buttonIDs.ButSearchType);
     buttons::widgets.hSearch = CreateButton("Поиск", marginX, screenHeight - 2 * (buttonHeight + marginY) - 120, buttonWidth, buttonHeight, 
         hWnd, buttons::buttonIDs.Search);
+    //buttons::widgets.hHelpButton = CreateButton("Справка", marginX, screenHeight - buttonHeight - marginY - 70, buttonWidth, buttonHeight,
+       // hWnd, buttons::buttonIDs.OnHelp);
 
 
     // Статические элементы
@@ -865,6 +967,7 @@ void MainWndAddWidget(HWND hWnd)
     buttons::widgets.hOutputText = CreateStatic("Текст с найденными рифмами", 
         marginX + buttonWidth + marginX + (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, marginY + buttonHeight + marginY, 
         (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, buttonHeight, hWnd);
+
 
     // Поля редактирования
     buttons::widgets.hOutputStatus = CreateStatic("",marginX + buttonWidth + marginX + buttonWidth - 99, 
@@ -884,18 +987,19 @@ void MainWndAddWidget(HWND hWnd)
         (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, editHeight, hWnd, true);
 
 
-    buttons::widgets.hCheckBox1 = CreateWindowA("BUTTON", "", WS_VISIBLE | WS_CHILD | BS_CHECKBOX,marginX, screenHeight - 2 * (buttonHeight + marginY) - 150,
+    buttons::widgets.hCheckBox1 = CreateWindowA("BUTTON", "", WS_VISIBLE | WS_CHILD | BS_CHECKBOX ,marginX, screenHeight - 2 * (buttonHeight + marginY) - 150,
         12, buttonHeight-10,hWnd, (HMENU)buttons::buttonIDs.CheckBox1, NULL, NULL);
 	buttons::widgets.hStaticCheckBox1Info = CreateStatic("Выберите часть речи", marginX+15, screenHeight - 2 * (buttonHeight + marginY) - 143, 
         buttonWidth-10, 20, hWnd);
-    buttons::widgets.hCheckBox2 = CreateWindowA("BUTTON", "", WS_VISIBLE | WS_CHILD | BS_CHECKBOX,marginX, screenHeight - 2 * (buttonHeight + marginY) - 170,
+    buttons::widgets.hCheckBox2 = CreateWindowA("BUTTON", "", WS_VISIBLE | WS_CHILD | BS_CHECKBOX ,marginX, screenHeight - 2 * (buttonHeight + marginY) - 170,
         12, buttonHeight - 10, hWnd, (HMENU)buttons::buttonIDs.CheckBox2, NULL, NULL);
     buttons::widgets.hStaticCheckBox2Info = CreateStatic("Выберите файл", marginX + 15, screenHeight - 2 * (buttonHeight + marginY) - 163, 
         buttonWidth - 10, 20, hWnd);
-    buttons::widgets.hCheckBox3 = CreateWindowA("BUTTON", "", WS_VISIBLE | WS_CHILD | BS_CHECKBOX, marginX, screenHeight - 2 * (buttonHeight + marginY) - 190,
+    buttons::widgets.hCheckBox3 = CreateWindowA("BUTTON", "", WS_VISIBLE | WS_CHILD | BS_CHECKBOX , marginX, screenHeight - 2 * (buttonHeight + marginY) - 190,
         12, buttonHeight - 10,hWnd, (HMENU)buttons::buttonIDs.CheckBox3, NULL, NULL);
 	buttons::widgets.hStaticCheckBox3Info = CreateStatic("Выберите тип поиска", marginX + 15, screenHeight - 2 * (buttonHeight + marginY) - 183, 
         buttonWidth - 10, 20, hWnd);
+
 }
 
 // Функция для создания кнопки
@@ -945,6 +1049,7 @@ HWND CreateStatic(const char* text, int x, int y, int width, int height, HWND hW
 // Функция для создания поля редактирования
 HWND CreateEdit(int x, int y, int width, int height, HWND hWnd, bool readOnly)
 {
+    LoadLibraryA("Msftedit.dll");
 	// Создаем поле редактирования с заданными параметрами
     DWORD style = WS_VISIBLE | WS_CHILD | ES_MULTILINE | WS_VSCROLL;
 	// Если поле редактирования только для чтения, добавляем соответствующий стиль
@@ -953,14 +1058,18 @@ HWND CreateEdit(int x, int y, int width, int height, HWND hWnd, bool readOnly)
         style |= ES_READONLY;
     }
 	// Создаем поле редактирования
-    HWND hEdit = CreateWindowA(
-        "edit", "", style,
-        x, y, width, height, hWnd, NULL, NULL, NULL);
+    HWND hEdit = CreateWindowExA(
+        0, "RICHEDIT50W", "", style,
+        x, y, width, height,
+        hWnd, NULL, GetModuleHandle(NULL), NULL);
 	// Проверяем, было ли поле редактирования успешно создано
     if (!hEdit)
     {
         MessageBoxA(hWnd, "Не удалось создать поле редактирования", "Ошибка", MB_OK | MB_ICONERROR);
     }
+
+    // Снимаем лимит, RichEdit и так поддерживает большие объёмы, но можно явно задать
+    SendMessageA(hEdit, EM_EXLIMITTEXT, 0, (WPARAM)-1); // -1 = максимально возможное
 
     return hEdit;
 }
