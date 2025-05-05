@@ -18,7 +18,6 @@ using namespace std;
 OPENFILENAMEA OFN;
 //char BufferReceive[TextBufferSize] = { 0 };
 
-ifstream file_input; // файл для чтения
 
 
 string filename_str = "";
