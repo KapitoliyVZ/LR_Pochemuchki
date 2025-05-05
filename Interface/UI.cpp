@@ -445,19 +445,14 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             }
             vector<vector<wstring>> Wsentences;
 
-            // Лямбда-функция для преобразования строки string в wstring
-            auto utf8_to_unicode_lambda = [](const string& str) -> wstring {
-                wstring_convert<codecvt_utf8<wchar_t>> converter;
-                return converter.from_bytes(str);
-                };
-
+            
             // Копирование с преобразованием через лямбда-функцию
             for (const vector<string>& sentence : sentences)
             {
                 vector<wstring> wsentence;
                 for (const string& word : sentence)
                 {
-                    wsentence.push_back(utf8_to_unicode_lambda(word)); // Используем лямбда-функцию для преобразования
+                    wsentence.push_back(utf8_to_wstring(word)); // Используем лямбда-функцию для преобразования
                 }
                 Wsentences.push_back(wsentence);
             }
@@ -833,7 +828,7 @@ BOOL MakeRoundButton(LPDRAWITEMSTRUCT lpDrawItem)
     else if (lpDrawItem->hwndItem == buttons::widgets.hSearchType)
     {
         isActive = buttons::ButtonFlags.test(7);
-        hBrushes = isActive ? buttons::graphics.hBrushGreen : buttons::graphics.hBrushGrey;
+        hBrushes = buttons::graphics.hBrushNeutral;
         buttonText = isActive ? "Режим поиска: однородный" : "Режим поиска: неоднородный";
     }
 
