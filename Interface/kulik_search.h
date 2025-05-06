@@ -1,6 +1,13 @@
 #pragma once
 #include "standard_libraries.h"
 
+
+
+// Функция для удаления символов переноса строки из текста
+void removeNewlines(string& text) {
+    text.erase(remove(text.begin(), text.end(), '\n'), text.end());
+}
+
 // Функция для определения длины символа в UTF-8
 int utf8CharLength(unsigned char byte) {
     if ((byte & 0x80) == 0) return 1;       // ASCII символ (1 байт)
@@ -58,8 +65,11 @@ vector<string> tokenizeTextUTF8(const string& text) {
 }
 
 // функция разделения текста на предложения
-vector<vector<string>> splitTextIntoSentences(string str_text) 
+vector<vector<string>> splitTextIntoSentences(string str_text)
 {
+    // Убираем все переносы строк
+    removeNewlines(str_text);
+
     vector<vector<string>> sentences;
 
     // Токенизация текста
@@ -69,15 +79,11 @@ vector<vector<string>> splitTextIntoSentences(string str_text)
     vector<string> current_sentence;
     bool inside_quotes = false;
 
-    // Список знаков пунктуации, которые определяют конец предложения
-    const vector<string> sentence_endings = {
-        ".", "!", "?", "...", "?!", "!?", "!...", "?..."
-    };
+    const vector<string> sentence_endings = { ".", "!", "?", "...", "?!", "!?", "!...", "?..." };
 
     for (size_t i = 0; i < tokens.size(); ++i) {
         const auto& token = tokens[i];
 
-        // Проверка на кавычки
         if (token == "\"" || token == "«") {
             inside_quotes = !inside_quotes;
         }
@@ -85,47 +91,40 @@ vector<vector<string>> splitTextIntoSentences(string str_text)
             inside_quotes = !inside_quotes;
         }
 
-        // Добавляем токен в текущее предложение
         if (!token.empty()) {
             current_sentence.push_back(token);
         }
 
-        // Проверка конца предложения, если мы вне кавычек
         if (!inside_quotes &&
-            (find(sentence_endings.begin(), sentence_endings.end(), token) != sentence_endings.end())) {
+            find(sentence_endings.begin(), sentence_endings.end(), token) != sentence_endings.end()) {
 
-            // Проверяем, есть ли после текущего токена кавычки или другие символы, относящиеся к текущему предложению
             while (i + 1 < tokens.size() &&
                 (tokens[i + 1] == "\"" || tokens[i + 1] == "«" || tokens[i + 1] == "»")) {
                 current_sentence.push_back(tokens[++i]);
             }
 
-            // Проверяем, не является ли текущий токен частью многосоставного конца
             if (i + 1 < tokens.size() &&
                 find(sentence_endings.begin(), sentence_endings.end(), tokens[i + 1]) != sentence_endings.end()) {
                 current_sentence.push_back(tokens[++i]);
             }
 
-            // Добавляем предложение в список, если оно не пустое
             if (!current_sentence.empty()) {
                 sentences.push_back(current_sentence);
             }
 
-            // Очищаем текущее предложение
             current_sentence.clear();
         }
     }
 
-    // Добавляем оставшиеся токены (если они есть)
     if (!current_sentence.empty()) {
         sentences.push_back(current_sentence);
     }
 
     removeSpacesFromSentences(sentences);
 
-	// Удаляем последний элемент, если он пустой
-	if (!sentences.empty())
+    if (!sentences.empty()) {
         sentences.pop_back();
+    }
 
     return sentences;
 }
