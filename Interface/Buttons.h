@@ -11,7 +11,6 @@ namespace buttons
     {
         int OnInfoClicked = 1;
         int OnExitSoftware = 2;
-        int OnReadFile = 4;
         int Search = 5;
         int ClearRhymes = 6;
         int ClearText = 7;
@@ -27,6 +26,8 @@ namespace buttons
 		int CheckBox2 = 17;
 		int CheckBox3 = 18;
         int OnHelp = 19;
+        int ButOpenFile = 20;
+        int ButSaveFile = 21;
     };
 
     // Структура для хранения виджетов
@@ -56,9 +57,11 @@ namespace buttons
 		HWND hStaticCheckBox1Info = nullptr;
 		HWND hStaticCheckBox2Info = nullptr;
 		HWND hStaticCheckBox3Info = nullptr;
-		HWND hCheckBox1 = nullptr;
-		HWND hCheckBox2 = nullptr;
-		HWND hCheckBox3 = nullptr;
+        HWND hPathSaveFileText = nullptr;
+        HWND hPathSaveFileData = nullptr;
+        HWND hPathSaveFileRhymes = nullptr;
+        HWND hOpenFile = nullptr;
+        HWND hSaveFile = nullptr;
         HWND hHelpButton = nullptr;
         HWND hLoadingWnd = NULL;
     };

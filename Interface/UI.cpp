@@ -174,43 +174,172 @@ WNDCLASS NewWindClass(HBRUSH BGColor, HCURSOR Cursor, HINSTANCE hInst, HICON Ico
 }
 
 
+// Установка жирного текста
+void SetRichEditBold(HWND hRichEdit, bool bold)
+{
+    SendMessage(hRichEdit, EM_SETSEL, 0, -1);  // Выделить весь текст
+
+    CHARFORMAT cf = { 0 };
+    cf.cbSize = sizeof(cf);
+    cf.dwMask = CFM_BOLD;          // Указываем, что меняем жирность
+    cf.dwEffects = bold ? CFE_BOLD : 0; // Включаем/выключаем жирный шрифт
+
+    SendMessage(hRichEdit, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
+}
+
+// Установка зачеркивания
+void SetRichEditStrikeout(HWND hRichEdit, bool strikeout)
+{
+    SendMessage(hRichEdit, EM_SETSEL, 0, -1);  // Выделить весь текст
+
+    CHARFORMAT cf = { 0 };
+    cf.cbSize = sizeof(cf);
+    cf.dwMask = CFM_STRIKEOUT;          // Указываем, что меняем зачеркивание
+    cf.dwEffects = strikeout ? CFE_STRIKEOUT : 0; // Включаем/выключаем зачеркивание
+
+    SendMessage(hRichEdit, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
+}
 
 void UpdateCheckboxStates()
 {
-    // Проверка первого чекбокса
-    bool isHomogeneousMode = buttons::ButtonFlags[7]; // Флаг однородного режима
+    // Проверка условий
+    bool isHomogeneousMode = buttons::ButtonFlags[7];
+    bool partOfSpeechSelected;
     int selectedPartsOfSpeech = buttons::ButtonFlags.test(0) + buttons::ButtonFlags.test(1) +
         buttons::ButtonFlags.test(2) + buttons::ButtonFlags.test(3) +
         buttons::ButtonFlags.test(4) + buttons::ButtonFlags.test(5);
 
-    if (isHomogeneousMode || selectedPartsOfSpeech > 1) {
-        SendMessage(buttons::widgets.hCheckBox3, BM_SETCHECK, BST_CHECKED, 0);
+    if (isHomogeneousMode)
+    {
+        SetWindowText(buttons::widgets.hStaticCheckBox3Info, L"Однородный режим поиска");
+        SetRichEditBold(buttons::widgets.hStaticCheckBox3Info, true);
+        SetWindowText(buttons::widgets.hStaticCheckBox1Info, L"Выберите ОДНУ часть речи");
+        SetRichEditStrikeout(buttons::widgets.hStaticCheckBox2Info, false);
+        partOfSpeechSelected = (selectedPartsOfSpeech == 1);
     }
-    else {
-        SendMessage(buttons::widgets.hCheckBox3, BM_SETCHECK, BST_UNCHECKED, 0);
-    }
-
-    // Проверка второго чекбокса
-    bool isFileSelected = !filename_str.empty(); // Проверяем, выбран ли файл
-    if (isFileSelected) {
-        SendMessage(buttons::widgets.hCheckBox2, BM_SETCHECK, BST_CHECKED, 0);
-    }
-    else {
-        SendMessage(buttons::widgets.hCheckBox2, BM_SETCHECK, BST_UNCHECKED, 0);
-    }
-
-    // Проверка третьего чекбокса
-    if (selectedPartsOfSpeech > 0) {
-        SendMessage(buttons::widgets.hCheckBox1, BM_SETCHECK, BST_CHECKED, 0);
-    }
-    else {
-        SendMessage(buttons::widgets.hCheckBox1, BM_SETCHECK, BST_UNCHECKED, 0);
+    else
+    {
+        SetWindowText(buttons::widgets.hStaticCheckBox3Info, L"Неоднородный режим поиска");
+        SetRichEditBold(buttons::widgets.hStaticCheckBox3Info, true); 
+        SetWindowText(buttons::widgets.hStaticCheckBox1Info, L"Выберите НЕ МЕНЕЕ ДВУХ частей речи");
+        SetRichEditStrikeout(buttons::widgets.hStaticCheckBox2Info, false);
+        partOfSpeechSelected = (selectedPartsOfSpeech > 1);
     }
 
-    // Обновляем окна для применения изменений
-    UpdateWindow(buttons::widgets.hCheckBox1);
-    UpdateWindow(buttons::widgets.hCheckBox2);
-    UpdateWindow(buttons::widgets.hCheckBox3);
+    bool isFileSelected = !filename_str.empty();
+    SetRichEditStrikeout(buttons::widgets.hStaticCheckBox2Info, isFileSelected);
+
+    
+    SetRichEditStrikeout(buttons::widgets.hStaticCheckBox1Info, partOfSpeechSelected);
+
+    // Обновляем окна
+    UpdateWindow(buttons::widgets.hStaticCheckBox1Info);
+    UpdateWindow(buttons::widgets.hStaticCheckBox2Info);
+    UpdateWindow(buttons::widgets.hStaticCheckBox3Info);
+}
+
+// Вывод текста в поле
+void OutputTextInfo(const vector<vector<string>>& sentences)
+{
+    vector<vector<wstring>> Wsentences;
+
+    // Копирование
+    for (const vector<string>& sentence : sentences)
+    {
+        vector<wstring> wsentence;
+        for (const string& word : sentence)
+        {
+            wsentence.push_back(utf8_to_wstring(word)); // Используем лямбда-функцию для преобразования
+        }
+        Wsentences.push_back(wsentence);
+    }
+    // Выводим текст в поле
+    for (vector<wstring>& sentence : Wsentences)
+    {
+        bool firstWord = true;
+        for (wstring& word : sentence)
+        {
+
+            wstring tmp_word = word;
+            static const set<wstring> punctuationMarks = { L".", L",", L"!", L"?", L":", L";", L"-", L"(", L")", L"\"", L"'" };
+
+            if (!firstWord && punctuationMarks.find(tmp_word) == punctuationMarks.end())
+            {
+                // Добавляем пробел перед словом (если это не пунктуация и не первое слово)
+                SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)L" ");
+            }
+
+            SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)tmp_word.c_str());
+
+            firstWord = false;
+        }
+
+        // Перенос строки после предложения
+        SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)L"\r\n");
+    }
+}
+
+// Вывод рифм в поле
+void OutputRhymeInfo(const vector<WordData>& rhymes_data) 
+{
+    
+    // Очищаем поле перед выводом новой информации
+    SetWindowTextW(buttons::widgets.hEditRhymes, L"");
+
+    int counter = 0;
+    for (const WordData& output : rhymes_data) {
+        counter++;
+
+        // Основная информация о слове
+        wstring wordInfo;
+        if (counter == 1) {
+            wordInfo = L"Слово: ";
+        }
+        else {
+            wordInfo = L"\r\n\r\nСлово: ";
+        }
+
+        wordInfo += utf8_to_wstring(output.word);
+
+        // Часть речи
+        wordInfo += L"\r\nЧасть речи: " + utf8_to_wstring(output.part_of_speech);
+
+        // Количество найденных слов
+        wordInfo += L"\r\nКоличество найденных слов: " + to_wstring(output.amount);
+
+        // Количество рифм
+        wordInfo += L"\r\nКоличество рифм: " + to_wstring(output.rhymed_amount);
+
+        // Добавляем основную информацию
+        SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)wordInfo.c_str());
+
+        // Предложения, где встречается слово
+        std::wstring sentenceInfo = L"\r\nНайдено в предложениях: ";
+        if (!output.sentence_counter.empty()) 
+        {
+            for (size_t i = 0; i < output.sentence_counter.size(); ++i) 
+            {
+                if (i != 0) sentenceInfo += L", ";
+                sentenceInfo += to_wstring(output.sentence_counter[i]);
+            }
+        }
+        SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)sentenceInfo.c_str());
+
+        // Рифмы
+        if (!output.rhymed_words.empty()) 
+        {
+            SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)L"\r\nРифмы:");
+            for (const auto& word : output.rhymed_words) 
+            {
+                std::wstring rhyme = L"\r\n  • " + utf8_to_wstring(word);
+                SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)rhyme.c_str());
+            }
+        }
+    }
+
+    // Прокручиваем в начало
+    SendMessageW(buttons::widgets.hEditRhymes, EM_SETSEL, 0, 0);
+    SendMessageW(buttons::widgets.hEditRhymes, EM_SCROLLCARET, 0, 0);
 }
 
 // Основной цикл программы
@@ -230,6 +359,8 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 
 		// Создание виджетов
         MainWndAddWidget(hWnd);
+
+        void UpdateCheckboxStates();
 
         // Настройка параметров чтения файла
         SetOpenFileParams(hWnd);
@@ -260,21 +391,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
     }
     case WM_COMMAND:
     {
-        
-
-
-        // Проверяем, если есть используемый файл
-        if (filename_str == "")
-        {
-            SetWindowTextA(buttons::widgets.hOutputStatus, "");
-        }
-        else
-        {
-            SendMessage(buttons::widgets.hCheckBox2, BM_SETCHECK, BST_CHECKED, 0);
-            UpdateWindow(buttons::widgets.hCheckBox2);
-        }
-
-
+       
         // Проверяем, если уведомление пришло от поля ввода слова для поиска по нему рифм
         if (HIWORD(wp) == EN_CHANGE && (HWND)lp == buttons::widgets.hEditInputWord)
         {
@@ -311,7 +428,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             UpdateWindow(buttons::widgets.hExitButton);
             ExitSoftware();
         }
-		// Нажата кнопка "Вывод на экран"
+		// Нажата кнопка "Тип поиска"
         else if (LOWORD(wp) == buttons::buttonIDs.ButSearchType)
         {
             buttons::ButtonFlags.flip(7);
@@ -425,13 +542,6 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             // Получаем найденные рифмы, разделенные предложения и флаги 
             unite_functions(rhymes_data, sentences, str_sentences, word_to_compare, buttons::ButtonFlags);
 
-            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            // ВЫЗОВ ФУНКЦИИ ДЛЯ ВЫВОДА В ФАЙЛ
-            string outputFileName_numbered; // имя выходного файла-текста
-            string outputFileName_rhymes; // имя выходного файла-рифм
-            outputFiles_working(filename_str, outputFileName_numbered, outputFileName_rhymes, sentences, rhymes_data);
-            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
             // Скрываем окно загрузки
             HideLoadingWindow(hWnd);
 
@@ -450,117 +560,38 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 				MessageBoxA(hWnd, "Не найдено предложений", "Ошибка", MB_OK | MB_ICONERROR);
 				break;
             }
-            vector<vector<wstring>> Wsentences;
 
+            // Вывод текста
+            OutputTextInfo(sentences);
             
-            // Копирование с преобразованием через лямбда-функцию
-            for (const vector<string>& sentence : sentences)
-            {
-                vector<wstring> wsentence;
-                for (const string& word : sentence)
-                {
-                    wsentence.push_back(utf8_to_wstring(word)); // Используем лямбда-функцию для преобразования
-                }
-                Wsentences.push_back(wsentence);
-            }
-            // Выводим текст в поле
-            for (vector<wstring>& sentence : Wsentences)
-            {
-                bool firstWord = true;
-                for (wstring& word : sentence)
-                {
-                    
-                    wstring tmp_word = word;
-                    static const set<wstring> punctuationMarks = { L".", L",", L"!", L"?", L":", L";", L"-", L"(", L")", L"\"", L"'" };
-
-                    if (!firstWord && punctuationMarks.find(tmp_word) == punctuationMarks.end())
-                    {
-                        // Добавляем пробел перед словом (если это не пунктуация и не первое слово)
-                        SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)L" ");
-                    }
-
-                    SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)tmp_word.c_str());
-
-                    firstWord = false;
-                }
-
-                // Перенос строки после предложения
-                SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)L"\r\n");
-            }
-            int counter = 0;
-            // Проходим по всем словам
-            for (WordData& output : rhymes_data)
-            {
-                counter++;
-                string wordInfo;
-                if (counter == 1)
-                {
-                    wordInfo = "Слово: ";
-                }
-                else
-                {
-					wordInfo = "\r\nСлово: ";
-                }
-
-                output.word = utf8_to_ansi(output.word);
-                
-                wordInfo += output.word;
-
-                // Вывод части речи
-                string part_of_speech = "\r\nЧасть речи: " + output.part_of_speech;
-				string amount_number = "\r\nКоличество найденных слов: " + to_string(output.amount);
-				string rhymes_number = "\r\nКоличество рифм: " + to_string(output.rhymed_amount);
-				wordInfo += utf8_to_ansi(amount_number);
-				wordInfo += utf8_to_ansi(rhymes_number);
-				
-
-				wordInfo += utf8_to_ansi(part_of_speech);
-                SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)wordInfo.c_str());
-                SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)part_of_speech.c_str());
-                SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)amount_number.c_str());
-                SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)rhymes_number.c_str());
-
-				string setence_counter = "\r\nНайдено в следующих предложениях: ";
-                SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)setence_counter.c_str());
-                string buffer;
-				for (int& word : output.sentence_counter)
-				{
-					buffer += to_string(word);
-					buffer += ", ";
-				}
-				// Удаляем последний символ ", "
-				if (!buffer.empty())
-				{
-					buffer.erase(buffer.length() - 2);
-				}
-				
-                SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)buffer.c_str());
-                // Если есть рифмы, добавляем их
-                if (!output.rhymed_words.empty())
-                {
-                    SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)"\r\nРифмы: ");
-                    for (string& word : output.rhymed_words)
-                    {
-                        word = utf8_to_ansi(word);
-                        string rhyme = "\r\n  - " + word;
-                        SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)rhyme.c_str());
-                    }
-                }
-
-                // Добавляем разделитель между словами
-                SendMessageA(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)"\n");
-            }
-
+            // Вывод рифм
+            OutputRhymeInfo(rhymes_data);
             // Перерисовываем поле текста
             InvalidateRect(buttons::widgets.hEditText, NULL, TRUE);
             UpdateWindow(buttons::widgets.hEditText);
+            UpdateWindow(buttons::widgets.hEditRhymes);
             buttons::ButtonFlags.reset();
             UpdateButtonStatesAndColors();
             UpdateCheckboxStates();
         }
-        
+		// Нажата кнопка "Сохранить файл"
+		else if (LOWORD(wp) == buttons::buttonIDs.ButSaveFile)
+		{
+            // ВЫЗОВ ФУНКЦИИ ДЛЯ ВЫВОДА В ФАЙЛ
+            string outputFileName_numbered; // имя выходного файла-текста
+            string outputFileName_rhymes; // имя выходного файла-рифм
+            outputFiles_working(filename_str, outputFileName_numbered, outputFileName_rhymes, sentences, rhymes_data);
+
+            wstring wtext = utf8_to_wstring(outputFileName_numbered);
+            wstring wrhymes = utf8_to_wstring(outputFileName_rhymes);
+            // Устанавливаем текст в поле "Выбранный файл"
+            SetWindowTextA(buttons::widgets.hPathSaveFileData, outputFileName_numbered.c_str());
+            SetWindowTextA(buttons::widgets.hPathSaveFileRhymes, outputFileName_rhymes.c_str());
+            UpdateWindow(buttons::widgets.hPathSaveFileData);
+            UpdateWindow(buttons::widgets.hPathSaveFileRhymes);
+		}
         // Нажатие кнопки "чтение файла"
-        else if (LOWORD(wp) == buttons::buttonIDs.OnReadFile)
+        else if (LOWORD(wp) == buttons::buttonIDs.ButOpenFile)
         {
           
             // Проверка успешности выбора файла
@@ -592,12 +623,12 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 
             break;
         }
-        // Есди нажата кнопка "Инфо"
+        // Нажата кнопка "Инфо"
         else if (LOWORD(wp) == buttons::buttonIDs.OnInfoClicked)
         {
             MessageBox(hWnd, L"Информация о программе и ее разработчиках:", L"Инфо", MB_OK | MB_ICONINFORMATION);
         }
-        // Нажатие кнопки "Справка"
+        // Нажата кнопка "Справка"
         else if (LOWORD(wp) == buttons::buttonIDs.OnHelp) {
             MessageBox(hWnd, L"Инструкции по использованию программы:\n"
                 L"1. Выберите часть речи или введите слово для поиска.\n"
@@ -653,12 +684,14 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         HPEN hOldPen = (HPEN)SelectObject(hdc, buttons::graphics.hPenBlack);
         HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
 
-        HWND All_hwnd[8] = { buttons::widgets.hOutputStatus, buttons::widgets.hOutputStatusText, 
+        HWND All_hwnd[11] = { buttons::widgets.hOutputStatus, buttons::widgets.hOutputStatusText, 
                              buttons::widgets.hEditRhymes, buttons::widgets.hOutputRhymes, 
                              buttons::widgets.hOutputText, buttons::widgets.hEditText, 
-                             buttons::widgets.hInputWord, buttons::widgets.hEditInputWord};
+                             buttons::widgets.hInputWord, buttons::widgets.hEditInputWord,
+                             buttons::widgets.hPathSaveFileData, buttons::widgets.hPathSaveFileRhymes,
+                             buttons::widgets.hPathSaveFileText };
 
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 11; i++)
         {
             MakeFrame(hWnd, hdc, All_hwnd[i]);
         }
@@ -865,6 +898,18 @@ BOOL MakeRoundButton(LPDRAWITEMSTRUCT lpDrawItem)
         hBrushes = buttons::graphics.hBrushNeutral;
         buttonText = "Поиск";
     }
+    // Кнопка "Открыть файл"
+    else if (lpDrawItem->hwndItem == buttons::widgets.hOpenFile)
+    {
+        hBrushes = buttons::graphics.hBrushNeutral;
+        buttonText = "Открыть файл";
+    }
+    // Кнопка "Сохранить файл"
+    else if (lpDrawItem->hwndItem == buttons::widgets.hSaveFile)
+    {
+        hBrushes = buttons::graphics.hBrushNeutral;
+        buttonText = "Сохранить файл";
+    }
 
 	// Иное значение кнопки
     else
@@ -878,7 +923,10 @@ BOOL MakeRoundButton(LPDRAWITEMSTRUCT lpDrawItem)
      
 	// Создаем обрамление для кнопки
     if (lpDrawItem->hwndItem == buttons::widgets.hExitButton ||
-        lpDrawItem->hwndItem == buttons::widgets.hSearch)
+        lpDrawItem->hwndItem == buttons::widgets.hSearch ||
+        lpDrawItem->hwndItem == buttons::widgets.hSearchType ||
+        lpDrawItem->hwndItem == buttons::widgets.hOpenFile ||
+        lpDrawItem->hwndItem == buttons::widgets.hSaveFile)
     {
         hPen = CreatePen(PS_SOLID, 1, RGB(0, 210, 210)); // Синее обрамление для голубой кнопки
     }
@@ -931,7 +979,7 @@ void MainWndAddMenus(HWND hWnd)
 
     // Создание основного меню
     AppendMenu(RootMenu, MF_POPUP, (UINT_PTR)SubMenu, L"Файл");
-    AppendMenu(RootMenu, MF_STRING, buttons::buttonIDs.OnReadFile, L"Чтение файла");
+
     AppendMenu(RootMenu, MF_STRING, buttons::buttonIDs.OnHelp, L"Справка"); // Пункт справки
 
     // Создание подменю Файл
@@ -955,7 +1003,7 @@ void MainWndAddWidget(HWND hWnd)
     int marginY = screenHeight * 2 / 100;      // 2% от высоты экрана
 
     // Кнопки
-    buttons::widgets.hExitButton = CreateButton("Выход", marginX, screenHeight - buttonHeight - marginY-100, buttonWidth, buttonHeight, 
+    buttons::widgets.hExitButton = CreateButton("Выход", marginX, screenHeight - buttonHeight - marginY-80, buttonWidth, buttonHeight, 
         hWnd, buttons::buttonIDs.ButExit);
     buttons::widgets.hVerbButton = CreateButton("Глагол", marginX, marginY + buttonHeight + marginY + 20, buttonWidth, buttonHeight, 
         hWnd, buttons::buttonIDs.ButVerb);
@@ -971,30 +1019,38 @@ void MainWndAddWidget(HWND hWnd)
         hWnd, buttons::buttonIDs.ButAdverb);
     buttons::widgets.hSearchType = CreateButton("Тип поиска", marginX, marginY + 7 * (buttonHeight + marginY) + 20, buttonWidth, buttonHeight, 
         hWnd, buttons::buttonIDs.ButSearchType);
-    buttons::widgets.hSearch = CreateButton("Поиск", marginX, screenHeight - 2 * (buttonHeight + marginY) - 120, buttonWidth, buttonHeight, 
+    buttons::widgets.hSearch = CreateButton("Поиск", marginX, screenHeight - 2 * (buttonHeight + marginY) - 100, buttonWidth, buttonHeight, 
         hWnd, buttons::buttonIDs.Search);
-    //buttons::widgets.hHelpButton = CreateButton("Справка", marginX, screenHeight - buttonHeight - marginY - 70, buttonWidth, buttonHeight,
-       // hWnd, buttons::buttonIDs.OnHelp);
-
+    buttons::widgets.hOpenFile = CreateButton("Открыть файл", 2 * marginX + buttonWidth, marginY-10, buttonWidth, 30,
+        hWnd, buttons::buttonIDs.ButOpenFile);
+    buttons::widgets.hSaveFile = CreateButton("Сохранить файл", 2 * marginX + buttonWidth, marginY+30, buttonWidth, 30,
+        hWnd, buttons::buttonIDs.ButSaveFile);
+    
 
     // Статические элементы
-    buttons::widgets.hOutputStatusText = CreateStatic("Выбранный файл: ", 
-        marginX + buttonWidth + marginX, marginY, buttonWidth-100, 20, hWnd);
-    buttons::widgets.hInputWord = CreateStatic("Введите слово для поиска рифм", 
-        marginX, marginY + 7 * (buttonHeight + marginY) + 30 + buttonHeight + 11, buttonWidth, 20, hWnd);
-    buttons::widgets.hOutputRhymes = CreateStatic("Найденные рифмы", 
-        marginX + buttonWidth + marginX, marginY + buttonHeight + marginY, 
+    buttons::widgets.hOutputStatusText = CreateRichEdit(L"Открыт файл: ", 
+        10*marginX + buttonWidth, marginY-10, buttonWidth-80, 30, hWnd);
+    buttons::widgets.hPathSaveFileText = CreateRichEdit(L"Файлы сохранения: ",
+        10 * marginX + buttonWidth, marginY+30, buttonWidth - 80, 30, hWnd);
+    buttons::widgets.hInputWord = CreateRichEdit(L"Введите слово для поиска рифм", 
+        marginX, marginY + 7 * (buttonHeight + marginY) + 20 + buttonHeight + 11, buttonWidth, 30, hWnd);
+    buttons::widgets.hOutputRhymes = CreateRichEdit(L"Найденные рифмы", 
+        marginX + buttonWidth + marginX, marginY + buttonHeight + marginY+50, 
         (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2 - 1, buttonHeight, hWnd);
-    buttons::widgets.hOutputText = CreateStatic("Текст с найденными рифмами", 
-        marginX + buttonWidth + marginX + (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, marginY + buttonHeight + marginY, 
+    buttons::widgets.hOutputText = CreateRichEdit(L"Текст с найденными рифмами", 
+        marginX + buttonWidth + marginX + (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, marginY + buttonHeight + marginY+50, 
         (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, buttonHeight, hWnd);
 
 
     // Поля редактирования
-    buttons::widgets.hOutputStatus = CreateStatic("",marginX + buttonWidth + marginX + buttonWidth - 99, 
-        marginY, buttonWidth*4, 20, hWnd);
-    buttons::widgets.hEditInputWord = CreateEdit(marginX, 
-        marginY + 7 * (buttonHeight + marginY) + 30 + buttonHeight + 32, buttonWidth, 60, hWnd, false);
+    buttons::widgets.hOutputStatus = CreateRichEdit(L"",10*marginX + buttonWidth + buttonWidth - 79, 
+        marginY-10, buttonWidth*3, 30, hWnd);
+    buttons::widgets.hPathSaveFileData = CreateRichEdit(L"", 10 * marginX + buttonWidth + buttonWidth - 79,
+        marginY+30, buttonWidth * 3, 30, hWnd);
+    buttons::widgets.hPathSaveFileRhymes = CreateRichEdit(L"", 10 * marginX + buttonWidth + buttonWidth - 79,
+        marginY + 61, buttonWidth * 3, 30, hWnd);
+    buttons::widgets.hEditInputWord = CreateRichEdit(L"",marginX,
+        marginY + 7 * (buttonHeight + marginY) + 30 + buttonHeight + 32, buttonWidth, 60, hWnd);
 
     // Верхняя граница для полей редактирования (вплотную с hOutputRhymes и hOutputText)
     int editTopMargin = marginY + buttonHeight + marginY + buttonHeight + 1; 
@@ -1002,25 +1058,62 @@ void MainWndAddWidget(HWND hWnd)
     // Высота полей с учетом зазоров
     int editHeight = screenHeight - editTopMargin - 2 * (buttonHeight + marginY) - 1; 
     
-    buttons::widgets.hEditRhymes = CreateEdit(marginX + buttonWidth + marginX, editTopMargin, 
-        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2 - 1, editHeight, hWnd, true);
-    buttons::widgets.hEditText = CreateEdit(marginX + buttonWidth + marginX + (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, editTopMargin, 
-        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, editHeight, hWnd, true);
+    buttons::widgets.hEditRhymes = CreateRichEdit(L"",marginX + buttonWidth + marginX, editTopMargin + 50,
+        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2 - 1, editHeight-50, hWnd);
+    buttons::widgets.hEditText = CreateRichEdit(L"",marginX + buttonWidth + marginX + (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, editTopMargin + 50,
+        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, editHeight-50, hWnd);
 
 
-    buttons::widgets.hCheckBox1 = CreateWindowA("BUTTON", "", WS_VISIBLE | WS_CHILD | BS_CHECKBOX ,marginX, screenHeight - 2 * (buttonHeight + marginY) - 150,
-        12, buttonHeight-10,hWnd, (HMENU)buttons::buttonIDs.CheckBox1, NULL, NULL);
-	buttons::widgets.hStaticCheckBox1Info = CreateStatic("Выберите часть речи", marginX+15, screenHeight - 2 * (buttonHeight + marginY) - 143, 
-        buttonWidth-10, 20, hWnd);
-    buttons::widgets.hCheckBox2 = CreateWindowA("BUTTON", "", WS_VISIBLE | WS_CHILD | BS_CHECKBOX ,marginX, screenHeight - 2 * (buttonHeight + marginY) - 170,
-        12, buttonHeight - 10, hWnd, (HMENU)buttons::buttonIDs.CheckBox2, NULL, NULL);
-    buttons::widgets.hStaticCheckBox2Info = CreateStatic("Выберите файл", marginX + 15, screenHeight - 2 * (buttonHeight + marginY) - 163, 
-        buttonWidth - 10, 20, hWnd);
-    buttons::widgets.hCheckBox3 = CreateWindowA("BUTTON", "", WS_VISIBLE | WS_CHILD | BS_CHECKBOX , marginX, screenHeight - 2 * (buttonHeight + marginY) - 190,
-        12, buttonHeight - 10,hWnd, (HMENU)buttons::buttonIDs.CheckBox3, NULL, NULL);
-	buttons::widgets.hStaticCheckBox3Info = CreateStatic("Выберите тип поиска", marginX + 15, screenHeight - 2 * (buttonHeight + marginY) - 183, 
-        buttonWidth - 10, 20, hWnd);
+    
+    buttons::widgets.hStaticCheckBox1Info = CreateRichEdit(L"Выберите НЕ МЕНЕЕ ДВУХ частей речи",
+        marginX, screenHeight - 2 * (buttonHeight + marginY) - 143,
+        buttonWidth, 30, hWnd); 
 
+    buttons::widgets.hStaticCheckBox2Info = CreateRichEdit(L"Выберите файл",
+        marginX, screenHeight - 2 * (buttonHeight + marginY) - 173,
+        buttonWidth, 30, hWnd);
+
+    buttons::widgets.hStaticCheckBox3Info = CreateRichEdit(L"Неоднородный режим поиска",
+        marginX, screenHeight - 2 * (buttonHeight + marginY) - 203,
+        buttonWidth, 30, hWnd);
+
+}
+
+HWND CreateRichEdit(LPCWSTR text, int x, int y, int width, int height, HWND hParent) 
+{
+    // Убедись, что библиотека загружена
+    static bool richEditLoaded = false;
+    if (!richEditLoaded) {
+        LoadLibrary(TEXT("Msftedit.dll"));
+        richEditLoaded = true;
+    }
+
+    HWND hRich = CreateWindowEx(
+        0,
+        MSFTEDIT_CLASS,  // "RichEdit50W"
+        text,
+        WS_CHILD | WS_VISIBLE | ES_READONLY | ES_CENTER | ES_MULTILINE | WS_BORDER,
+        x, y, width, height,
+        hParent, NULL, GetModuleHandle(NULL), NULL
+    );
+
+    if (!hRich) return NULL;
+
+    // Если нужно сделать текст жирным
+    if (text == L"Неоднородный режим поиска" or text == L"Найденные рифмы" or text == L"Текст с найденными рифмами"
+        or text == L"Открыт файл: " or text == L"Файлы сохранения: " or text == L"Введите слово для поиска рифм")
+    {
+        CHARFORMAT2 cf = { 0 };
+        cf.cbSize = sizeof(cf);
+        cf.dwMask = CFM_BOLD;  // Указываем, что меняем жирность
+        cf.dwEffects = CFE_BOLD; // Включаем жирный шрифт
+
+        // Выделяем весь текст и применяем форматирование
+        SendMessage(hRich, EM_SETSEL, 0, -1);
+        SendMessage(hRich, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
+    }
+
+    return hRich;
 }
 
 // Функция для создания кнопки
@@ -1045,7 +1138,7 @@ HWND CreateStatic(const char* text, int x, int y, int width, int height, HWND hW
 	// Создаем статический текст с заданными параметрами
     HWND hStatic = 0;
 	// Устанавливаем стиль текста в зависимости от текста
-    if (text == "Выбранный файл: " or text == "Выберите часть речи" or text == "Выберите файл" or text == "Выберите тип поиска")
+    if (text == "Открыт файл: " or text == "Файлы сохранения: " or text == "Выберите НЕ МЕНЕЕ ДВУХ частей речи" or text == "Выберите файл" or text == "Неоднородный режим поиска")
     {
         hStatic = CreateWindowA(
             "static", text, WS_VISIBLE | WS_CHILD | ES_LEFT,
@@ -1094,29 +1187,7 @@ HWND CreateEdit(int x, int y, int width, int height, HWND hWnd, bool readOnly)
 
     return hEdit;
 }
-// Запись в файл
-void save_data(LPCSTR path)
-{
-	// Создаем файл для записи
-    HANDLE SAVEfile = CreateFileA(
-        path,
-        GENERIC_WRITE,
-        0,
-        NULL,
-        CREATE_ALWAYS,
-        FILE_ATTRIBUTE_NORMAL,
-        NULL);
-    int SAVElength = GetWindowTextLength(buttons::widgets.hSearch) + 1;
-    char *data = new char[SAVElength];
 
-    SAVElength = GetWindowTextA(buttons::widgets.hSearch, data, SAVElength);
-
-    DWORD bytesIterated;
-	// Записываем данные в файл
-    WriteFile(SAVEfile, data, SAVElength, &bytesIterated, NULL);
-    CloseHandle(SAVEfile);
-    delete[] data;
-}
 
 // Установка начальных параметров на открытие файлов для чтения и записи
 void SetOpenFileParams(HWND hWnd)

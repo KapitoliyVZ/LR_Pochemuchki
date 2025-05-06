@@ -6,17 +6,15 @@
 #include <string>
 #include <fstream>
 #include <set>
+#include <vector>
 #include "Buttons.h"
 #include <richedit.h>
-
-
-// Размер буфера
-//#define TextBufferSize      90
+#include "general_search.h"
 
 using namespace std;
 
 OPENFILENAMEA OFN;
-//char BufferReceive[TextBufferSize] = { 0 };
+
 
 
 
@@ -31,21 +29,10 @@ struct InitialDimensions {
 	int height;
 };
 
-//InitialDimensions initialDimensions[20];
-
-
-
-
-
-// OPENFILENAMEW OFN;
-
-
-
 
 
 // Прототипы функций
 void SetOpenFileParams(HWND hWnd); 
-void save_data(LPCSTR path);
 BOOL MakeRoundButton(LPDRAWITEMSTRUCT lpDrawItem);
 void ExitSoftware();
 void MainWndAddMenus(HWND hWnd);
@@ -57,11 +44,16 @@ string ConvertLPWSTRToString(LPWSTR lpwstr);
 void MakeFrame(HWND hWnd, HDC hdc, HWND Edit);
 LPWSTR ConvertStringToLPWSTR(const std::string& str);
 void FreeLPWSTR(LPWSTR lpwstr);
+HWND CreateRichEdit(LPCWSTR text, int x, int y, int width, int height, HWND hParent);
 HWND CreateEdit(int x, int y, int width, int height, HWND hWnd, bool readOnly = false);
 HWND CreateStatic(const char* text, int x, int y, int width, int height, HWND hWnd);
 HWND CreateButton(const char* text, int x, int y, int width, int height, HWND hWnd, int id);
+void SetRichEditBold(HWND hRichEdit, bool bold);
+void SetRichEditStrikeout(HWND hRichEdit, bool strikeout);
 void UpdateButtonStatesAndColors();
 void ShowLoadingWindow(HWND hWnd);
 void HideLoadingWindow(HWND hWnd);
+void OutputTextInfo(const vector<vector<string>>& sentences);
+void OutputRhymeInfo(const vector<WordData>& rhymes_data);
 
 #endif // UI_CONST_H
