@@ -44,7 +44,7 @@ string ConvertLPWSTRToString(LPWSTR lpwstr);
 void MakeFrame(HWND hWnd, HDC hdc, HWND Edit);
 LPWSTR ConvertStringToLPWSTR(const std::string& str);
 void FreeLPWSTR(LPWSTR lpwstr);
-HWND CreateRichEdit(LPCWSTR text, int x, int y, int width, int height, HWND hParent);
+
 HWND CreateEdit(int x, int y, int width, int height, HWND hWnd, bool readOnly = false);
 HWND CreateStatic(const char* text, int x, int y, int width, int height, HWND hWnd);
 HWND CreateButton(const char* text, int x, int y, int width, int height, HWND hWnd, int id);
@@ -55,5 +55,6 @@ void ShowLoadingWindow(HWND hWnd);
 void HideLoadingWindow(HWND hWnd);
 void OutputTextInfo(const vector<vector<string>>& sentences);
 void OutputRhymeInfo(const vector<WordData>& rhymes_data);
+HWND CreateRichEdit(LPCWSTR text, int x, int y, int width, int height, HWND hParent, bool readonly = false);
 
 #endif // UI_CONST_H

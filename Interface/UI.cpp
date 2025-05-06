@@ -213,7 +213,7 @@ void UpdateCheckboxStates()
     {
         SetWindowText(buttons::widgets.hStaticCheckBox3Info, L"Однородный режим поиска");
         SetRichEditBold(buttons::widgets.hStaticCheckBox3Info, true);
-        SetWindowText(buttons::widgets.hStaticCheckBox1Info, L"Выберите ОДНУ часть речи");
+        SetWindowText(buttons::widgets.hStaticCheckBox1Info, L"Выберите НЕ МЕНЕЕ ОДНОЙ части речи");
         SetRichEditStrikeout(buttons::widgets.hStaticCheckBox2Info, false);
         partOfSpeechSelected = (selectedPartsOfSpeech == 1);
     }
@@ -359,7 +359,8 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 
 		// Создание виджетов
         MainWndAddWidget(hWnd);
-
+        EnableWindow(buttons::widgets.hSaveFile, FALSE);  // Блокировка кнопки
+        UpdateWindow(buttons::widgets.hSaveFile);
         void UpdateCheckboxStates();
 
         // Настройка параметров чтения файла
@@ -573,6 +574,8 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             buttons::ButtonFlags.reset();
             UpdateButtonStatesAndColors();
             UpdateCheckboxStates();
+            EnableWindow(buttons::widgets.hSaveFile, TRUE);  // Блокировка кнопки
+            UpdateWindow(buttons::widgets.hSaveFile);
         }
 		// Нажата кнопка "Сохранить файл"
 		else if (LOWORD(wp) == buttons::buttonIDs.ButSaveFile)
@@ -589,6 +592,8 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             SetWindowTextA(buttons::widgets.hPathSaveFileRhymes, outputFileName_rhymes.c_str());
             UpdateWindow(buttons::widgets.hPathSaveFileData);
             UpdateWindow(buttons::widgets.hPathSaveFileRhymes);
+            EnableWindow(buttons::widgets.hSaveFile, FALSE);  // Блокировка кнопки
+            UpdateWindow(buttons::widgets.hSaveFile);
 		}
         // Нажатие кнопки "чтение файла"
         else if (LOWORD(wp) == buttons::buttonIDs.ButOpenFile)
@@ -1029,26 +1034,26 @@ void MainWndAddWidget(HWND hWnd)
 
     // Статические элементы
     buttons::widgets.hOutputStatusText = CreateRichEdit(L"Открыт файл: ", 
-        10*marginX + buttonWidth, marginY-10, buttonWidth-80, 30, hWnd);
+        10*marginX + buttonWidth, marginY-10, buttonWidth-80, 30, hWnd, true);
     buttons::widgets.hPathSaveFileText = CreateRichEdit(L"Файлы сохранения: ",
-        10 * marginX + buttonWidth, marginY+30, buttonWidth - 80, 30, hWnd);
+        10 * marginX + buttonWidth, marginY+30, buttonWidth - 80, 30, hWnd, true);
     buttons::widgets.hInputWord = CreateRichEdit(L"Введите слово для поиска рифм", 
-        marginX, marginY + 7 * (buttonHeight + marginY) + 20 + buttonHeight + 11, buttonWidth, 30, hWnd);
+        marginX, marginY + 7 * (buttonHeight + marginY) + 20 + buttonHeight + 11, buttonWidth, 30, hWnd, true);
     buttons::widgets.hOutputRhymes = CreateRichEdit(L"Найденные рифмы", 
         marginX + buttonWidth + marginX, marginY + buttonHeight + marginY+50, 
-        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2 - 1, buttonHeight, hWnd);
+        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2 - 1, buttonHeight, hWnd, true);
     buttons::widgets.hOutputText = CreateRichEdit(L"Текст с найденными рифмами", 
         marginX + buttonWidth + marginX + (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, marginY + buttonHeight + marginY+50, 
-        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, buttonHeight, hWnd);
+        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, buttonHeight, hWnd, true);
 
 
     // Поля редактирования
     buttons::widgets.hOutputStatus = CreateRichEdit(L"",10*marginX + buttonWidth + buttonWidth - 79, 
-        marginY-10, buttonWidth*3, 30, hWnd);
+        marginY-10, buttonWidth*3, 30, hWnd, true);
     buttons::widgets.hPathSaveFileData = CreateRichEdit(L"", 10 * marginX + buttonWidth + buttonWidth - 79,
-        marginY+30, buttonWidth * 3, 30, hWnd);
+        marginY+30, buttonWidth * 3, 30, hWnd, true);
     buttons::widgets.hPathSaveFileRhymes = CreateRichEdit(L"", 10 * marginX + buttonWidth + buttonWidth - 79,
-        marginY + 61, buttonWidth * 3, 30, hWnd);
+        marginY + 61, buttonWidth * 3, 30, hWnd, true);
     buttons::widgets.hEditInputWord = CreateRichEdit(L"",marginX,
         marginY + 7 * (buttonHeight + marginY) + 30 + buttonHeight + 32, buttonWidth, 60, hWnd);
 
@@ -1059,27 +1064,27 @@ void MainWndAddWidget(HWND hWnd)
     int editHeight = screenHeight - editTopMargin - 2 * (buttonHeight + marginY) - 1; 
     
     buttons::widgets.hEditRhymes = CreateRichEdit(L"",marginX + buttonWidth + marginX, editTopMargin + 50,
-        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2 - 1, editHeight-50, hWnd);
+        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2 - 1, editHeight-50, hWnd, true);
     buttons::widgets.hEditText = CreateRichEdit(L"",marginX + buttonWidth + marginX + (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, editTopMargin + 50,
-        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, editHeight-50, hWnd);
+        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, editHeight-50, hWnd, true);
 
 
     
     buttons::widgets.hStaticCheckBox1Info = CreateRichEdit(L"Выберите НЕ МЕНЕЕ ДВУХ частей речи",
         marginX, screenHeight - 2 * (buttonHeight + marginY) - 143,
-        buttonWidth, 30, hWnd); 
+        buttonWidth, 30, hWnd, true); 
 
     buttons::widgets.hStaticCheckBox2Info = CreateRichEdit(L"Выберите файл",
         marginX, screenHeight - 2 * (buttonHeight + marginY) - 173,
-        buttonWidth, 30, hWnd);
+        buttonWidth, 30, hWnd, true);
 
     buttons::widgets.hStaticCheckBox3Info = CreateRichEdit(L"Неоднородный режим поиска",
         marginX, screenHeight - 2 * (buttonHeight + marginY) - 203,
-        buttonWidth, 30, hWnd);
+        buttonWidth, 30, hWnd, true);
 
 }
 
-HWND CreateRichEdit(LPCWSTR text, int x, int y, int width, int height, HWND hParent) 
+HWND CreateRichEdit(LPCWSTR text, int x, int y, int width, int height, HWND hParent, bool readonly)
 {
     // Убедись, что библиотека загружена
     static bool richEditLoaded = false;
@@ -1087,12 +1092,16 @@ HWND CreateRichEdit(LPCWSTR text, int x, int y, int width, int height, HWND hPar
         LoadLibrary(TEXT("Msftedit.dll"));
         richEditLoaded = true;
     }
-
+    DWORD style = WS_VISIBLE | WS_CHILD | ES_MULTILINE | WS_VSCROLL | ES_CENTER | WS_BORDER;
+    if (readonly)
+    {
+        style |= ES_READONLY;
+    }
     HWND hRich = CreateWindowEx(
         0,
         MSFTEDIT_CLASS,  // "RichEdit50W"
         text,
-        WS_CHILD | WS_VISIBLE | ES_READONLY | ES_CENTER | ES_MULTILINE | WS_BORDER,
+        style,
         x, y, width, height,
         hParent, NULL, GetModuleHandle(NULL), NULL
     );
