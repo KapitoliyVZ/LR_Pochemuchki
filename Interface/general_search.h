@@ -731,6 +731,8 @@ void deal_with_words(bitset<8>& button_flags, vector<vector<string>>& numbered_s
 		// перевод слова в UTF-8
 		word_to_compare = ansi_to_utf8(word_to_compare);
 
+		word_to_compare = lowFirstLetter(word_to_compare);
+
 		comparing_word_part_of_speech = get_comparing_word_part(word_to_compare);
 
 		for (string& word : comparing_word_part_of_speech)
@@ -754,7 +756,7 @@ void deal_with_words(bitset<8>& button_flags, vector<vector<string>>& numbered_s
 	{
 		if (button_flags.test(i))
 		{
-			words_text_collection[i] = findWordsByPartOfSpeech(numbered_sentences, parts_of_speech[i]);
+			words_text_collection[i] = findWordsByPartOfSpeech(numbered_sentences, parts_of_speech[i],word_to_compare);
 		}
 	}
 

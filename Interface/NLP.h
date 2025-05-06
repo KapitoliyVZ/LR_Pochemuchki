@@ -268,7 +268,7 @@ std::string getPartOfSpeech(const std::string& word) {
 }
 
 // Поиск слов по части речи в предложениях
-std::vector<std::string> findWordsByPartOfSpeech(std::vector<std::vector<std::string>>& sentences, const std::string& targetPartOfSpeech) {
+std::vector<std::string> findWordsByPartOfSpeech(std::vector<std::vector<std::string>>& sentences, const std::string& targetPartOfSpeech, string& word_to_compare) {
     std::vector<std::string> foundWords;
 
     // переменная для проверки наличия пунктуации на месте части вектора векторов предложений
@@ -290,11 +290,12 @@ std::vector<std::string> findWordsByPartOfSpeech(std::vector<std::vector<std::st
             std::string partOfSpeech = getPartOfSpeech(word);
             if (partOfSpeech == targetPartOfSpeech) {
                 
-                // TMP РАЗОБРАТЬСЯ ПОЧЕМУ НЕ РАБОТАЮТ ФУНКЦИИ РЕГИСТРОВ
+                
                 word = lowFirstLetter(word);
 
                 foundWords.push_back(word); // Сохраняем найденное слово с обработкой регистра
 
+                if (word_to_compare.empty() || (!word_to_compare.empty() && word_to_compare == word))
                 word = capitalizeAllLetters(word); // Обновляем слово в предложении
 
             }
