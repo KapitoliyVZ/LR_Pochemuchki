@@ -4,70 +4,6 @@
 #include "NLP.h"
 
 
-
-void ShowLoadingWindow(HWND hWnd) {
-    // Создаем кисть для фона окна
-    HBRUSH hBrush = CreateSolidBrush(RGB(0, 255, 0)); // Устанавливаем белый цвет фона
-    // Устанавливаем кисть в качестве фона окна
-    SetClassLongPtr(buttons::widgets.hLoadingWnd, GCLP_HBRBACKGROUND, (LONG_PTR)hBrush);
-    HDC hdc = GetDC(buttons::widgets.hLoadingWnd);
-    SetTextColor(hdc, RGB(0, 255, 0)); // Устанавливаем черный цвет текста
-    // Получаем координаты окон "Найденные рифмы" и "Текст с найденными рифмами"
-    if (buttons::widgets.hLoadingWnd == NULL) {
-        buttons::widgets.hLoadingWnd = CreateWindowEx(
-            0,
-            L"STATIC",
-            L"Поиск рифм... Пожалуйста, подождите.",
-            WS_POPUP | WS_VISIBLE ,
-            CW_USEDEFAULT, CW_USEDEFAULT, 300, 100,
-            hWnd,
-            NULL,
-            GetModuleHandle(NULL),
-            NULL
-        );
-
-        RECT rectInputWord;
-        GetWindowRect(buttons::widgets.hEditInputWord, &rectInputWord);
-
-        // Получаем координаты окон "Найденные рифмы" и "Текст с найденными рифмами"
-        RECT rectRhymes, rectText;
-        GetWindowRect(buttons::widgets.hEditRhymes, &rectRhymes);
-        GetWindowRect(buttons::widgets.hEditText, &rectText);
-
-        // Вычисляем среднюю точку между этими окнами
-        int centerX = (rectRhymes.left + rectRhymes.right + rectText.left + rectText.right) / 4;
-        int centerY = (rectRhymes.top + rectRhymes.bottom + rectText.top + rectText.bottom) / 4;
-
-        // Центрируем окно загрузки относительно средней точки
-        int x = centerX - 150; // 150 - половина ширины окна загрузки
-        int y = centerY - 50;  // 50 - половина высоты окна загрузки
-        SetWindowPos(buttons::widgets.hLoadingWnd, HWND_TOPMOST, x, y, 300, 100, SWP_SHOWWINDOW);
-
-        //// Позиционируем окно загрузки под виджетом "Введите слово для поиска рифм"
-        //int x = rectInputWord.left;
-        //int y = rectInputWord.bottom + 10; // 10 - отступ от нижней границы виджета
-        //SetWindowPos(buttons::widgets.hLoadingWnd, HWND_TOPMOST, x, y, 290, 100, SWP_SHOWWINDOW);
-
-    }
-    else {
-        ShowWindow(buttons::widgets.hLoadingWnd, SW_SHOW);
-    }
-    UpdateWindow(buttons::widgets.hLoadingWnd);
-    // Блокируем основное окно
-    EnableWindow(hWnd, FALSE);
-}
-
-void HideLoadingWindow(HWND hWnd) {
-    if (buttons::widgets.hLoadingWnd != NULL) {
-        ShowWindow(buttons::widgets.hLoadingWnd, SW_HIDE);
-        // Разблокируем основное окно
-        EnableWindow(hWnd, TRUE);
-        SetFocus(hWnd);
-    }
-}
-
-
-
 // Старт приложения и создание стартовых процедур
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdshow)
 {
@@ -543,17 +479,16 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             // Получаем найденные рифмы, разделенные предложения и флаги 
             unite_functions(rhymes_data, sentences, str_sentences, word_to_compare, buttons::ButtonFlags);
 
-            // Скрываем окно загрузки
-            HideLoadingWindow(hWnd);
-
             // Очищаем содержимое поля перед добавлением нового текста
             SetWindowTextA(buttons::widgets.hEditRhymes, "");
             SetWindowTextA(buttons::widgets.hEditText, "");
+            UpdateWindow(buttons::widgets.hLoadingWnd);
 
 			// Если не найдено рифм, выводим сообщение
             if (rhymes_data.empty())
             {
                 MessageBoxA(hWnd, "Не найдено рифм", "Ошибка", MB_OK | MB_ICONERROR);
+                HideLoadingWindow(hWnd);
                 break;
             }
             if (sentences.empty())
@@ -567,6 +502,10 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             
             // Вывод рифм
             OutputRhymeInfo(rhymes_data);
+
+            // Скрываем окно загрузки
+            HideLoadingWindow(hWnd);
+
             // Перерисовываем поле текста
             InvalidateRect(buttons::widgets.hEditText, NULL, TRUE);
             UpdateWindow(buttons::widgets.hEditText);
@@ -1218,5 +1157,51 @@ void SetOpenFileParams(HWND hWnd)
 void SetWinStatus(string status)
 {
     SetWindowTextA(buttons::widgets.hOutputStatus, status.c_str());
+}
+
+void ShowLoadingWindow(HWND hWnd) {
+    // Получаем координаты окон "Найденные рифмы" и "Текст с найденными рифмами"
+    RECT rectRhymes, rectText;
+    GetWindowRect(buttons::widgets.hEditRhymes, &rectRhymes);
+    GetWindowRect(buttons::widgets.hEditText, &rectText);
+
+    int centerX = (rectRhymes.left + rectRhymes.right) / 2;
+    int centerY = rectRhymes.top + 300;
+    centerX -= 150; centerY -= 50;
+
+    // Получаем координаты окон "Найденные рифмы" и "Текст с найденными рифмами"
+    if (buttons::widgets.hLoadingWnd == NULL) {
+        buttons::widgets.hLoadingWnd = CreateWindowEx(
+            0,
+            L"STATIC",
+            L"Поиск рифм... Пожалуйста, подождите.",
+            WS_CHILD | WS_VISIBLE | WS_BORDER,
+            CW_USEDEFAULT, CW_USEDEFAULT, 300, 100,
+            hWnd,
+            NULL,
+            GetModuleHandle(NULL),
+            NULL
+        );
+
+        RECT rectInputWord;
+        GetWindowRect(buttons::widgets.hEditInputWord, &rectInputWord);
+        SetWindowPos(buttons::widgets.hLoadingWnd, HWND_TOP, centerX, centerY, 300, 100, SWP_SHOWWINDOW);
+        SetWindowPos(buttons::widgets.hLoadingWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW);
+    }
+    else {
+        ShowWindow(buttons::widgets.hLoadingWnd, SW_SHOW);
+    }
+    UpdateWindow(buttons::widgets.hLoadingWnd);
+    // Блокируем основное окно
+    EnableWindow(hWnd, FALSE);
+}
+
+void HideLoadingWindow(HWND hWnd) {
+    if (buttons::widgets.hLoadingWnd != NULL) {
+        ShowWindow(buttons::widgets.hLoadingWnd, SW_HIDE);
+        // Разблокируем основное окно
+        EnableWindow(hWnd, TRUE);
+        SetFocus(hWnd);
+    }
 }
 
