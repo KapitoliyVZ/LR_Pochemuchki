@@ -6,8 +6,8 @@
 #include "UI_const.h"
 
 ifstream file_input;           // файл для чтения
-ofstream file_output_numbered; // файл для записи
-ofstream file_output_rhymes;   // файл для записи
+ofstream file_output_numbered; // файл-текст для записи
+ofstream file_output_rhymes;   // файл-рифмы для записи
 
 int len_txt = 4;               // длина расширения .txt
 string extension_txt = ".txt"; // расширение .txt
@@ -110,9 +110,23 @@ void write_outputFiles(vector<WordData> rhymes_data)
     {
         string wordInfo = "Слово: " + output.word;                                      // само слово
         string part_of_speech = "\nЧасть речи: " + ansi_to_utf8(output.part_of_speech); // часть речи слова
+        string wordAmount = "\nКоличество найденных слов: " + to_string(output.amount); // Количество найденных слов
+        string rhymesAmount = "\nКоличество рифм: " + to_string(output.rhymed_amount);  // Количество рифм
+        string sentenceAmount = "\nНайдено в предложениях: ";                           // Кол-во предложений с упоминанием
 
         // вывод слова
-        file_output_rhymes << wordInfo << part_of_speech;
+        file_output_rhymes << wordInfo << part_of_speech << wordAmount << rhymesAmount;
+
+        // вывод предложений, где встречается слово
+        if (!output.sentence_counter.empty())
+        {
+            for (size_t i = 0; i < output.sentence_counter.size(); ++i)
+            {
+                if (i != 0)
+                    sentenceAmount += ", ";
+                sentenceAmount += to_string(output.sentence_counter[i]);
+            }
+        }
 
         // вывод рифм
         if (!output.rhymed_words.empty())
@@ -144,20 +158,24 @@ bool check_outputFile_existence(const string outputFileName)
 // Функция для создания имён выходных файлов
 pair<string, string> create_outputFileNames(const string inputFilePath)
 {
-    // Извлечение имени входного файла из полного пути
-    string outputFileName = inputFilePath.substr(inputFilePath.find_last_of("/\\") + 1);
-
-    string outputFileName_numbered = outputFileName.substr(0, outputFileName.find_last_of('.')) + "_numbered.txt"; // имя выходного файла-текста
-    string outputFileName_rhymes = outputFileName.substr(0, outputFileName.find_last_of('.')) + "_rhymes.txt";     // имя выходного файла-рифм
+    // Создание имен выходных файлов на основе полного пути входного файла
+    string outputFileName_numbered = inputFilePath.substr(0, inputFilePath.find_last_of('.')) + "_numbered.txt"; // имя выходного файла-текста
+    string outputFileName_rhymes = inputFilePath.substr(0, inputFilePath.find_last_of('.')) + "_rhymes.txt";     // имя выходного файла-рифм
 
     int count_numb = 1; // счетчик для нумерации
 
     // Проверка наличия файла-текста с данным именем
     while (check_outputFile_existence(outputFileName_numbered))
     {
-        outputFileName_numbered.erase(outputFileName_numbered.length() - len_txt, len_txt); // Удаляем расширение
-        if (count_numb > 1)
-            outputFileName_numbered.erase(outputFileName_numbered.length() - 3, 3); // Удаляем нумерацию, если она уже была
+        // Удалить ".txt"
+        outputFileName_numbered.erase(outputFileName_numbered.length() - len_txt, len_txt);
+
+        // Удалить "(n)", если есть
+        size_t pos = outputFileName_numbered.rfind('(');
+        if (pos != std::string::npos && outputFileName_numbered.back() == ')')
+            outputFileName_numbered.erase(pos); // Удаляет от '(' до конца
+
+        // Добавить новую нумерацию
         outputFileName_numbered += "(" + to_string(count_numb) + ").txt";
         count_numb++;
     }
@@ -167,10 +185,16 @@ pair<string, string> create_outputFileNames(const string inputFilePath)
     // Проверка наличия файла-рифм с данным именем
     while (check_outputFile_existence(outputFileName_rhymes))
     {
-        outputFileName_rhymes.erase(outputFileName_rhymes.length() - len_txt, len_txt); // Удаляем расширение
-        if (count_rhymes > 1)
-            outputFileName_rhymes.erase(outputFileName_rhymes.length() - 3, 3); // Удаляем нумерацию, если она уже была
-        outputFileName_rhymes += "(" + to_string(count_rhymes) + ").txt";       // Добавляем новую нумерацию
+        // Удалить ".txt"
+        outputFileName_rhymes.erase(outputFileName_rhymes.length() - len_txt, len_txt);
+
+        // Удалить "(n)", если есть
+        size_t pos = outputFileName_rhymes.rfind('(');
+        if (pos != std::string::npos && outputFileName_rhymes.back() == ')')
+            outputFileName_rhymes.erase(pos); // Удаляет от '(' до конца
+
+        // Добавить новую нумерацию
+        outputFileName_rhymes += "(" + to_string(count_rhymes) + ").txt";
         count_rhymes++;
     }
 
@@ -185,7 +209,6 @@ string outputFileName_rhymes; // имя выходного файла-рифм
 outputFiles_working(filename_str, outputFileName_numbered, outputFileName_rhymes, sentences, rhymes_data);
 */
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 // Функция для создания файла и его открытия
 bool outputFiles_working(const string inputFilePath,                      // путь входного файла
