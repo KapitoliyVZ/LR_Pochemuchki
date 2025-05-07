@@ -518,6 +518,9 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             // Получаем найденные рифмы, разделенные предложения и флаги 
             unite_functions(rhymes_data, sentences, str_sentences, word_to_compare, buttons::ButtonFlags);
 
+            // Скрываем окно загрузки
+            HideLoadingWindow(hWnd);
+
             // Очищаем содержимое поля перед добавлением нового текста
             SetWindowTextA(buttons::widgets.hEditRhymes, "");
             SetWindowTextA(buttons::widgets.hEditText, "");
@@ -541,9 +544,6 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             
             // Вывод рифм
             OutputRhymeInfo(rhymes_data);
-
-            // Скрываем окно загрузки
-            HideLoadingWindow(hWnd);
 
             // Перерисовываем поле текста
             InvalidateRect(buttons::widgets.hEditText, NULL, TRUE);
@@ -1226,6 +1226,19 @@ void SetWinStatus(string status)
 }
 
 void ShowLoadingWindow(HWND hWnd) {
+
+    // Отключаем все кнопки, кроме кнопок тулбара
+    EnableWindow(buttons::widgets.hVerbButton, FALSE);
+    EnableWindow(buttons::widgets.hAdjectiveButton, FALSE);
+    EnableWindow(buttons::widgets.hNounButton, FALSE);
+    EnableWindow(buttons::widgets.hAdverbialButton, FALSE);
+    EnableWindow(buttons::widgets.hParticipleButton, FALSE);
+    EnableWindow(buttons::widgets.hAdverbButton, FALSE);
+    EnableWindow(buttons::widgets.hSearchType, FALSE);
+    EnableWindow(buttons::widgets.hSearch, FALSE);
+    EnableWindow(buttons::widgets.hOpenFile, FALSE);
+    EnableWindow(buttons::widgets.hSaveFile, FALSE);
+
     // Получаем координаты окон "Найденные рифмы" и "Текст с найденными рифмами"
     RECT rectRhymes, rectText;
     GetWindowRect(buttons::widgets.hEditRhymes, &rectRhymes);
@@ -1238,7 +1251,7 @@ void ShowLoadingWindow(HWND hWnd) {
     // Получаем координаты окон "Найденные рифмы" и "Текст с найденными рифмами"
     if (buttons::widgets.hLoadingWnd == NULL) {
         buttons::widgets.hLoadingWnd = CreateWindowEx(
-            0,
+            WS_EX_TOPMOST,
             L"STATIC",
             L"Поиск рифм... Пожалуйста, подождите.",
             WS_CHILD | WS_VISIBLE | WS_BORDER,
@@ -1258,15 +1271,25 @@ void ShowLoadingWindow(HWND hWnd) {
         ShowWindow(buttons::widgets.hLoadingWnd, SW_SHOW);
     }
     UpdateWindow(buttons::widgets.hLoadingWnd);
-    // Блокируем основное окно
-    EnableWindow(hWnd, FALSE);
+
 }
+
 
 void HideLoadingWindow(HWND hWnd) {
     if (buttons::widgets.hLoadingWnd != NULL) {
         ShowWindow(buttons::widgets.hLoadingWnd, SW_HIDE);
-        // Разблокируем основное окно
-        EnableWindow(hWnd, TRUE);
+        // Включаем все кнопки
+        EnableWindow(buttons::widgets.hVerbButton, TRUE);
+        EnableWindow(buttons::widgets.hAdjectiveButton, TRUE);
+        EnableWindow(buttons::widgets.hNounButton, TRUE);
+        EnableWindow(buttons::widgets.hAdverbialButton, TRUE);
+        EnableWindow(buttons::widgets.hParticipleButton, TRUE);
+        EnableWindow(buttons::widgets.hAdverbButton, TRUE);
+        EnableWindow(buttons::widgets.hSearchType, TRUE);
+        EnableWindow(buttons::widgets.hSearch, TRUE);
+        EnableWindow(buttons::widgets.hOpenFile, TRUE);
+        EnableWindow(buttons::widgets.hSaveFile, TRUE);
+
         SetFocus(hWnd);
     }
 }
