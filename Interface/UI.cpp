@@ -274,7 +274,7 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data)
         wordInfo += L"\r\nЧасть речи: " + utf8_to_wstring(output.part_of_speech);
 
         // Количество найденных слов
-        wordInfo += L"\r\nКоличество найденных слов: " + to_wstring(output.amount);
+        wordInfo += L"\r\nКоличество встреч в тексте: " + to_wstring(output.amount);
 
         // Количество рифм
         wordInfo += L"\r\nКоличество рифмующихся слов: " + to_wstring(output.rhymed_amount);
