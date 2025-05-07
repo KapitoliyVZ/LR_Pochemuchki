@@ -162,7 +162,7 @@ void UpdateCheckboxStates()
     {
         SetWindowText(buttons::widgets.hStaticCheckBox3Info, L"Однородный режим поиска");
         SetRichEditBold(buttons::widgets.hStaticCheckBox3Info, true);
-        SetWindowText(buttons::widgets.hStaticCheckBox1Info, L"Выберите НЕ МЕНЕЕ ОДНОЙ части речи");
+        SetWindowText(buttons::widgets.hStaticCheckBox1Info, L"Введите слово");
         SetRichEditStrikeout(buttons::widgets.hStaticCheckBox2Info, true);
         partOfSpeechSelected = (selectedPartsOfSpeech == 0);
     }
@@ -365,10 +365,11 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         SetWindowTextW(buttons::widgets.hEditText, L"");
         break;
     }
+
     case WM_COMMAND:
     {
        
-        // Проверяем, если уведомление пришло от поля ввода слова для поиска по нему рифм
+        // Проверяем, если уведомление пришло от поля ввода слова
         if (HIWORD(wp) == EN_CHANGE && (HWND)lp == buttons::widgets.hEditInputWord)
         {
             // Получаем текст из поля редактирования
@@ -376,7 +377,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             GetWindowTextA(buttons::widgets.hEditInputWord, buffer, sizeof(buffer));
 
             // Если поле не пустое и поиск однородный, блокируем кнопки
-            if ( (strlen(buffer) > 0) && buttons::ButtonFlags[7] == true)
+            if ((strlen(buffer) > 0) && buttons::ButtonFlags[7] == true)
             {
                 EnableWindow(buttons::widgets.hVerbButton, FALSE);
                 EnableWindow(buttons::widgets.hAdverbButton, FALSE);
@@ -394,6 +395,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 EnableWindow(buttons::widgets.hParticipleButton, TRUE);
                 EnableWindow(buttons::widgets.hAdverbialButton, TRUE);
             }
+            UpdateCheckboxStates();
         }
 		// Нажата кнопка "Выход"
         if (LOWORD(wp) == buttons::buttonIDs.ButExit)
@@ -1039,6 +1041,7 @@ void MainWndAddWidget(HWND hWnd)
         marginY + 61, buttonWidth * 3, 30, hWnd, true);
     buttons::widgets.hEditInputWord = CreateRichEdit(L"",marginX,
         marginY + 7 * (buttonHeight + marginY) + 30 + buttonHeight + 32, buttonWidth, 60, hWnd);
+    SendMessage(buttons::widgets.hEditInputWord, EM_SETEVENTMASK, 0, ENM_CHANGE);
 
     // Верхняя граница для полей редактирования (вплотную с hOutputRhymes и hOutputText)
     int editTopMargin = marginY + buttonHeight + marginY + buttonHeight + 1; 
@@ -1050,7 +1053,7 @@ void MainWndAddWidget(HWND hWnd)
         (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2 - 1, editHeight-50, hWnd, true);
     buttons::widgets.hEditText = CreateRichEdit(L"text",marginX + buttonWidth + marginX + (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, editTopMargin + 50,
         (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, editHeight-50, hWnd, true);
-
+    
 
     
     buttons::widgets.hStaticCheckBox1Info = CreateRichEdit(L"Выберите НЕ МЕНЕЕ ДВУХ частей речи",
