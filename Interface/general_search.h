@@ -148,9 +148,31 @@ int countMaxConsecutiveMatches(const std::string& s1, const std::string& s2) {
 	return maxCount;
 }
 
-// Функция для проверки рифмы (сравнение окончаний двух слов)
-bool areWordsRhymed(const std::string& word_1, const std::string& word_2)
-{
+// Функция для подсчета слогов в слове (по количеству гласных)
+int countSyllables(const std::string& word) {
+	// Массив гласных букв
+	const std::string vowels = "аеёиоуыэюяАЕЁИОУЫЭЮЯ";
+	int syllables = 0;
+
+	// Перебираем каждый символ в слове и проверяем, является ли он гласным
+	for (char c : word) {
+		if (vowels.find(c) != std::string::npos) {
+			syllables++;
+		}
+	}
+	return syllables;
+}
+
+bool areWordsRhymed(const std::string& word_1, const std::string& word_2) {
+	// Получаем количество слогов
+	string word_1_ansi = utf8_to_ansi(word_1);
+	string word_2_ansi = utf8_to_ansi(word_2);
+	int syllables_1 = countSyllables(word_1_ansi);
+	int syllables_2 = countSyllables(word_2_ansi);
+
+	// Если количество слогов не совпадает, то слова не рифмуются
+	if (syllables_1 != syllables_2) return false;
+
 	// Функция для подсчета максимального количества подряд совпадающих символов
 	auto countMaxConsecutiveMatches = [](const std::vector<std::string>& s1, const std::vector<std::string>& s2) {
 		int maxCount = 0;
@@ -174,22 +196,24 @@ bool areWordsRhymed(const std::string& word_1, const std::string& word_2)
 	int len_1 = letters_1.size();
 	int len_2 = letters_2.size();
 
-	if (len_1 > 4 && len_2 > 4)
-	{
+	if (len_1 > 4 && len_2 > 4) {
 		int diff_count = 0;
 
 		// Сравниваем последние 4 символа по позициям
-		for (int i = 0; i < 4; ++i)
-		{
+		for (int i = 0; i < 4; ++i) {
 			std::string char1 = letters_1[len_1 - 4 + i];
 			std::string char2 = letters_2[len_2 - 4 + i];
 
-			if (char1 != char2)
-			{
+			if (char1 != char2) {
 				diff_count++;
 				if (diff_count > 2) return false;
 			}
 		}
+
+		// Проверка на последние 2 символа
+		std::string suffix1_last2 = letters_1[len_1 - 2] + letters_1[len_1 - 1];
+		std::string suffix2_last2 = letters_2[len_2 - 2] + letters_2[len_2 - 1];
+		if (suffix1_last2 != suffix2_last2) return false;
 
 		// Дополнительная проверка: есть ли хотя бы 2 подряд совпадающих символа
 		std::vector<std::string> suffix1(letters_1.end() - 4, letters_1.end());
@@ -198,8 +222,7 @@ bool areWordsRhymed(const std::string& word_1, const std::string& word_2)
 
 		return maxConsecutive >= 2;
 	}
-	else
-	{
+	else {
 		// Берём последние 2 символа
 		if (len_1 < 2 || len_2 < 2) return false; // безопасности ради
 
@@ -209,6 +232,8 @@ bool areWordsRhymed(const std::string& word_1, const std::string& word_2)
 		return suffix1 == suffix2;
 	}
 }
+
+
 
 // функция проверки наличия одинаковых рифмованных причастий
 bool existenceRhymedParticiples(WordData& candidate, const string& word)
@@ -233,22 +258,22 @@ std::string get_output_part_of_speech(string part_of_speech)
 	// основная проверка части речи
 
 	if (part_of_speech == "V")
-		return "глагол";
+		return ansi_to_utf8("глагол");
 
 	if (part_of_speech == "ADV")
-		return "наречие";
+		return ansi_to_utf8("наречие");
 
 	if (part_of_speech == "A")
-		return "прилагательное";
+		return ansi_to_utf8("прилагательное");
 
 	if (part_of_speech == "прич")
-		return "причастие";
+		return ansi_to_utf8("причастие");
 
 	if (part_of_speech == "деепр")
-		return "деепричастие";
+		return ansi_to_utf8("деепричастие");
 
 	if (part_of_speech == "S")
-		return "существительное";
+		return ansi_to_utf8("существительное");
 
 	
 };
@@ -574,7 +599,7 @@ vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bits
 					}
 
 					candidate.part_of_speech = get_output_part_of_speech(parts_of_speech[i]);
-					candidate.amount = 1; // Поскольку мы уже проверили, что слово уникально
+					//candidate.amount = 1; // Поскольку мы уже проверили, что слово уникально
 					candidate.rhymed_amount = candidate.rhymed_words.size();
 					data.push_back(candidate);
 					candidate.rhymed_words.clear();
@@ -613,7 +638,7 @@ vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bits
 				}
 
 				candidate.part_of_speech = get_output_part_of_speech(parts_of_speech[i]);
-				candidate.amount = 1; // Поскольку мы уже проверили, что слово уникально
+				//candidate.amount = 1; // Поскольку мы уже проверили, что слово уникально
 				candidate.rhymed_amount = candidate.rhymed_words.size();
 				data.push_back(candidate);
 				candidate.rhymed_words.clear();
@@ -655,7 +680,7 @@ vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bits
 					}
 
 					candidate.part_of_speech = get_output_part_of_speech(parts_of_speech[i]);
-					candidate.amount = 1; // Поскольку мы уже проверили, что слово уникально
+					//candidate.amount = 1; // Поскольку мы уже проверили, что слово уникально
 					candidate.rhymed_amount = candidate.rhymed_words.size();
 					data.push_back(candidate);
 					candidate.rhymed_words.clear();
@@ -698,7 +723,7 @@ vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bits
 				}
 
 				candidate.part_of_speech = get_output_part_of_speech(parts_of_speech[i]);
-				candidate.amount = 1; // Поскольку мы уже проверили, что слово уникально
+				//candidate.amount = 1; // Поскольку мы уже проверили, что слово уникально
 				candidate.rhymed_amount = candidate.rhymed_words.size();
 				data.push_back(candidate);
 				candidate.rhymed_words.clear();
@@ -709,6 +734,7 @@ vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bits
 
 	return data;
 }
+
 
 
 

@@ -109,7 +109,7 @@ void write_outputFiles(vector<WordData> rhymes_data)
     for (WordData output : rhymes_data)
     {
         string wordInfo = "Слово: " + output.word;                                      // само слово
-        string part_of_speech = "\nЧасть речи: " + ansi_to_utf8(output.part_of_speech); // часть речи слова
+        string part_of_speech = "\nЧасть речи: " + output.part_of_speech; // часть речи слова
         string wordAmount = "\nКоличество найденных слов: " + to_string(output.amount); // Количество найденных слов
         string rhymesAmount = "\nКоличество рифм: " + to_string(output.rhymed_amount);  // Количество рифм
         string sentenceAmount = "\nНайдено в предложениях: ";                           // Кол-во предложений с упоминанием
