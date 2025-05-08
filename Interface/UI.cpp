@@ -180,7 +180,7 @@ void UpdateCheckboxStates()
         SetRichEditBold(buttons::widgets.hStaticCheckBox3Info, true);
         SetWindowText(buttons::widgets.hStaticCheckBox1Info, L"Выберите НЕ МЕНЕЕ ОДНОЙ ч.р.");
         SetRichEditStrikeout(buttons::widgets.hStaticCheckBox2Info, false);
-        partOfSpeechSelected = (selectedPartsOfSpeech > 1);
+        partOfSpeechSelected = (selectedPartsOfSpeech > 0);
     }
     else if(!isHomogeneousMode && strlen(buffer) == 0)
     {
@@ -957,7 +957,7 @@ void MainWndAddMenus(HWND hWnd)
     AppendMenu(RootMenu, MF_STRING, buttons::buttonIDs.OnHelp, L"Справка"); // Пункт справки
 
     // Создание подменю Файл
-    AppendMenu(SubMenu, MF_STRING, buttons::buttonIDs.OnInfoClicked, L"Инфо");
+
     AppendMenu(SubMenu, MF_SEPARATOR, NULL, NULL);
     AppendMenu(SubMenu, MF_STRING, buttons::buttonIDs.OnExitSoftware, L"Завершить работу");
 
