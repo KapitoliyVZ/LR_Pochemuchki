@@ -758,13 +758,22 @@ void deal_with_words(bitset<8>& button_flags, vector<vector<string>>& numbered_s
 
 		for (string& word : comparing_word_part_of_speech)
 		{
-			if (!word.empty())
+			if (!word.empty() && button_flags.test(7) == 1)
 			{
 				for (int i = 0; i < 6; i++)
 				{
 					if (!comparing_word_part_of_speech[i].empty())
 						button_flags.set(i);
 				}
+			}
+			else if (!word.empty() && button_flags.test(7) == 0)
+			{
+				for (int i = 0; i < 6; i++)
+				{
+					if (!comparing_word_part_of_speech[i].empty())
+						button_flags.set(i, 0);
+				}
+				
 			}
 		}
 	}
