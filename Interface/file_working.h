@@ -104,8 +104,6 @@ void write_outputFiles(vector<vector<string>> sentences_numbered)
 // Функция для записи рифм в файл (file_output_rhymes)
 void write_outputFiles(vector<WordData> rhymes_data)
 {
-    file_output_rhymes << "тут информация о всех рифмах\n\n";
-
     for (WordData output : rhymes_data)
     {
         string wordInfo = "Слово: " + output.word;                                      // само слово
