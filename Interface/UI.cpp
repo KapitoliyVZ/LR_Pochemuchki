@@ -62,7 +62,7 @@ void UpdateButtonStatesAndColors()
 {
     // Обновляем состояние кнопок в зависимости от флагов
     bool isHomogeneousMode = buttons::ButtonFlags[7]; // Флаг однородного режима
-    bool hasInput = GetWindowTextLengthA(buttons::widgets.hEditInputWord) > 0;
+    bool hasInput = GetWindowTextLengthW(buttons::widgets.hEditInputWord) > 0;
 
     // Обновляем доступность кнопок
     EnableWindow(buttons::widgets.hVerbButton, !isHomogeneousMode || !hasInput);
@@ -170,7 +170,7 @@ void UpdateCheckboxStates()
     {
         SetWindowText(buttons::widgets.hStaticCheckBox3Info, L"Однородный режим поиска");
         SetRichEditBold(buttons::widgets.hStaticCheckBox3Info, true);
-        SetWindowText(buttons::widgets.hStaticCheckBox1Info, L"Выберите НЕ МЕНЕЕ ОДНОЙ части речи");
+        SetWindowText(buttons::widgets.hStaticCheckBox1Info, L"Выберите НЕ МЕНЕЕ ОДНОЙ ч.р.");
         SetRichEditStrikeout(buttons::widgets.hStaticCheckBox2Info, false);
         partOfSpeechSelected = (selectedPartsOfSpeech == 1);
     }
@@ -178,7 +178,7 @@ void UpdateCheckboxStates()
     {
         SetWindowText(buttons::widgets.hStaticCheckBox3Info, L"Неоднородный режим поиска");
         SetRichEditBold(buttons::widgets.hStaticCheckBox3Info, true);
-        SetWindowText(buttons::widgets.hStaticCheckBox1Info, L"Выберите НЕ МЕНЕЕ ОДНОЙ части речи");
+        SetWindowText(buttons::widgets.hStaticCheckBox1Info, L"Выберите НЕ МЕНЕЕ ОДНОЙ ч.р.");
         SetRichEditStrikeout(buttons::widgets.hStaticCheckBox2Info, false);
         partOfSpeechSelected = (selectedPartsOfSpeech > 1);
     }
@@ -186,7 +186,7 @@ void UpdateCheckboxStates()
     {
         SetWindowText(buttons::widgets.hStaticCheckBox3Info, L"Неоднородный режим поиска");
         SetRichEditBold(buttons::widgets.hStaticCheckBox3Info, true);
-        SetWindowText(buttons::widgets.hStaticCheckBox1Info, L"Выберите НЕ МЕНЕЕ ДВУХ частей речи");
+        SetWindowText(buttons::widgets.hStaticCheckBox1Info, L"Выберите НЕ МЕНЕЕ ДВУХ ч.р.");
         SetRichEditStrikeout(buttons::widgets.hStaticCheckBox2Info, false);
         partOfSpeechSelected = (selectedPartsOfSpeech > 1);
     }
@@ -366,29 +366,39 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         // Проверяем, если уведомление пришло от поля ввода слова
         if (HIWORD(wp) == EN_CHANGE && (HWND)lp == buttons::widgets.hEditInputWord)
         {
-            // Получаем текст из поля редактирования
-            char buffer[256] = { 0 };
-            GetWindowTextA(buttons::widgets.hEditInputWord, buffer, sizeof(buffer));
+            //// Получаем текст из поля редактирования
+            //char buffer[256] = { 0 };
+            //GetWindowTextA(buttons::widgets.hEditInputWord, buffer, sizeof(buffer));
 
-            // Если поле не пустое и поиск однородный, блокируем кнопки
-            if ((strlen(buffer) > 0) && buttons::ButtonFlags[7] == true)
+            //// Если поле не пустое и поиск однородный, блокируем кнопки
+            //if ((strlen(buffer) > 0) && buttons::ButtonFlags[7] == true)
+            //{
+            //    EnableWindow(buttons::widgets.hVerbButton, FALSE);
+            //    EnableWindow(buttons::widgets.hAdverbButton, FALSE);
+            //    EnableWindow(buttons::widgets.hAdjectiveButton, FALSE);
+            //    EnableWindow(buttons::widgets.hNounButton, FALSE);
+            //    EnableWindow(buttons::widgets.hParticipleButton, FALSE);
+            //    EnableWindow(buttons::widgets.hAdverbialButton, FALSE);
+            //}
+            //else // Если поле пустое, разблокируем кнопки
+            //{
+            //    EnableWindow(buttons::widgets.hVerbButton, TRUE);
+            //    EnableWindow(buttons::widgets.hAdverbButton, TRUE);
+            //    EnableWindow(buttons::widgets.hAdjectiveButton, TRUE);
+            //    EnableWindow(buttons::widgets.hNounButton, TRUE);
+            //    EnableWindow(buttons::widgets.hParticipleButton, TRUE);
+            //    EnableWindow(buttons::widgets.hAdverbialButton, TRUE);
+            //}
+            if (buttons::ButtonFlags.test(7) == true)
             {
-                EnableWindow(buttons::widgets.hVerbButton, FALSE);
-                EnableWindow(buttons::widgets.hAdverbButton, FALSE);
-                EnableWindow(buttons::widgets.hAdjectiveButton, FALSE);
-                EnableWindow(buttons::widgets.hNounButton, FALSE);
-                EnableWindow(buttons::widgets.hParticipleButton, FALSE);
-                EnableWindow(buttons::widgets.hAdverbialButton, FALSE);
+                buttons::ButtonFlags.reset(0);
+                buttons::ButtonFlags.reset(1);
+                buttons::ButtonFlags.reset(2);
+                buttons::ButtonFlags.reset(3);
+                buttons::ButtonFlags.reset(4);
+                buttons::ButtonFlags.reset(5);
             }
-            else // Если поле пустое, разблокируем кнопки
-            {
-                EnableWindow(buttons::widgets.hVerbButton, TRUE);
-                EnableWindow(buttons::widgets.hAdverbButton, TRUE);
-                EnableWindow(buttons::widgets.hAdjectiveButton, TRUE);
-                EnableWindow(buttons::widgets.hNounButton, TRUE);
-                EnableWindow(buttons::widgets.hParticipleButton, TRUE);
-                EnableWindow(buttons::widgets.hAdverbialButton, TRUE);
-            }
+            UpdateButtonStatesAndColors();
             UpdateCheckboxStates();
         }
 		// Нажата кнопка "Выход"
@@ -404,6 +414,16 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         else if (LOWORD(wp) == buttons::buttonIDs.ButSearchType)
         {
             buttons::ButtonFlags.flip(7);
+            bool hasInput = GetWindowTextLengthW(buttons::widgets.hEditInputWord) > 0;
+            if (buttons::ButtonFlags.test(7) == true and hasInput == true)
+            {
+                buttons::ButtonFlags.reset(0);
+                buttons::ButtonFlags.reset(1);
+                buttons::ButtonFlags.reset(2);
+                buttons::ButtonFlags.reset(3);
+                buttons::ButtonFlags.reset(4);
+                buttons::ButtonFlags.reset(5);
+            }
             // Перерисовываем кнопку
             UpdateButtonStatesAndColors();
             UpdateCheckboxStates();
@@ -562,12 +582,12 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             string outputFileName_numbered; // имя выходного файла-текста
             string outputFileName_rhymes; // имя выходного файла-рифм
             outputFiles_working(filename_str, outputFileName_numbered, outputFileName_rhymes, sentences, rhymes_data);
-
-            wstring wtext = utf8_to_wstring(outputFileName_numbered);
-            wstring wrhymes = utf8_to_wstring(outputFileName_rhymes);
+            wstring wtext, wrhymes;
+            wtext += L"Файл с пронумерованным текстом: " + utf8_to_wstring(outputFileName_numbered);
+            wrhymes += L"Файл с найденными рифмами: " + utf8_to_wstring(outputFileName_rhymes);
             // Устанавливаем текст в поле "Выбранный файл"
-            SetWindowTextA(buttons::widgets.hPathSaveFileData, outputFileName_numbered.c_str());
-            SetWindowTextA(buttons::widgets.hPathSaveFileRhymes, outputFileName_rhymes.c_str());
+            SetWindowTextW(buttons::widgets.hPathSaveFileData, wtext.c_str());
+            SetWindowTextW(buttons::widgets.hPathSaveFileRhymes, wrhymes.c_str());
             UpdateWindow(buttons::widgets.hPathSaveFileData);
             UpdateWindow(buttons::widgets.hPathSaveFileRhymes);
             EnableWindow(buttons::widgets.hSaveFile, FALSE);  // Блокировка кнопки
@@ -984,9 +1004,9 @@ void MainWndAddWidget(HWND hWnd)
     // Статические элементы
     buttons::widgets.hOutputStatusText = CreateRichEdit(L"Открыт файл: ", 
         10*marginX + buttonWidth, marginY-10, buttonWidth-80, 30, hWnd, true);
-    buttons::widgets.hPathSaveFileText = CreateRichEdit(L"Файлы сохранения: ",
+    buttons::widgets.hPathSaveFileText = CreateRichEdit(L"Сохранения: ",
         10 * marginX + buttonWidth, marginY+30, buttonWidth - 80, 30, hWnd, true);
-    buttons::widgets.hInputWord = CreateRichEdit(L"Введите слово для поиска рифм", 
+    buttons::widgets.hInputWord = CreateRichEdit(L"Слово для поиска рифм", 
         marginX, marginY + 7 * (buttonHeight + marginY) + 20 + buttonHeight + 11, buttonWidth, 30, hWnd, true);
     buttons::widgets.hOutputRhymes = CreateRichEdit(L"Найденные рифмы", 
         marginX + buttonWidth + marginX, marginY + buttonHeight + marginY+50, 
@@ -1020,7 +1040,7 @@ void MainWndAddWidget(HWND hWnd)
     
 
     
-    buttons::widgets.hStaticCheckBox1Info = CreateRichEdit(L"Выберите НЕ МЕНЕЕ ДВУХ частей речи",
+    buttons::widgets.hStaticCheckBox1Info = CreateRichEdit(L"Выберите НЕ МЕНЕЕ ДВУХ ч.р.",
         marginX, screenHeight - 2 * (buttonHeight + marginY) - 143,
         buttonWidth, 30, hWnd, true); 
 
@@ -1082,7 +1102,7 @@ HWND CreateRichEdit(LPCWSTR text, int x, int y, int width, int height, HWND hPar
 
     // Если нужно сделать текст жирным
     if (text == L"Неоднородный режим поиска" or text == L"Найденные рифмы" or text == L"Текст с найденными рифмами"
-        or text == L"Открыт файл: " or text == L"Файлы сохранения: " or text == L"Введите слово для поиска рифм")
+        or text == L"Открыт файл: " or text == L"Сохранения: " or text == L"Слово для поиска рифм")
     {
         CHARFORMAT2 cf = { 0 };
         cf.cbSize = sizeof(cf);
@@ -1119,7 +1139,7 @@ HWND CreateStatic(const char* text, int x, int y, int width, int height, HWND hW
 	// Создаем статический текст с заданными параметрами
     HWND hStatic = 0;
 	// Устанавливаем стиль текста в зависимости от текста
-    if (text == "Открыт файл: " or text == "Файлы сохранения: " or text == "Выберите НЕ МЕНЕЕ ДВУХ частей речи" or text == "Выберите файл" or text == "Неоднородный режим поиска")
+    if (text == "Открыт файл: " or text == "Сохранения: " or text == "Выберите НЕ МЕНЕЕ ДВУХ ч.р." or text == "Выберите файл" or text == "Неоднородный режим поиска")
     {
         hStatic = CreateWindowA(
             "static", text, WS_VISIBLE | WS_CHILD | ES_LEFT,
