@@ -170,9 +170,9 @@ void UpdateCheckboxStates()
     {
         SetWindowText(buttons::widgets.hStaticCheckBox3Info, L"Однородный режим поиска");
         SetRichEditBold(buttons::widgets.hStaticCheckBox3Info, true);
-        SetWindowText(buttons::widgets.hStaticCheckBox1Info, L"Выберите ОДНУ ч.р.");
+        SetWindowText(buttons::widgets.hStaticCheckBox1Info, L"Выберите НЕ МЕНЕЕ ОДНОЙ ч.р.");
         SetRichEditStrikeout(buttons::widgets.hStaticCheckBox2Info, false);
-        partOfSpeechSelected = (selectedPartsOfSpeech == 1);
+        partOfSpeechSelected = (selectedPartsOfSpeech >= 1);
     }
     else if(!isHomogeneousMode && strlen(buffer) > 0)
     {
