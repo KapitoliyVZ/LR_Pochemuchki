@@ -347,13 +347,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         buttons::graphics.hBrush = CreateSolidBrush(RGB(255, 255, 255)); 
         SetClassLongPtr(hWnd, GCLP_HBRBACKGROUND, (LONG_PTR)buttons::graphics.hBrush);
 
-        // Загрузка изображения
-        buttons::graphics.hBitmap = (HBITMAP)LoadImageA(NULL, "Icon.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-        buttons::graphics.hBitmap2 = (HBITMAP)LoadImageA(NULL, "7Institute.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-        if (!buttons::graphics.hBitmap || !buttons::graphics.hBitmap2)
-        {
-            MessageBoxA(hWnd, "Не удалось загрузить изображение", "Ошибка", MB_OK | MB_ICONERROR);
-        }
+        
 
         // Создание кистей для кнопок
         buttons::graphics.hBrushRed = CreateSolidBrush(RGB(205, 92, 92));
@@ -634,34 +628,6 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hWnd, &ps);
 
-        BITMAP bitmap;
-        BITMAP bitmap2;
-        // Отображение первого изображения
-        if (buttons::graphics.hBitmap)
-        {
-            buttons::graphics.hdcMem = CreateCompatibleDC(hdc);
-            HBITMAP hOldBitmap = (HBITMAP)SelectObject(buttons::graphics.hdcMem, buttons::graphics.hBitmap);
-
-            GetObject(buttons::graphics.hBitmap, sizeof(BITMAP), &bitmap);
-            BitBlt(hdc, 20, 0, bitmap.bmWidth, bitmap.bmHeight, buttons::graphics.hdcMem, 0, 0, SRCCOPY);
-
-            SelectObject(buttons::graphics.hdcMem, hOldBitmap);
-            DeleteDC(buttons::graphics.hdcMem);
-        }
-
-        // Отображение второго изображения
-        if (buttons::graphics.hBitmap2)
-        {
-            buttons::graphics.hdcMem = CreateCompatibleDC(hdc);
-            HBITMAP hOldBitmap = (HBITMAP)SelectObject(buttons::graphics.hdcMem, buttons::graphics.hBitmap2);
-
-            GetObject(buttons::graphics.hBitmap2, sizeof(BITMAP), &bitmap2);
-            BitBlt(hdc, bitmap.bmWidth + 20, 0, bitmap2.bmWidth, bitmap2.bmHeight, buttons::graphics.hdcMem, 0, 0, SRCCOPY);
-
-            SelectObject(buttons::graphics.hdcMem, hOldBitmap);
-            DeleteDC(buttons::graphics.hdcMem);
-        }
-
         // Рисуем черную рамку вокруг статических полей
 
         HPEN hOldPen = (HPEN)SelectObject(hdc, buttons::graphics.hPenBlack);
@@ -723,8 +689,6 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         DeleteObject(buttons::graphics.hBrush);
         DeleteObject(buttons::graphics.hBrushNeutral);
         DeleteObject(buttons::graphics.hPenBlack);
-        DeleteObject(buttons::graphics.hBitmap);
-        DeleteObject(buttons::graphics.hBitmap2);
         DeleteObject(buttons::graphics.hdcMem);
         ExitSoftware();
         break;

@@ -78,8 +78,7 @@ namespace buttons
         HBRUSH hBrushNeutral = nullptr;
         HDC hdcMem = nullptr;
         HPEN hPenBlack = nullptr;
-        HBITMAP hBitmap = nullptr;
-        HBITMAP hBitmap2 = nullptr;
+
     };
 
     // Флаги состояния
