@@ -170,7 +170,7 @@ void UpdateCheckboxStates()
     {
         SetWindowText(buttons::widgets.hStaticCheckBox3Info, L"Однородный режим поиска");
         SetRichEditBold(buttons::widgets.hStaticCheckBox3Info, true);
-        SetWindowText(buttons::widgets.hStaticCheckBox1Info, L"Выберите НЕ МЕНЕЕ ОДНОЙ ч.р.");
+        SetWindowText(buttons::widgets.hStaticCheckBox1Info, L"Выберите ОДНУ ч.р.");
         SetRichEditStrikeout(buttons::widgets.hStaticCheckBox2Info, false);
         partOfSpeechSelected = (selectedPartsOfSpeech == 1);
     }
@@ -255,18 +255,21 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data)
     // Очищаем поле перед выводом новой информации
     SetWindowTextW(buttons::widgets.hEditRhymes, L"");
 
-    int counter = 0;
+    wstring parts_of_speech;
+
+    parts_of_speech += L"Поиск выполнялся по следующим частям речи: " + GetActivePartsOfSpeech(buttons::ButtonFlags) + L"\r\n";
+    parts_of_speech += L"Тип поиска: ";
+    parts_of_speech += buttons::ButtonFlags.test(7) ? L"Однородный" : L"Неоднородный";
+    SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)parts_of_speech.c_str());
+
     for (const WordData& output : rhymes_data) {
-        counter++;
+
 
         // Основная информация о слове
         wstring wordInfo;
-        if (counter == 1) {
-            wordInfo = L"Слово: ";
-        }
-        else {
+
             wordInfo = L"\r\n\r\nСлово: ";
-        }
+
 
         wordInfo += utf8_to_wstring(output.word);
 
@@ -283,7 +286,7 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data)
         SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)wordInfo.c_str());
 
         // Предложения, где встречается слово
-        std::wstring sentenceInfo = L"\r\nНайдено в предложениях: ";
+        wstring sentenceInfo = L"\r\nНайдено в предложениях: ";
         if (!output.sentence_counter.empty()) 
         {
             for (size_t i = 0; i < output.sentence_counter.size(); ++i) 
@@ -304,7 +307,7 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data)
             SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)L"\r\nРифмующиеся слова:");
             for (const auto& word : output.rhymed_words) 
             {
-                std::wstring rhyme = L"\r\n  • " + utf8_to_wstring(word);
+                wstring rhyme = L"\r\n  • " + utf8_to_wstring(word);
                 SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)rhyme.c_str());
             }
         }
@@ -313,6 +316,50 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data)
     // Прокручиваем в начало
     SendMessageW(buttons::widgets.hEditRhymes, EM_SETSEL, 0, 0);
     SendMessageW(buttons::widgets.hEditRhymes, EM_SCROLLCARET, 0, 0);
+}
+
+wstring GetActivePartsOfSpeech(const bitset<8>& ButtonFlags) 
+{
+    wstring result;
+    bool first = true;
+
+    // Проверяем каждый бит и добавляем соответствующую часть речи
+    if (ButtonFlags.test(0)) { // Глагол
+        if (!first) result += L", ";
+        result += L"Глагол";
+        first = false;
+    }
+    if (ButtonFlags.test(1)) { // Наречие
+        if (!first) result += L", ";
+        result += L"Наречие";
+        first = false;
+    }
+    if (ButtonFlags.test(2)) { // Прилагательное
+        if (!first) result += L", ";
+        result += L"Прилагательное";
+        first = false;
+    }
+    if (ButtonFlags.test(3)) { // Существительное
+        if (!first) result += L", ";
+        result += L"Существительное";
+        first = false;
+    }
+    if (ButtonFlags.test(4)) { // Причастие
+        if (!first) result += L", ";
+        result += L"Причастие";
+        first = false;
+    }
+    if (ButtonFlags.test(5)) { // Деепричастие
+        if (!first) result += L", ";
+        result += L"Деепричастие";
+        first = false;
+    }
+
+    if (result.empty()) {
+        result = L"Нет выбранных частей речи";
+    }
+
+    return result;
 }
 
 // Основной цикл программы
@@ -366,29 +413,6 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         // Проверяем, если уведомление пришло от поля ввода слова
         if (HIWORD(wp) == EN_CHANGE && (HWND)lp == buttons::widgets.hEditInputWord)
         {
-            //// Получаем текст из поля редактирования
-            //char buffer[256] = { 0 };
-            //GetWindowTextA(buttons::widgets.hEditInputWord, buffer, sizeof(buffer));
-
-            //// Если поле не пустое и поиск однородный, блокируем кнопки
-            //if ((strlen(buffer) > 0) && buttons::ButtonFlags[7] == true)
-            //{
-            //    EnableWindow(buttons::widgets.hVerbButton, FALSE);
-            //    EnableWindow(buttons::widgets.hAdverbButton, FALSE);
-            //    EnableWindow(buttons::widgets.hAdjectiveButton, FALSE);
-            //    EnableWindow(buttons::widgets.hNounButton, FALSE);
-            //    EnableWindow(buttons::widgets.hParticipleButton, FALSE);
-            //    EnableWindow(buttons::widgets.hAdverbialButton, FALSE);
-            //}
-            //else // Если поле пустое, разблокируем кнопки
-            //{
-            //    EnableWindow(buttons::widgets.hVerbButton, TRUE);
-            //    EnableWindow(buttons::widgets.hAdverbButton, TRUE);
-            //    EnableWindow(buttons::widgets.hAdjectiveButton, TRUE);
-            //    EnableWindow(buttons::widgets.hNounButton, TRUE);
-            //    EnableWindow(buttons::widgets.hParticipleButton, TRUE);
-            //    EnableWindow(buttons::widgets.hAdverbialButton, TRUE);
-            //}
             if (buttons::ButtonFlags.test(7) == true)
             {
                 buttons::ButtonFlags.reset(0);
@@ -565,6 +589,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             InvalidateRect(buttons::widgets.hEditText, NULL, TRUE);
             UpdateWindow(buttons::widgets.hEditText);
             UpdateWindow(buttons::widgets.hEditRhymes);
+            buttons::SaveButtonFlags = buttons::ButtonFlags;
             buttons::ButtonFlags.reset();
             UpdateButtonStatesAndColors();
             UpdateCheckboxStates();

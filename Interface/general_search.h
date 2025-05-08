@@ -233,8 +233,6 @@ bool areWordsRhymed(const std::string& word_1, const std::string& word_2) {
 	}
 }
 
-
-
 // функция проверки наличия одинаковых рифмованных причастий
 bool existenceRhymedParticiples(WordData& candidate, const string& word)
 {
@@ -734,9 +732,6 @@ vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bits
 
 	return data;
 }
-
-
-
 
 // основная функция работы с рифмами частей речи
 void deal_with_words(bitset<8>& button_flags, vector<vector<string>>& numbered_sentences, string word_to_compare, vector<WordData>& data)

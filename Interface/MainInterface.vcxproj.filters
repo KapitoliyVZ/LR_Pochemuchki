@@ -52,14 +52,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="7Institute.bmp">
-      <Filter>Файлы заголовков</Filter>
-    </Image>
-    <Image Include="Icon.bmp">
-      <Filter>Файлы заголовков</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="mystem.exe">
       <Filter>Файлы заголовков</Filter>
     </None>

@@ -144,10 +144,6 @@
     <ClInclude Include="UI_const.h" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="7Institute.bmp" />
-    <Image Include="Icon.bmp" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="mystem.exe" />
   </ItemGroup>
   <ItemGroup>

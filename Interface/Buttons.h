@@ -91,4 +91,5 @@ namespace buttons
 
     // Флаги для кнопок
     std::bitset<8> ButtonFlags = 0; 
+    std::bitset<8> SaveButtonFlags = 0;
 }

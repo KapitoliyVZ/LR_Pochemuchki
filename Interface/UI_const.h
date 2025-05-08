@@ -45,7 +45,7 @@ void MakeFrame(HWND hWnd, HDC hdc, HWND Edit);
 LPWSTR ConvertStringToLPWSTR(const std::string& str);
 void FreeLPWSTR(LPWSTR lpwstr);
 
-
+wstring GetActivePartsOfSpeech(const bitset<8>& ButtonFlags);
 bool IsRichEditStrikeout(HWND hRichEdit);
 HWND CreateEdit(int x, int y, int width, int height, HWND hWnd, bool readOnly = false);
 HWND CreateStatic(const char* text, int x, int y, int width, int height, HWND hWnd);

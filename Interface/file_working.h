@@ -104,13 +104,25 @@ void write_outputFiles(vector<vector<string>> sentences_numbered)
 // Функция для записи рифм в файл (file_output_rhymes)
 void write_outputFiles(vector<WordData> rhymes_data)
 {
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    wstring wparts_of_speech;
+    string parts_of_speech;
+
+    parts_of_speech += "Поиск выполнялся по следующим частям речи: ";
+    wparts_of_speech += GetActivePartsOfSpeech(buttons::SaveButtonFlags);
+    parts_of_speech += wstring_to_utf8(wparts_of_speech);
+    parts_of_speech += "\r\n";
+    parts_of_speech += "Тип поиска: ";
+    parts_of_speech += buttons::SaveButtonFlags.test(7) ? "Однородный" : "Неоднородный";
+	file_output_rhymes << parts_of_speech << "\n\n"; // Запись частей речи в файл
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     for (WordData output : rhymes_data)
     {
         string wordInfo = "Слово: " + output.word;                                      // само слово
         string part_of_speech = "\nЧасть речи: " + output.part_of_speech; // часть речи слова
-        string wordAmount = "\nКоличество найденных слов: " + to_string(output.amount); // Количество найденных слов
-        string rhymesAmount = "\nКоличество рифм: " + to_string(output.rhymed_amount);  // Количество рифм
-        string sentenceAmount = "\nНайдено в предложениях: ";                           // Кол-во предложений с упоминанием
+        string wordAmount = "\nКоличество встреч в тексте: " + to_string(output.amount); // Количество найденных слов
+        string rhymesAmount = "\nКоличество рифмующихся пар: " + to_string(output.rhymed_amount);  // Количество рифм
+        string sentenceAmount = "\nНайдено в следующих предложениях: ";                           // Кол-во предложений с упоминанием
 
         // вывод слова
         file_output_rhymes << wordInfo << part_of_speech << wordAmount << rhymesAmount;
@@ -124,15 +136,19 @@ void write_outputFiles(vector<WordData> rhymes_data)
                     sentenceAmount += ", ";
                 sentenceAmount += to_string(output.sentence_counter[i]);
             }
-        }
+		}
+		else
+			sentenceAmount += "не найдено";
 
         // вывод рифм
         if (!output.rhymed_words.empty())
         {
-            file_output_rhymes << "\nРифмы: ";
+            file_output_rhymes << "\nРифмующиеся пары: ";
             for (string &word : output.rhymed_words)
                 file_output_rhymes << "\n  - " << word;
         }
+		else
+			file_output_rhymes << "\nРифмующихся пар не найдено";
         file_output_rhymes << "\n\n";
     }
 
