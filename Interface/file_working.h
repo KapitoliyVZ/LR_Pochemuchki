@@ -42,7 +42,7 @@ bool check_inputFile_is_empty(string file_name)
 pair<bool, string> inputFile_working(const string &inputFilePath) // filePath - путь к файлу
 {
     if (inputFilePath.empty())
-        return {false, "Error!: FilePath is empty!"}; // Путь к файлу пустой
+        return {false, "Ошибка!: Пустой путь к файлу!"}; // Путь к файлу пустой
 
     string path = inputFilePath;
     // Удаление кавычек в начале и конце строки, если они есть
@@ -50,16 +50,16 @@ pair<bool, string> inputFile_working(const string &inputFilePath) // filePath - 
         path = path.substr(1, path.size() - 2);
 
     if (!check_txt_extension(path))
-        return {false, "Error!: Wrong extension!"}; // Неверное расширение
+        return {false, "Ошибка!: Неверное расширение!"}; // Неверное расширение
 
     // Открытие файла через глобальный ifstream file_input
     file_input.open(path, ios_base::in);
 
     if (!file_input.is_open())
-        return {false, "Error!: Fail in opening!"}; // Не удалось открыть файл
+        return {false, "Ошибка!: Не удалось открыть файл!"}; // Не удалось открыть файл
 
     if (check_inputFile_is_empty(path))
-        return {false, "Error!: File is empty!"}; // файл пустой
+        return {false, "Ошибка!: Файл пуст!"}; // файл пустой
 
     string text_in_string; // текст файла
 

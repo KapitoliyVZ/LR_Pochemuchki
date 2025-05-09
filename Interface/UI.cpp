@@ -280,7 +280,7 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data)
         wordInfo += L"\r\nКоличество встреч в тексте: " + to_wstring(output.amount);
 
         // Количество рифм
-        wordInfo += L"\r\nКоличество рифмующихся слов: " + to_wstring(output.rhymed_amount);
+        //wordInfo += L"\r\nКоличество рифмующихся слов: " + to_wstring(output.rhymed_amount);
 
         // Добавляем основную информацию
         SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)wordInfo.c_str());
@@ -310,6 +310,10 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data)
                 wstring rhyme = L"\r\n  • " + utf8_to_wstring(word);
                 SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)rhyme.c_str());
             }
+        }
+        else
+        {
+            SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)L"\r\nРифмующиеся слов нет");
         }
     }
 
@@ -594,8 +598,15 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             UpdateButtonStatesAndColors();
             UpdateCheckboxStates();
             // Разблокировка кнопки записи в файл
-            EnableWindow(buttons::widgets.hSaveFile, TRUE);  
-            UpdateWindow(buttons::widgets.hSaveFile);
+            if (!rhymes_data.empty())
+            {
+                EnableWindow(buttons::widgets.hSaveFile, TRUE);
+                UpdateWindow(buttons::widgets.hSaveFile);
+            }
+            else
+            {
+                MessageBoxA(hWnd, "Не найдено рифм, сохранение невозможно!", "Ошибка", MB_OK | MB_ICONERROR);
+            }
 
             EnableWindow(buttons::widgets.hSearch, FALSE);  // Блокировка кнопки поиск
             UpdateWindow(buttons::widgets.hSearch);
@@ -608,8 +619,8 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             string outputFileName_rhymes; // имя выходного файла-рифм
             outputFiles_working(filename_str, outputFileName_numbered, outputFileName_rhymes, sentences, rhymes_data);
             wstring wtext, wrhymes;
-            wtext += L"Файл с пронумерованным текстом: " + utf8_to_wstring(outputFileName_numbered);
-            wrhymes += L"Файл с найденными рифмами: " + utf8_to_wstring(outputFileName_rhymes);
+            wtext += L"Файл с пронумерованным текстом: " + utf8_to_wstring(ansi_to_utf8(outputFileName_numbered));
+            wrhymes += L"Файл с найденными рифмами: " + utf8_to_wstring(ansi_to_utf8(outputFileName_rhymes));
             // Устанавливаем текст в поле "Выбранный файл"
             SetWindowTextW(buttons::widgets.hPathSaveFileData, wtext.c_str());
             SetWindowTextW(buttons::widgets.hPathSaveFileRhymes, wrhymes.c_str());
