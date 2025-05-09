@@ -575,13 +575,23 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             {
                 MessageBoxA(hWnd, "Не найдено рифм", "Ошибка", MB_OK | MB_ICONERROR);
                 HideLoadingWindow(hWnd);
+                EnableWindow(buttons::widgets.hSaveFile, FALSE);
+                UpdateWindow(buttons::widgets.hSaveFile);
                 break;
             }
-            if (sentences.empty())
+            else if(sentences.empty())
             {
-				MessageBoxA(hWnd, "Не найдено предложений", "Ошибка", MB_OK | MB_ICONERROR);
-				break;
+                MessageBoxA(hWnd, "Не найдено предложений", "Ошибка", MB_OK | MB_ICONERROR);
+                EnableWindow(buttons::widgets.hSaveFile, FALSE);
+                UpdateWindow(buttons::widgets.hSaveFile);
+                break;
             }
+            else
+            {
+                EnableWindow(buttons::widgets.hSaveFile, TRUE);
+                UpdateWindow(buttons::widgets.hSaveFile);
+            }
+            
 
             // Вывод текста
             OutputTextInfo(sentences);
@@ -597,19 +607,8 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             buttons::ButtonFlags.reset();
             UpdateButtonStatesAndColors();
             UpdateCheckboxStates();
-            // Разблокировка кнопки записи в файл
-            if (!rhymes_data.empty())
-            {
-                EnableWindow(buttons::widgets.hSaveFile, TRUE);
-                UpdateWindow(buttons::widgets.hSaveFile);
-            }
-            else
-            {
-                MessageBoxA(hWnd, "Не найдено рифм, сохранение невозможно!", "Ошибка", MB_OK | MB_ICONERROR);
-            }
 
-            EnableWindow(buttons::widgets.hSearch, FALSE);  // Блокировка кнопки поиск
-            UpdateWindow(buttons::widgets.hSearch);
+
         }
 		// Нажата кнопка "Сохранить файл"
 		else if (LOWORD(wp) == buttons::buttonIDs.ButSaveFile)
@@ -1260,7 +1259,6 @@ void ShowLoadingWindow(HWND hWnd) {
     EnableWindow(buttons::widgets.hSearchType, FALSE);
     EnableWindow(buttons::widgets.hSearch, FALSE);
     EnableWindow(buttons::widgets.hOpenFile, FALSE);
-    EnableWindow(buttons::widgets.hSaveFile, FALSE);
 
     // Получаем координаты окон "Найденные рифмы" и "Текст с найденными рифмами"
     RECT rectRhymes, rectText;
@@ -1311,7 +1309,6 @@ void HideLoadingWindow(HWND hWnd) {
         EnableWindow(buttons::widgets.hSearchType, TRUE);
         EnableWindow(buttons::widgets.hSearch, TRUE);
         EnableWindow(buttons::widgets.hOpenFile, TRUE);
-        EnableWindow(buttons::widgets.hSaveFile, TRUE);
 
         SetFocus(hWnd);
     }
