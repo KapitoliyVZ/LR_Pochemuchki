@@ -8,7 +8,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>
-
+#include <cmath>
 
 // структура для хранения данных о найденном причастии
 struct WordData
@@ -171,7 +171,7 @@ bool areWordsRhymed(const std::string& word_1, const std::string& word_2) {
 	int syllables_2 = countSyllables(word_2_ansi);
 
 	// Если количество слогов не совпадает, то слова не рифмуются
-	if (syllables_1 != syllables_2) return false;
+	if (std::abs(syllables_1 - syllables_2) > 1 ) return false;
 
 	// Функция для подсчета максимального количества подряд совпадающих символов
 	auto countMaxConsecutiveMatches = [](const std::vector<std::string>& s1, const std::vector<std::string>& s2) {
