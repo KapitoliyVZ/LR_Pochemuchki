@@ -208,43 +208,86 @@ void UpdateCheckboxStates()
 }
 
 // Вывод текста в поле
-void OutputTextInfo(const vector<vector<string>>& sentences)
+void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordData>& rhymes_data)
 {
-    vector<vector<wstring>> Wsentences;
-
-    // Копирование
-    for (const vector<string>& sentence : sentences)
-    {
-        vector<wstring> wsentence;
-        for (const string& word : sentence)
-        {
-            wsentence.push_back(utf8_to_wstring(word)); // Используем лямбда-функцию для преобразования
-        }
-        Wsentences.push_back(wsentence);
+    // Создаем map для быстрого поиска части речи по слову
+    unordered_map<string_view, string_view> wordToPartOfSpeech;
+    for (const auto& wordData : rhymes_data) {
+        wordToPartOfSpeech[wordData.word] = wordData.part_of_speech;
     }
-    // Выводим текст в поле
-    for (vector<wstring>& sentence : Wsentences)
-    {
+
+    // Очищаем поле перед выводом
+    SetWindowTextW(buttons::widgets.hEditText, L"");
+
+    int startPos = 0;
+    for (const auto& sentence : sentences) {
+        COLORREF color = RGB(0, 0, 0);
+        // Устанавливаем цвет перед вставкой слова
+        CHARFORMAT2 cf = { 0 };
+        cf.cbSize = sizeof(CHARFORMAT2);
+        cf.dwMask = CFM_COLOR;
+        cf.crTextColor = color;
         bool firstWord = true;
-        for (wstring& word : sentence)
-        {
+        for (const string& word : sentence) {
+            // Устанавливаем произвольный цвет для текста
+            cf.crTextColor = RGB(0, 0, 0);
+            wstring wword = utf8_to_wstring(word);
 
-            wstring tmp_word = word;
-            static const set<wstring> punctuationMarks = { L".", L",", L"!", L"?", L":", L";", L"-", L"(", L")", L"\"", L"'" };
-
-            if (!firstWord && punctuationMarks.find(tmp_word) == punctuationMarks.end())
-            {
-                // Добавляем пробел перед словом (если это не пунктуация и не первое слово)
+            // Добавляем пробел если нужно
+            if (!firstWord) {
                 SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)L" ");
+                startPos++;
             }
+            // Выделяем слово цветом
+            auto it = wordToPartOfSpeech.find(word);
+            if (it != wordToPartOfSpeech.end()) {
+                // Выводим значение it->second в консоль
+                SetConsoleOutputCP(CP_UTF8);
+                std::cout << "Part of speech for word '" << word << "': " << it->second << std::endl;
+                // Определяем цвет для части речи
+                if (it->second == ansi_to_utf8("глагол")) {
+                    color = RGB(200, 0, 0); // Красный цвет для глаголов
+                }
+                else if (it->second == ansi_to_utf8("существительное")) {
+                    color = RGB(0, 0, 200); // Синий цвет для существительных
+                }
+                else if (it->second == ansi_to_utf8("прилагательное")) {
+                    color = RGB(0, 150, 0); // Зеленый цвет для прилагательных
+                }
+                else if (it->second == ansi_to_utf8("наречие")) {
+                    color = RGB(150, 0, 150); // Фиолетовый цвет для наречий
+                }
+                else if (it->second == ansi_to_utf8("причастие")) {
+                    color = RGB(0, 150, 150); // Бирюзовый цвет для причастий
+                }
+                else if (it->second == ansi_to_utf8("деепричастие")) {
+                    color = RGB(150, 150, 0); // Оливковый цвет для деепричастий
+                }
+                else {
+                    color = RGB(0, 0, 0); // Черный по умолчанию
+                }
+                // Устанавливаем произвольный цвет для текста
+                cf.crTextColor = color;
 
-            SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)tmp_word.c_str());
+                // Устанавливаем позицию для форматирования
+                SendMessageW(buttons::widgets.hEditText, EM_EXSETSEL, 0, (LPARAM)&startPos);
+                SendMessageW(buttons::widgets.hEditText, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
+            }
+            // Вставляем слово
+            SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)wword.c_str());
+
+            // Устанавливаем черный цвет для текста
+            cf.crTextColor = RGB(0, 0, 0);
+            SendMessageW(buttons::widgets.hEditText, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
+            // Обновляем позицию
+            startPos += wword.length();
 
             firstWord = false;
         }
-
-        // Перенос строки после предложения
         SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)L"\r\n");
+        cf.crTextColor = RGB(0, 0, 0);
+        SendMessageW(buttons::widgets.hEditText, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
+        startPos += 2; // Учитываем символы новой строки
     }
 }
 
@@ -594,7 +637,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             
 
             // Вывод текста
-            OutputTextInfo(sentences);
+            OutputTextInfo(sentences, rhymes_data);
             
             // Вывод рифм
             OutputRhymeInfo(rhymes_data);

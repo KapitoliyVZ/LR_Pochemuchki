@@ -55,7 +55,7 @@ void SetRichEditStrikeout(HWND hRichEdit, bool strikeout);
 void UpdateButtonStatesAndColors();
 void ShowLoadingWindow(HWND hWnd);
 void HideLoadingWindow(HWND hWnd);
-void OutputTextInfo(const vector<vector<string>>& sentences);
+void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordData>& rhymes_data);
 void OutputRhymeInfo(const vector<WordData>& rhymes_data);
 HWND CreateRichEdit(LPCWSTR text, int x, int y, int width, int height, HWND hParent, bool readonly = false);
 

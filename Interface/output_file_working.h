@@ -28,7 +28,7 @@ void searchWordInSentences(vector<WordData>& data, vector<vector<string>>& sente
                     sentence_number = stoi(sentence[0]);                  // Получаем номер предложения
                     wordData.sentence_counter.push_back(sentence_number); // Добавляем номер предложения
                     wordData.amount++;                                    // Увеличиваем количество упоминаний
-                    sentence[i] = "{" + sentence[i] + "}";                // Выделяем слово фигурными скобками
+                    //sentence[i] = "{" + sentence[i] + "}";                // Выделяем слово фигурными скобками
                 }
             }
         }
