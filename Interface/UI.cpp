@@ -989,7 +989,7 @@ void MainWndAddMenus(HWND hWnd)
     // Создание основного меню
     AppendMenu(RootMenu, MF_POPUP, (UINT_PTR)SubMenu, L"Файл");
 
-    AppendMenu(RootMenu, MF_STRING, buttons::buttonIDs.OnHelp, L"Справка"); // Пункт справки
+    //AppendMenu(RootMenu, MF_STRING, buttons::buttonIDs.OnHelp, L"Справка"); // Пункт справки
 
     // Создание подменю Файл
 
