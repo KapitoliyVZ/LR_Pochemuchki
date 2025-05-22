@@ -236,7 +236,7 @@ std::wstring ansi_to_wstring(const std::string& ansi_str)
 void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordData>& rhymes_data)
 {
     // Создаем map для быстрого поиска части речи по слову
-    unordered_map<string_view, string_view> wordToPartOfSpeech;
+    unordered_map<string, string> wordToPartOfSpeech;
     for (const auto& wordData : rhymes_data) {
         wordToPartOfSpeech[wordData.word] = wordData.part_of_speech;
     }
@@ -244,77 +244,50 @@ void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordDa
     // Очищаем поле перед выводом
     SetWindowTextW(buttons::widgets.hEditText, L"");
 
-    int startPos = 0;
-    for (const auto& sentence : sentences) 
+    int totalLength = 0;
+
+    for (const auto& sentence : sentences)
     {
-        COLORREF color = RGB(0, 0, 0);
-        // Устанавливаем цвет перед вставкой слова
-        CHARFORMAT2 cf = { 0 };
-        cf.cbSize = sizeof(CHARFORMAT2);
-        cf.dwMask = CFM_COLOR;
-        cf.crTextColor = color;
         bool firstWord = true;
-        for (const auto& word : sentence) 
+        for (const auto& word : sentence)
         {
-            // Устанавливаем произвольный цвет для текста
-            cf.crTextColor = RGB(0, 0, 0);
             wstring wword = ansi_to_wstring(word);
 
-            // Добавляем пробел если нужно
             if (!firstWord) {
                 SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)L" ");
-                startPos++;
+                totalLength += 1;
             }
-            // Выделяем слово цветом
+
+            COLORREF color = RGB(0, 0, 0);
             auto it = wordToPartOfSpeech.find(word);
             if (it != wordToPartOfSpeech.end()) {
-                // Выводим значение it->second в консоль
-                SetConsoleOutputCP(CP_UTF8);
-                std::cout << "Part of speech for word '" << word << "': " << it->second << std::endl;
-                // Определяем цвет для части речи
-                if (it->second == ansi_to_utf8("глагол")) {
-                    color = RGB(200, 0, 0); // Красный цвет для глаголов
-                }
-                else if (it->second == ansi_to_utf8("существительное")) {
-                    color = RGB(0, 0, 200); // Синий цвет для существительных
-                }
-                else if (it->second == ansi_to_utf8("прилагательное")) {
-                    color = RGB(0, 150, 0); // Зеленый цвет для прилагательных
-                }
-                else if (it->second == ansi_to_utf8("наречие")) {
-                    color = RGB(150, 0, 150); // Фиолетовый цвет для наречий
-                }
-                else if (it->second == ansi_to_utf8("причастие")) {
-                    color = RGB(0, 150, 150); // Бирюзовый цвет для причастий
-                }
-                else if (it->second == ansi_to_utf8("деепричастие")) {
-                    color = RGB(150, 150, 0); // Оливковый цвет для деепричастий
-                }
-                else {
-                    color = RGB(0, 0, 0); // Черный по умолчанию
-                }
-                // Устанавливаем произвольный цвет для текста
-                cf.crTextColor = color;
-
-                // Устанавливаем позицию для форматирования
-                SendMessageW(buttons::widgets.hEditText, EM_EXSETSEL, 0, (LPARAM)&startPos);
-                SendMessageW(buttons::widgets.hEditText, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
+                wstring part = ansi_to_wstring(it->second);
+                if (part == L"глагол") color = RGB(200, 0, 0);
+                else if (part == L"существительное") color = RGB(0, 0, 200);
+                else if (part == L"прилагательное") color = RGB(0, 150, 0);
+                else if (part == L"наречие") color = RGB(150, 0, 150);
+                else if (part == L"причастие") color = RGB(0, 150, 150);
+                else if (part == L"деепричастие") color = RGB(150, 150, 0);
             }
-            // Вставляем слово
+
+            CHARFORMAT2 cf = { sizeof(cf) };
+            cf.dwMask = CFM_COLOR;
+            cf.crTextColor = color;
+
+            // Текущая позиция курсора
+            CHARRANGE cr;
+            cr.cpMin = cr.cpMax = GetWindowTextLengthW(buttons::widgets.hEditText);
+            SendMessageW(buttons::widgets.hEditText, EM_EXSETSEL, 0, (LPARAM)&cr);
+            SendMessageW(buttons::widgets.hEditText, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
+
             SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)wword.c_str());
 
-            // Устанавливаем черный цвет для текста
-            cf.crTextColor = RGB(0, 0, 0);
-            SendMessageW(buttons::widgets.hEditText, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
-            // Обновляем позицию
-            startPos += wword.length();
-
+            totalLength += wword.length();
             firstWord = false;
         }
+
         SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)L"\r\n");
-        cf.crTextColor = RGB(0, 0, 0);
-        SendMessageW(buttons::widgets.hEditText, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
-        startPos += 2; // Учитываем символы новой строки
+        totalLength += 2;
     }
 }
 
@@ -341,10 +314,10 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data)
             wordInfo = L"\r\n\r\nСлово: ";
 
 
-        wordInfo += utf8_to_wstring(output.word);
+        wordInfo += ansi_to_wstring(output.word);
 
         // Часть речи
-        wordInfo += L"\r\nЧасть речи: " + utf8_to_wstring(output.part_of_speech);
+        wordInfo += L"\r\nЧасть речи: " + ansi_to_wstring(output.part_of_speech);
 
         // Количество найденных слов
         wordInfo += L"\r\nКоличество встреч в тексте: " + to_wstring(output.amount);
@@ -377,7 +350,7 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data)
             SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)L"\r\nРифмующиеся слова:");
             for (const auto& word : output.rhymed_words) 
             {
-                wstring rhyme = L"\r\n  • " + utf8_to_wstring(word);
+                wstring rhyme = L"\r\n  • " + ansi_to_wstring(word);
                 SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)rhyme.c_str());
             }
         }
