@@ -181,29 +181,6 @@ bool numerals_check(string wordSt) {
     return res;
 }
 
-// Загружает морфемные признаки из файла
-vector<string> load_morphemes(string filename)
-{
-    string file_path = get_filepath(filename);
-
-    ifstream file;
-    file.open(file_path, ios_base::in);
-
-    if (!file.is_open()) {
-        throw std::runtime_error("Не удалось открыть файл " + filename);
-    }
-
-    vector<string> morphemes;
-    string morpheme;
-
-    while (file >> morpheme) {
-        morphemes.push_back(morpheme);
-    }
-
-    file.close();
-    return morphemes;
-}
-
 // Проверяет, оканчивается ли слово на один из суффиксов/окончаний
 bool ends_with(const string& word, const vector<string>& suffixes) {
     for (const string& suffix : suffixes) {
@@ -452,47 +429,6 @@ std::string capitalizeAllLetters(const std::string& input) {
     return result;
 }
 
-/*
-std::string cleanRussianOnly(const std::string& utf8_input) {
-    std::wstring wide = utf8_to_wstring(utf8_input);
-    std::wstring cleaned = keepOnlyRussianLetters(wide);
-    return wstring_to_utf8(cleaned);
-}
-
-// Преобразует первую букву строки в нижний регистр
-std::string lowFirstLetter(const std::string& input) {
-    std::unordered_map<char, char> to_lower = {
-        {'А','а'}, {'Б','б'}, {'В','в'}, {'Г','г'}, {'Д','д'}, {'Е','е'}, {'Ё','ё'},
-        {'Ж','ж'}, {'З','з'}, {'И','и'}, {'Й','й'}, {'К','к'}, {'Л','л'}, {'М','м'},
-        {'Н','н'}, {'О','о'}, {'П','п'}, {'Р','р'}, {'С','с'}, {'Т','т'}, {'У','у'},
-        {'Ф','ф'}, {'Х','х'}, {'Ц','ц'}, {'Ч','ч'}, {'Ш','ш'}, {'Щ','щ'}, {'Ъ','ъ'},
-        {'Ы','ы'}, {'Ь','ь'}, {'Э','э'}, {'Ю','ю'}, {'Я','я'}
-    };
-
-    std::string ansi = utf8_to_ansi(input);
-    if (!ansi.empty() && to_lower.count(ansi[0])) {
-        ansi[0] = to_lower[ansi[0]];
-    }
-    return ansi_to_utf8(ansi);
-}
-
-// Преобразует все символы строки в верхний регистр
-std::string capitalizeAllLetters(const std::string& input) {
-    std::unordered_map<char, char> to_upper = {
-        {'а','А'}, {'б','Б'}, {'в','В'}, {'г','Г'}, {'д','Д'}, {'е','Е'}, {'ё','Ё'},
-        {'ж','Ж'}, {'з','З'}, {'и','И'}, {'й','Й'}, {'к','К'}, {'л','Л'}, {'м','М'},
-        {'н','Н'}, {'о','О'}, {'п','П'}, {'р','Р'}, {'с','С'}, {'т','Т'}, {'у','У'},
-        {'ф','Ф'}, {'х','Х'}, {'ц','Ц'}, {'ч','Ч'}, {'ш','Ш'}, {'щ','Щ'}, {'ъ','Ъ'},
-        {'ы','Ы'}, {'ь','Ь'}, {'э','Э'}, {'ю','Ю'}, {'я','Я'}
-    };
-
-    std::string ansi = utf8_to_ansi(input);
-    for (auto& ch : ansi) {
-        if (to_upper.count(ch)) ch = to_upper[ch];
-    }
-    return ansi_to_utf8(ansi);
-}
-*/
 // Удаляет знаки пунктуации из слова
 std::string removePunctuation(const std::string& word) {
     // Преобразуем UTF-8 → UTF-16
@@ -530,27 +466,9 @@ std::string read_file(const std::string& path) {
 std::unordered_map<std::string, std::string> cache;
 
 // Получение части речи слова через mystem
-std::string getPartOfSpeech(const std::string& word) {
+std::string getPartOfSpeech(const std::string& word,unordered_map<string, vector<string>>& morphemeRules) {
 
     //string word_ANSI = utf8_to_ansi(word); // Перекодируем результат в ANSI
-
-    // инициализация векторов окончаний и суффиксов всех 6 частей речи
-    // Загрузка морфемных правил из файлов
-    unordered_map<string, vector<string>> morphemeRules = {
-        {"nouns_endings", load_morphemes("nouns_endings.txt")},
-        {"nouns_suffixes", load_morphemes("nouns_suffixes.txt")},
-        {"adjectives_endings", load_morphemes("adjectives_endings.txt")},
-        {"adjectives_suffixes", load_morphemes("adjectives_suffixes.txt")},
-        {"participles_endings", load_morphemes("participles_endings.txt")}, // Новое
-        {"participles_suffixes", load_morphemes("participles_suffixes.txt")}, // Новое
-        {"verbs_endings", load_morphemes("verbs_endings.txt")},
-        {"verbs_suffixes", load_morphemes("verbs_suffixes.txt")},
-        {"gerunds_endings", load_morphemes("gerunds_endings.txt")},
-        {"gerunds_suffixes", load_morphemes("gerunds_suffixes.txt")},
-        {"adverbs_endings", load_morphemes("adverbs_endings.txt")},
-        {"adverbs_suffixes", load_morphemes("adverbs_suffixes.txt")},
-        {"others_list", load_morphemes("others_list.txt")}
-    };
 
     // идентификация наречий, междометий и тд
     if (match_others(word, morphemeRules.at("others_list")))
@@ -600,19 +518,11 @@ std::string getPartOfSpeech(const std::string& word) {
     return "unknown";
 
 };
-/*// Приоритетная проверка некоторых частей речи
-if (firstParse.find("прич") != std::string::npos) cache[word] = "прич";
-else if (firstParse.find("деепр") != std::string::npos) cache[word] = "деепр";
-else if (firstParse.find("SPRO") != std::string::npos) cache[word] = "SPRO";
-else if (firstParse.find("ADV") != std::string::npos) cache[word] = "ADV";
-else if (firstParse.find("A=") != std::string::npos) cache[word] = "A";
-else {
-*/
 
 
 
 // Поиск слов по части речи в предложениях
-void findWordsByPartOfSpeech(std::vector<std::vector<std::string>>& sentences,bitset<8>& button_flags, const vector<string> parts_of_speech,vector<vector<string>>& words_text_collection, string& word_to_compare) {
+void findWordsByPartOfSpeech(std::vector<std::vector<std::string>>& sentences,bitset<8>& button_flags, const vector<string> parts_of_speech,vector<vector<string>>& words_text_collection, unordered_map<string, vector<string>>& morphemeRules, string& word_to_compare) {
 
     // переменная для проверки наличия пунктуации на месте части вектора векторов предложений
     string tmp_word;
@@ -629,10 +539,14 @@ void findWordsByPartOfSpeech(std::vector<std::vector<std::string>>& sentences,bi
             if (tmp_word.empty())
                 continue;
 
-            std::string partOfSpeech = getPartOfSpeech(word);
+            std::string partOfSpeech = getPartOfSpeech(word, morphemeRules);
 
             for (int i = 0; i < 6; i++)
             {
+                // выход из поиска нужного вектора векторов, если слово не одна из 6 речи, которые искались
+                if (partOfSpeech == "unknown" || partOfSpeech == "others")
+                    break;
+
                 if ((partOfSpeech == parts_of_speech[i]) && button_flags.test(i))
                 {
                     
@@ -651,11 +565,11 @@ void findWordsByPartOfSpeech(std::vector<std::vector<std::string>>& sentences,bi
 }
 
 // Возвращает слово, если его часть речи соответствует одной из категорий
-std::vector<std::string> get_comparing_word_part(std::string& comparing_word) {
+std::vector<std::string> get_comparing_word_part(std::string& comparing_word,unordered_map<string, vector<string>>& morphemeRules) {
     std::vector<std::string> part_of_speech(6, "");
     if (comparing_word == " ") return part_of_speech;
 
-    std::string part = getPartOfSpeech(comparing_word);
+    std::string part = getPartOfSpeech(comparing_word, morphemeRules);
 
     // Проверка всех целевых частей речи
     if (part == "V") part_of_speech[0] = comparing_word;
