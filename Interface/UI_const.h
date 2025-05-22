@@ -10,6 +10,7 @@
 #include "Buttons.h"
 #include <richedit.h>
 #include "general_search.h"
+#include <map>
 
 using namespace std;
 

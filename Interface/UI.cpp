@@ -65,6 +65,7 @@ void UpdateButtonStatesAndColors()
     bool hasInput = GetWindowTextLengthW(buttons::widgets.hEditInputWord) > 0;
 
     // Обновляем доступность кнопок
+	EnableWindow(buttons::widgets.hAllButton, !isHomogeneousMode || !hasInput);
     EnableWindow(buttons::widgets.hVerbButton, !isHomogeneousMode || !hasInput);
     EnableWindow(buttons::widgets.hAdverbButton, !isHomogeneousMode || !hasInput);
     EnableWindow(buttons::widgets.hAdjectiveButton, !isHomogeneousMode || !hasInput);
@@ -73,6 +74,7 @@ void UpdateButtonStatesAndColors()
     EnableWindow(buttons::widgets.hAdverbialButton, !isHomogeneousMode || !hasInput);
 
     // Перерисовываем кнопки для обновления их цветов
+	InvalidateRect(buttons::widgets.hAllButton, NULL, TRUE);
     InvalidateRect(buttons::widgets.hVerbButton, NULL, TRUE);
     InvalidateRect(buttons::widgets.hAdverbButton, NULL, TRUE);
     InvalidateRect(buttons::widgets.hAdjectiveButton, NULL, TRUE);
@@ -82,6 +84,7 @@ void UpdateButtonStatesAndColors()
     InvalidateRect(buttons::widgets.hSearchType, NULL, TRUE);
 
     // Обновляем окно для применения изменений
+	UpdateWindow(buttons::widgets.hAllButton);
     UpdateWindow(buttons::widgets.hVerbButton);
     UpdateWindow(buttons::widgets.hAdverbButton);
     UpdateWindow(buttons::widgets.hAdjectiveButton);
@@ -235,135 +238,152 @@ std::wstring ansi_to_wstring(const std::string& ansi_str)
 // Вывод текста в поле
 void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordData>& rhymes_data)
 {
-    // Создаем map для быстрого поиска части речи по слову
+    // Сопоставление слова и части речи
     unordered_map<string, string> wordToPartOfSpeech;
-    for (const auto& wordData : rhymes_data) {
+    for (const auto& wordData : rhymes_data)
         wordToPartOfSpeech[wordData.word] = wordData.part_of_speech;
-    }
 
     // Очищаем поле перед выводом
     SetWindowTextW(buttons::widgets.hEditText, L"");
-
-    int totalLength = 0;
 
     for (const auto& sentence : sentences)
     {
         bool firstWord = true;
         for (const auto& word : sentence)
         {
-            wstring wword = ansi_to_wstring(word);
-
+            // Вставляем пробел перед словом, если это не первое слово
             if (!firstWord) {
+                // Сброс цвета на чёрный для пробела
+                CHARFORMAT2 cf_def = { sizeof(cf_def) };
+                cf_def.dwMask = CFM_COLOR;
+                cf_def.crTextColor = RGB(0, 0, 0);
+                SendMessageW(buttons::widgets.hEditText, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf_def);
                 SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)L" ");
-                totalLength += 1;
             }
 
+            // Определяем цвет слова
             COLORREF color = RGB(0, 0, 0);
             auto it = wordToPartOfSpeech.find(word);
             if (it != wordToPartOfSpeech.end()) {
-                wstring part = ansi_to_wstring(it->second);
-                if (part == L"глагол") color = RGB(200, 0, 0);
-                else if (part == L"существительное") color = RGB(0, 0, 200);
-                else if (part == L"прилагательное") color = RGB(0, 150, 0);
-                else if (part == L"наречие") color = RGB(150, 0, 150);
-                else if (part == L"причастие") color = RGB(0, 150, 150);
-                else if (part == L"деепричастие") color = RGB(150, 150, 0);
+                const std::string& part = it->second;
+                if (part == "глагол") color = RGB(200, 0, 0);
+                else if (part == "существительное") color = RGB(0, 0, 200);
+                else if (part == "прилагательное") color = RGB(0, 150, 0);
+                else if (part == "наречие") color = RGB(150, 0, 150);
+                else if (part == "причастие") color = RGB(0, 150, 150);
+                else if (part == "деепричастие") color = RGB(150, 150, 0);
             }
 
+            // Устанавливаем цвет для слова
             CHARFORMAT2 cf = { sizeof(cf) };
             cf.dwMask = CFM_COLOR;
             cf.crTextColor = color;
-
-            // Текущая позиция курсора
-            CHARRANGE cr;
-            cr.cpMin = cr.cpMax = GetWindowTextLengthW(buttons::widgets.hEditText);
-            SendMessageW(buttons::widgets.hEditText, EM_EXSETSEL, 0, (LPARAM)&cr);
             SendMessageW(buttons::widgets.hEditText, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
 
+            // Вставляем слово
+            std::wstring wword = ansi_to_wstring(word);
             SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)wword.c_str());
 
-            totalLength += wword.length();
             firstWord = false;
         }
-
+        // После предложения — сброс цвета и вставка переноса строки
+        CHARFORMAT2 cf_def = { sizeof(cf_def) };
+        cf_def.dwMask = CFM_COLOR;
+        cf_def.crTextColor = RGB(0, 0, 0);
+        SendMessageW(buttons::widgets.hEditText, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf_def);
         SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)L"\r\n");
-        totalLength += 2;
     }
 }
 
-// Вывод рифм в поле
+
 void OutputRhymeInfo(const vector<WordData>& rhymes_data) 
 {
-    
-    // Очищаем поле перед выводом новой информации
-    SetWindowTextW(buttons::widgets.hEditRhymes, L"");
+    map<string, vector<WordData>> grouped;
 
-    wstring parts_of_speech;
-
-    parts_of_speech += L"Поиск выполнялся по следующим частям речи: " + GetActivePartsOfSpeech(buttons::ButtonFlags) + L"\r\n";
-    parts_of_speech += L"Тип поиска: ";
-    parts_of_speech += buttons::ButtonFlags.test(7) ? L"Однородный" : L"Неоднородный";
-    SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)parts_of_speech.c_str());
-
-    for (const WordData& output : rhymes_data) {
-
-
-        // Основная информация о слове
-        wstring wordInfo;
-
-            wordInfo = L"\r\n\r\nСлово: ";
-
-
-        wordInfo += ansi_to_wstring(output.word);
-
-        // Часть речи
-        wordInfo += L"\r\nЧасть речи: " + ansi_to_wstring(output.part_of_speech);
-
-        // Количество найденных слов
-        wordInfo += L"\r\nКоличество встреч в тексте: " + to_wstring(output.amount);
-
-        // Количество рифм
-        //wordInfo += L"\r\nКоличество рифмующихся слов: " + to_wstring(output.rhymed_amount);
-
-        // Добавляем основную информацию
-        SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)wordInfo.c_str());
-
-        // Предложения, где встречается слово
-        wstring sentenceInfo = L"\r\nНайдено в предложениях: ";
-        if (!output.sentence_counter.empty()) 
-        {
-            for (size_t i = 0; i < output.sentence_counter.size(); ++i) 
-            {
-                if (i != 0) sentenceInfo += L", ";
-                sentenceInfo += to_wstring(output.sentence_counter[i]);
-            }
-        }
-        else
-        {
-            sentenceInfo += L"не найдено";
-        }
-        SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)sentenceInfo.c_str());
-
-        // Рифмы
-        if (!output.rhymed_words.empty()) 
-        {
-            SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)L"\r\nРифмующиеся слова:");
-            for (const auto& word : output.rhymed_words) 
-            {
-                wstring rhyme = L"\r\n  • " + ansi_to_wstring(word);
-                SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)rhyme.c_str());
-            }
-        }
-        else
-        {
-            SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)L"\r\nРифмующиеся слов нет");
-        }
+    for (const auto& word : rhymes_data) 
+    {
+        grouped[word.part_of_speech].push_back(word);
     }
 
-    // Прокручиваем в начало
+    // Очистка поля
+    SetWindowTextW(buttons::widgets.hEditRhymes, L"");
+
+    // Заголовок
+    wstring output_text;
+    output_text += L"Поиск выполнялся по следующим частям речи: " + GetActivePartsOfSpeech(buttons::ButtonFlags) + L"\r\n";
+    output_text += L"Тип поиска: " + wstring(buttons::ButtonFlags.test(7) ? L"Однородный" : L"Неоднородный");
+
+    SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)output_text.c_str());
+
+    for (const auto& [part_key, words] : grouped)
+    {
+        // Цвет текста
+        COLORREF color = RGB(0, 0, 0);
+        if (part_key == "глагол") color = RGB(200, 0, 0);
+        else if (part_key == "существительное") color = RGB(0, 0, 200);
+        else if (part_key == "прилагательное") color = RGB(0, 150, 0);
+        else if (part_key == "наречие") color = RGB(150, 0, 150);
+        else if (part_key == "причастие") color = RGB(0, 150, 150);
+        else if (part_key == "деепричастие") color = RGB(150, 150, 0);
+
+        CHARFORMAT2 cf = { sizeof(cf) };
+        cf.dwMask = CFM_COLOR;
+        cf.crTextColor = color;
+        SendMessageW(buttons::widgets.hEditRhymes, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
+
+        wstring header = L"\r\n\r\n====================\r\n" +
+                         ansi_to_wstring(capitalizeAllLetters(part_key)) +
+                         L"\r\n====================";
+        SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)header.c_str());
+
+        for (const WordData& output : words)
+        {
+            wstring word_info = L"\r\n\r\nСлово: " + ansi_to_wstring(output.word) +
+                                L"\r\nЧасть речи: " + ansi_to_wstring(output.part_of_speech) +
+                                L"\r\nКоличество встреч в тексте: " + to_wstring(output.amount);
+
+            SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)word_info.c_str());
+
+            wstring sentence_info = L"\r\nНайдено в предложениях: ";
+            if (!output.sentence_counter.empty())
+            {
+                for (size_t i = 0; i < output.sentence_counter.size(); ++i)
+                {
+                    if (i > 0) sentence_info += L", ";
+                    sentence_info += to_wstring(output.sentence_counter[i]);
+                }
+            }
+            else
+            {
+                sentence_info += L"не найдено";
+            }
+            SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)sentence_info.c_str());
+
+            if (!output.rhymed_words.empty())
+            {
+                SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)L"\r\nРифмующиеся слова:");
+                for (const auto& rhymed : output.rhymed_words)
+                {
+                    wstring rhyme = L"\r\n  • " + ansi_to_wstring(rhymed);
+                    SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)rhyme.c_str());
+                }
+            }
+            else
+            {
+                SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)L"\r\nРифмующиеся слов нет");
+            }
+        }
+
+        // Сброс цвета
+        cf.crTextColor = RGB(0, 0, 0);
+        SendMessageW(buttons::widgets.hEditRhymes, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
+    }
+
+    // Прокрутка вверх
     SendMessageW(buttons::widgets.hEditRhymes, EM_SETSEL, 0, 0);
     SendMessageW(buttons::widgets.hEditRhymes, EM_SCROLLCARET, 0, 0);
 }
+
 
 wstring GetActivePartsOfSpeech(const bitset<8>& ButtonFlags) 
 {
@@ -499,6 +519,28 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             UpdateButtonStatesAndColors();
             UpdateCheckboxStates();
         }
+		// Нажата кнопка "Все части речи"
+		else if (LOWORD(wp) == buttons::buttonIDs.ButAll)
+		{
+			buttons::ButtonFlags.flip();
+			// Перерисовываем кнопку
+			SetWindowText(buttons::widgets.hAllButton, L"");
+			InvalidateRect(buttons::widgets.hAllButton, NULL, TRUE); // Перерисовываем кнопку
+            InvalidateRect(buttons::widgets.hVerbButton, NULL, TRUE); // Перерисовываем кнопку
+            InvalidateRect(buttons::widgets.hAdverbButton, NULL, TRUE); // Перерисовываем кнопку
+            InvalidateRect(buttons::widgets.hAdjectiveButton, NULL, TRUE); // Перерисовываем кнопку
+            InvalidateRect(buttons::widgets.hNounButton, NULL, TRUE); // Перерисовываем кнопку
+            InvalidateRect(buttons::widgets.hParticipleButton, NULL, TRUE); // Перерисовываем кнопку
+            InvalidateRect(buttons::widgets.hAdverbialButton, NULL, TRUE); // Перерисовываем кнопку
+			UpdateWindow(buttons::widgets.hAllButton);
+            UpdateWindow(buttons::widgets.hVerbButton);
+            UpdateWindow(buttons::widgets.hAdverbButton);
+            UpdateWindow(buttons::widgets.hAdjectiveButton);
+            UpdateWindow(buttons::widgets.hNounButton);
+            UpdateWindow(buttons::widgets.hParticipleButton);
+            UpdateWindow(buttons::widgets.hAdverbialButton);
+			UpdateCheckboxStates();
+		}
 		// Нажата кнопка "Глагол"
         else if (LOWORD(wp) == buttons::buttonIDs.ButVerb)
         {
@@ -605,8 +647,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             // Получаем найденные рифмы, разделенные предложения и флаги 
             unite_functions(rhymes_data, sentences, str_sentences, word_to_compare, buttons::ButtonFlags);
 
-            // Скрываем окно загрузки
-            HideLoadingWindow(hWnd);
+            
 
             // Очищаем содержимое поля перед добавлением нового текста
             SetWindowTextA(buttons::widgets.hEditRhymes, "");
@@ -635,12 +676,18 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 UpdateWindow(buttons::widgets.hSaveFile);
             }
             
+            // Вывод рифм
+            OutputRhymeInfo(rhymes_data);
+
+            UpdateWindow(buttons::widgets.hLoadingWnd);
 
             // Вывод текста
             OutputTextInfo(sentences, rhymes_data);
             
-            // Вывод рифм
-            OutputRhymeInfo(rhymes_data);
+            
+
+            // Скрываем окно загрузки
+            HideLoadingWindow(hWnd);
 
             // Перерисовываем поле текста
             InvalidateRect(buttons::widgets.hEditText, NULL, TRUE);
@@ -881,6 +928,13 @@ BOOL MakeRoundButton(LPDRAWITEMSTRUCT lpDrawItem)
         hBrushes = buttons::graphics.hBrushRed;
         buttonText = "Выход";
     }
+	// Кнопка "Все части речи"
+	else if (lpDrawItem->hwndItem == buttons::widgets.hAllButton)
+	{
+		isActive = buttons::ButtonFlags.all();
+		hBrushes = buttons::graphics.hBrushNeutral;
+		buttonText = "Все части речи";
+	}
 	// Кнопка "Глагол"
     else if (lpDrawItem->hwndItem == buttons::widgets.hVerbButton)
     {
@@ -973,24 +1027,45 @@ BOOL MakeRoundButton(LPDRAWITEMSTRUCT lpDrawItem)
     HPEN hOldPen = NULL;
     HBRUSH hOldBrush = NULL;
      
-	// Создаем обрамление для кнопки
-    if (lpDrawItem->hwndItem == buttons::widgets.hExitButton ||
-        lpDrawItem->hwndItem == buttons::widgets.hSearch ||
-        lpDrawItem->hwndItem == buttons::widgets.hSearchType ||
+    // Создаем обрамление для кнопки
+    if (lpDrawItem->hwndItem == buttons::widgets.hSearchType ||
         lpDrawItem->hwndItem == buttons::widgets.hOpenFile ||
-        lpDrawItem->hwndItem == buttons::widgets.hSaveFile)
+        lpDrawItem->hwndItem == buttons::widgets.hAllButton)
     {
         hPen = CreatePen(PS_SOLID, 1, RGB(0, 210, 210)); // Синее обрамление для голубой кнопки
+    }
+    else if (lpDrawItem->hwndItem == buttons::widgets.hSearch)
+    {
+        BOOL enabled = IsWindowEnabled(buttons::widgets.hSearch);
+        hPen = CreatePen(PS_SOLID, 1, enabled ? RGB(127, 255, 212) : RGB(205, 92, 92));
+    }
+    else if (lpDrawItem->hwndItem == buttons::widgets.hExitButton)
+    {
+        hPen = CreatePen(PS_SOLID, 1, RGB(205, 92, 92));
+    }
+    else if (lpDrawItem->hwndItem == buttons::widgets.hSaveFile)
+    {
+        BOOL enabled = IsWindowEnabled(buttons::widgets.hSaveFile);
+        hPen = CreatePen(PS_SOLID, 1, enabled ? RGB(127, 255, 212) : RGB(205, 92, 92));
     }
     else
     {
         hPen = CreatePen(PS_SOLID, 1, isActive ? RGB(0, 200, 0) : RGB(200, 0, 0));
     }
 
+
 	// Устанавливаем цвет текста и кисть для кнопки
     hOldPen = (HPEN)SelectObject(hdc, hPen);
     hOldBrush = (HBRUSH)SelectObject(hdc, hBrushes);
-    SetTextColor(hdc, RGB(0, 0, 0));
+
+    if (IsWindowEnabled(lpDrawItem->hwndItem)) 
+    {
+        SetTextColor(hdc, RGB(0, 0, 0)); // Ярко-чёрный для активной кнопки
+    }
+    else 
+    {
+        SetTextColor(hdc, RGB(120, 120, 120)); // Бледно-серый для неактивной
+    }
 
     // Если кнопка нажата, смещаем прямоугольник и изменяем цвет фона
     if (lpDrawItem->itemState & ODS_SELECTED)
@@ -1057,6 +1132,8 @@ void MainWndAddWidget(HWND hWnd)
     // Кнопки
     buttons::widgets.hExitButton = CreateButton("Выход", marginX, screenHeight - buttonHeight - marginY-80, buttonWidth, buttonHeight, 
         hWnd, buttons::buttonIDs.ButExit);
+	buttons::widgets.hAllButton = CreateButton("Все части речи", marginX, marginY + 20, buttonWidth, buttonHeight,
+		hWnd, buttons::buttonIDs.ButAll);
     buttons::widgets.hVerbButton = CreateButton("Глагол", marginX, marginY + buttonHeight + marginY + 20, buttonWidth, buttonHeight, 
         hWnd, buttons::buttonIDs.ButVerb);
     buttons::widgets.hAdjectiveButton = CreateButton("Прилагательное", marginX, marginY + 2 * (buttonHeight + marginY) + 20, buttonWidth, buttonHeight, 
@@ -1291,8 +1368,8 @@ void SetWinStatus(string status)
 }
 
 void ShowLoadingWindow(HWND hWnd) {
-
     // Отключаем все кнопки, кроме кнопок тулбара
+	EnableWindow(buttons::widgets.hAllButton, FALSE);
     EnableWindow(buttons::widgets.hVerbButton, FALSE);
     EnableWindow(buttons::widgets.hAdjectiveButton, FALSE);
     EnableWindow(buttons::widgets.hNounButton, FALSE);
@@ -1303,46 +1380,45 @@ void ShowLoadingWindow(HWND hWnd) {
     EnableWindow(buttons::widgets.hSearch, FALSE);
     EnableWindow(buttons::widgets.hOpenFile, FALSE);
 
-    // Получаем координаты окон "Найденные рифмы" и "Текст с найденными рифмами"
-    RECT rectRhymes, rectText;
-    GetWindowRect(buttons::widgets.hEditRhymes, &rectRhymes);
-    GetWindowRect(buttons::widgets.hEditText, &rectText);
+    // Размеры окна загрузки
+    const int loadingWidth = 300;
+    const int loadingHeight = 100;
 
-    int centerX = (rectRhymes.left + rectRhymes.right) - 350;
-    int centerY = rectRhymes.top + 300;
-    centerX -= 150; centerY -= 50;
+    // Центрируем относительно главного окна
+    RECT mainRect;
+    GetWindowRect(hWnd, &mainRect);
+    int centerX = mainRect.left + ((mainRect.right - mainRect.left) - loadingWidth) / 2;
+    int centerY = mainRect.top + ((mainRect.bottom - mainRect.top) - loadingHeight) / 2;
 
-    // Получаем координаты окон "Найденные рифмы" и "Текст с найденными рифмами"
     if (buttons::widgets.hLoadingWnd == NULL) {
         buttons::widgets.hLoadingWnd = CreateWindowEx(
             WS_EX_TOPMOST,
             L"STATIC",
             L"Поиск рифм... Пожалуйста, подождите.",
-            WS_CHILD | WS_VISIBLE | WS_BORDER,
-            CW_USEDEFAULT, CW_USEDEFAULT, 300, 100,
-            hWnd,
+            WS_POPUP | WS_VISIBLE | WS_BORDER | SS_CENTER,
+            centerX, centerY, loadingWidth, loadingHeight,
+            NULL, // Важно: не делаем дочерним!
             NULL,
             GetModuleHandle(NULL),
             NULL
         );
-
-        RECT rectInputWord;
-        GetWindowRect(buttons::widgets.hEditInputWord, &rectInputWord);
-        SetWindowPos(buttons::widgets.hLoadingWnd, HWND_TOP, centerX, centerY, 300, 100, SWP_SHOWWINDOW);
-        SetWindowPos(buttons::widgets.hLoadingWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW);
     }
     else {
+        SetWindowPos(buttons::widgets.hLoadingWnd, HWND_TOPMOST, centerX, centerY, loadingWidth, loadingHeight, SWP_SHOWWINDOW);
         ShowWindow(buttons::widgets.hLoadingWnd, SW_SHOW);
     }
-    UpdateWindow(buttons::widgets.hLoadingWnd);
 
+    SetForegroundWindow(buttons::widgets.hLoadingWnd);
+    UpdateWindow(buttons::widgets.hLoadingWnd);
 }
+
 
 
 void HideLoadingWindow(HWND hWnd) {
     if (buttons::widgets.hLoadingWnd != NULL) {
         ShowWindow(buttons::widgets.hLoadingWnd, SW_HIDE);
         // Включаем все кнопки
+		EnableWindow(buttons::widgets.hAllButton, TRUE);
         EnableWindow(buttons::widgets.hVerbButton, TRUE);
         EnableWindow(buttons::widgets.hAdjectiveButton, TRUE);
         EnableWindow(buttons::widgets.hNounButton, TRUE);

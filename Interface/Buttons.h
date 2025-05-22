@@ -28,11 +28,13 @@ namespace buttons
         int OnHelp = 19;
         int ButOpenFile = 20;
         int ButSaveFile = 21;
+		int ButAll = 22;
     };
 
     // Структура для хранения виджетов
     struct Widgets
     {
+		HWND hAllButton = nullptr;
         HWND hEditRhymes = nullptr;
         HWND hEditText = nullptr;
         HWND hSearch = nullptr;
