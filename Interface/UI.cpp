@@ -207,6 +207,31 @@ void UpdateCheckboxStates()
     UpdateWindow(buttons::widgets.hSearch);
 }
 
+// Конвертация строки ANSI (Windows-1251) в wstring (UTF-16)
+std::wstring ansi_to_wstring(const std::string& ansi_str) 
+{
+    if (ansi_str.empty()) return std::wstring();
+
+    // Получаем необходимый размер для wide строки
+    int size_needed = MultiByteToWideChar(1251 /*CP_ACP*/, 0, ansi_str.c_str(), -1, nullptr, 0);
+    if (size_needed == 0) {
+        // Ошибка конвертации, можно кинуть исключение или вернуть пустую строку
+        return std::wstring();
+    }
+
+    std::wstring wstr(size_needed, 0);
+    MultiByteToWideChar(1251 /*CP_ACP*/, 0, ansi_str.c_str(), -1, &wstr[0], size_needed);
+
+    // MultiByteToWideChar возвращает строку с завершающим нулём,
+    // поэтому можно удалить последний символ
+    if (!wstr.empty() && wstr.back() == L'\0') {
+        wstr.pop_back();
+    }
+
+    return wstr;
+}
+
+
 // Вывод текста в поле
 void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordData>& rhymes_data)
 {
@@ -220,7 +245,8 @@ void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordDa
     SetWindowTextW(buttons::widgets.hEditText, L"");
 
     int startPos = 0;
-    for (const auto& sentence : sentences) {
+    for (const auto& sentence : sentences) 
+    {
         COLORREF color = RGB(0, 0, 0);
         // Устанавливаем цвет перед вставкой слова
         CHARFORMAT2 cf = { 0 };
@@ -228,10 +254,11 @@ void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordDa
         cf.dwMask = CFM_COLOR;
         cf.crTextColor = color;
         bool firstWord = true;
-        for (const string& word : sentence) {
+        for (const auto& word : sentence) 
+        {
             // Устанавливаем произвольный цвет для текста
             cf.crTextColor = RGB(0, 0, 0);
-            wstring wword = utf8_to_wstring(word);
+            wstring wword = ansi_to_wstring(word);
 
             // Добавляем пробел если нужно
             if (!firstWord) {
