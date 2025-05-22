@@ -258,22 +258,22 @@ std::string get_output_part_of_speech(string part_of_speech)
 	// основная проверка части речи
 
 	if (part_of_speech == "V")
-		return ansi_to_utf8("глагол");
+		return ("глагол");
 
 	if (part_of_speech == "ADV")
-		return ansi_to_utf8("наречие");
+		return ("наречие");
 
 	if (part_of_speech == "A")
-		return ansi_to_utf8("прилагательное");
+		return ("прилагательное");
 
 	if (part_of_speech == "прич")
-		return ansi_to_utf8("причастие");
+		return ("причастие");
 
 	if (part_of_speech == "деепр")
-		return ansi_to_utf8("деепричастие");
+		return ("деепричастие");
 
 	if (part_of_speech == "S")
-		return ansi_to_utf8("существительное");
+		return ("существительное");
 
 
 };
