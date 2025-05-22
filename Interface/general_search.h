@@ -9,6 +9,8 @@
 #include <string>
 #include <algorithm>
 #include <cmath>
+#include <future>
+#include <mutex>
 
 // структура для хранения данных о найденном причастии
 struct WordData
@@ -171,7 +173,7 @@ bool areWordsRhymed(const std::string& word_1, const std::string& word_2) {
 	int syllables_2 = countSyllables(word_2_ansi);
 
 	// Если количество слогов не совпадает, то слова не рифмуются
-	if (std::abs(syllables_1 - syllables_2) > 1 ) return false;
+	if (std::abs(syllables_1 - syllables_2) > 1) return false;
 
 	// Функция для подсчета максимального количества подряд совпадающих символов
 	auto countMaxConsecutiveMatches = [](const std::vector<std::string>& s1, const std::vector<std::string>& s2) {
@@ -273,280 +275,10 @@ std::string get_output_part_of_speech(string part_of_speech)
 	if (part_of_speech == "S")
 		return ansi_to_utf8("существительное");
 
-	
+
 };
 
-
-// основная функция поиска рифм
 /*
-vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bitset<8> button_flags, vector<string>& word_to_compare,const vector<string>& parts_of_speech)
-{
-
-	vector<WordData> data;
-	// промежуточная переменная, которая будет добавлена в итоговый вектор data
-	WordData candidate;
-
-	int rhyme_counter = 0;
-
-	int same_words_counter = 0;
-
-	// вариант проверки рифм
-	int variant_of_check = 0;
-
-	
-		// однородная проверка всех частей речи без сравниваемого слова
-		if (button_flags.test(7) == 1 && word_to_compare.empty()) {
-			variant_of_check = 0;
-		}
-
-
-		// однородня проверка всех частей речи со сравниваемым словом
-		if (button_flags.test(7) == 1 && !word_to_compare.empty())
-		{
-			variant_of_check = 1;
-		}
-
-
-		// неоднородная проверка всех частей речи без сравниваемого слова
-		if (button_flags.test(7) == 0 && word_to_compare.empty())
-		{
-			variant_of_check = 2;
-		}
-
-
-		// неоднородная проверка всех частей речи co сравниваемым словом
-		if (button_flags.test(7) == 0 && !word_to_compare.empty())
-		{
-			variant_of_check = 3;
-		}
-	
-
-
-	// поиск рифм в зависимости от режима работы
-	switch (variant_of_check)
-	{
-		// нет сравниваемого слова + однородная проверка
-	case 0:
-		for (int i = 0; i < 6; i++)
-		{
-			if (!words_text_collection[i].empty())
-			{
-				for (string& first_word : words_text_collection[i])
-				{
-					rhyme_counter = 0;
-					same_words_counter = 0;
-					candidate.word = first_word;
-					for (string& second_word : words_text_collection[i])
-					{
-						// проверка на количество одинаковых слов
-						if (candidate.word == second_word)
-						{
-							same_words_counter++;
-							continue;
-						}
-
-						// проверка на наличие в векторе структур причастий
-						if (existence_of_participle(data, candidate.word))
-							continue;
-
-						// проверка, рифмуются ли слова
-						if (areWordsRhymed(second_word, candidate.word))
-						{
-
-							// проверка наличия рифмованного слова (если одинаковых слов несколько, то нет смысла заносить его несколько раз в вектор)
-							if (existenceRhymedParticiples(candidate, second_word))
-								continue;
-
-							// заносим рифмованное причастие в вектор рифмованных причастий
-							candidate.rhymed_words.push_back(second_word);
-						}
-					}
-
-					if (existence_of_participle(data, candidate.word))
-						continue;
-
-					candidate.part_of_speech = get_output_part_of_speech(parts_of_speech[i]);
-					candidate.amount = same_words_counter;
-					candidate.rhymed_amount = candidate.rhymed_words.size();
-					data.push_back(candidate);
-					candidate.rhymed_words.clear();
-				}
-			}
-		}
-		break;
-		// однородная проверка всех слов + сравниваемое слово
-	case 1:
-
-		for (int i = 0; i < 6; i++)
-		{
-
-			if (!word_to_compare[i].empty())
-			{
-				candidate.word = word_to_compare[i];
-
-				for (string& second_word : words_text_collection[i])
-				{
-
-					// проверка на количество одинаковых слов
-					if (candidate.word == second_word)
-					{
-						same_words_counter++;
-						continue;
-					}
-
-					// проверка на наличие в векторе структур причастий
-					if (existence_of_participle(data, candidate.word))
-						continue;
-
-					// проверка, рифмуются ли слова
-					if (areWordsRhymed(second_word, candidate.word))
-					{
-
-						// проверка наличия рифмованного слова (если одинаковых слов несколько, то нет смысла заносить его несколько раз в вектор)
-						if (existenceRhymedParticiples(candidate, second_word))
-							continue;
-
-						// заносим рифмованное причастие в вектор рифмованных причастий
-						candidate.rhymed_words.push_back(second_word);
-					}
-				}
-
-				if (existence_of_participle(data, candidate.word))
-					continue;
-
-				candidate.part_of_speech = get_output_part_of_speech(parts_of_speech[i]);
-				candidate.amount = same_words_counter;
-				candidate.rhymed_amount = candidate.rhymed_words.size();
-				data.push_back(candidate);
-				candidate.rhymed_words.clear();
-				same_words_counter = 0;
-			}
-		}
-		break;
-
-		// неоднородная проверка всех слов без сравниваемого слова
-	case 2:
-
-		for (int i = 0; i < 6; i++)
-		{
-			if (!words_text_collection[i].empty())
-			{
-				for (string& first_word : words_text_collection[i])
-				{
-					rhyme_counter = 0;
-					same_words_counter = 0;
-					candidate.word = first_word;
-
-					for (int j = 0; j < 6; j++)
-					{
-						// поиск одинаковых слов
-						if (j == i)
-						{
-							for (string& word : words_text_collection[i])
-							{
-								if (candidate.word == word)
-									same_words_counter++;
-							}
-							continue;
-						}
-
-						for (string& second_word : words_text_collection[j])
-						{
-
-							// проверка на наличие в векторе структур причастий
-							if (existence_of_participle(data, candidate.word))
-								continue;
-
-							// проверка, рифмуются ли слова
-							if (areWordsRhymed(second_word, candidate.word))
-							{
-
-								// проверка наличия рифмованного слова (если одинаковых слов несколько, то нет смысла заносить его несколько раз в вектор)
-								if (existenceRhymedParticiples(candidate, second_word))
-									continue;
-
-								// заносим рифмованное причастие в вектор рифмованных причастий
-								candidate.rhymed_words.push_back(second_word);
-							}
-						}
-					}
-
-					if (existence_of_participle(data, candidate.word))
-						continue;
-
-					candidate.part_of_speech = get_output_part_of_speech(parts_of_speech[i]);
-					candidate.amount = same_words_counter;
-					candidate.rhymed_amount = candidate.rhymed_words.size();
-					data.push_back(candidate);
-					candidate.rhymed_words.clear();
-				}
-			}
-		}
-		break;
-		// неоднородная проверка + сравниваемое слово
-	case 3:
-
-		for (int i = 0; i < 6; i++)
-		{
-			if (!word_to_compare[i].empty())
-			{
-				candidate.word = word_to_compare[i];
-				rhyme_counter = 0;
-				same_words_counter = 0;
-
-				for (int j = 0; j < 6; j++)
-				{
-					// поиск одинаковых слов
-					if (j == i)
-					{
-						for (string& word : words_text_collection[i])
-						{
-							if (candidate.word == word)
-								same_words_counter++;
-						}
-						continue;
-					}
-
-					for (string& second_word : words_text_collection[j])
-					{
-
-						// проверка на наличие в векторе структур причастий
-						if (existence_of_participle(data, candidate.word))
-							continue;
-
-						// проверка, рифмуются ли слова
-						if (areWordsRhymed(second_word, candidate.word))
-						{
-
-							// проверка наличия рифмованного слова (если одинаковых слов несколько, то нет смысла заносить его несколько раз в вектор)
-							if (existenceRhymedParticiples(candidate, second_word))
-								continue;
-
-							// заносим рифмованное причастие в вектор рифмованных причастий
-							candidate.rhymed_words.push_back(second_word);
-						}
-					}
-				}
-
-				if (existence_of_participle(data, candidate.word))
-					continue;
-
-				candidate.part_of_speech = get_output_part_of_speech(parts_of_speech[i]);
-				candidate.amount = same_words_counter;
-				candidate.rhymed_amount = candidate.rhymed_words.size();
-				data.push_back(candidate);
-				candidate.rhymed_words.clear();
-			}
-		}
-
-		break;
-	}
-
-	return data;
-};
-*/
-
-
 vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bitset<8> button_flags, vector<string>& word_to_compare, const vector<string>& parts_of_speech) {
 	vector<WordData> data;
 	WordData candidate;
@@ -732,11 +464,116 @@ vector<WordData> find_rhymes(vector<vector<string>>& words_text_collection, bits
 
 	return data;
 }
+*/
+
+
+string get_suffix(const string& word, size_t length = 3) {
+	if (word.length() < length) return word;
+	return word.substr(word.length() - length, length);
+}
+
+vector<WordData> find_rhymes_fast(
+	const vector<vector<string>>& words_text_collection,
+	bitset<8> button_flags,
+	const vector<string>& word_to_compare,
+	const vector<string>& parts_of_speech)
+{
+	vector<WordData> data;
+	unordered_set<string> added_words;
+	unordered_map<string, vector<string>> rhyme_cache;
+
+	int variant = 0;
+	if (button_flags.test(7)) variant = word_to_compare.empty() ? 0 : 1;
+	else variant = word_to_compare.empty() ? 2 : 3;
+
+	// Создаем индекс по суффиксам для каждого POS
+	vector<unordered_map<string, vector<string>>> suffix_indices(6);
+	for (int i = 0; i < 6; ++i) {
+		for (const auto& word : words_text_collection[i]) {
+			suffix_indices[i][get_suffix(word)].push_back(word);
+		}
+	}
+
+	// Лямбда для получения рифм через индекс
+	auto get_rhymes = [&](const string& word, int pos, bool cross_pos) -> vector<string> {
+		if (rhyme_cache.find(word) != rhyme_cache.end())
+			return rhyme_cache[word];
+
+		vector<string> rhymes;
+		string suff = get_suffix(word);
+		unordered_set<string> seen;
+
+		if (cross_pos) {
+			for (int j = 0; j < 6; ++j) {
+				if (j == pos) continue;
+				if (suffix_indices[j].count(suff)) {
+					for (const auto& candidate : suffix_indices[j][suff]) {
+						if (candidate != word && seen.insert(candidate).second) {
+							if (areWordsRhymed(word, candidate)) {
+								rhymes.push_back(candidate);
+							}
+						}
+					}
+				}
+			}
+		}
+		else {
+			if (suffix_indices[pos].count(suff)) {
+				for (const auto& candidate : suffix_indices[pos][suff]) {
+					if (candidate != word && seen.insert(candidate).second) {
+						if (areWordsRhymed(word, candidate)) {
+							rhymes.push_back(candidate);
+						}
+					}
+				}
+			}
+		}
+
+		rhyme_cache[word] = rhymes;
+		return rhymes;
+		};
+
+	auto process_word = [&](const string& word, int pos, bool cross_pos) {
+		if (word.empty()) return;
+		if (!added_words.insert(word).second) return;
+
+		WordData wd;
+		wd.word = word;
+		wd.rhymed_words = get_rhymes(word, pos, cross_pos);
+		wd.part_of_speech = get_output_part_of_speech(parts_of_speech[pos]);
+		wd.rhymed_amount = wd.rhymed_words.size();
+		data.push_back(std::move(wd));
+		};
+
+	switch (variant) {
+	case 0:
+		for (int i = 0; i < 6; ++i)
+			for (const auto& w : words_text_collection[i])
+				process_word(w, i, false);
+		break;
+	case 1:
+		for (int i = 0; i < 6; ++i)
+			process_word(word_to_compare[i], i, false);
+		break;
+	case 2:
+		for (int i = 0; i < 6; ++i)
+			for (const auto& w : words_text_collection[i])
+				process_word(w, i, true);
+		break;
+	case 3:
+		for (int i = 0; i < 6; ++i)
+			process_word(word_to_compare[i], i, true);
+		break;
+	}
+
+	return data;
+}
+
 
 // основная функция работы с рифмами частей речи
 void deal_with_words(bitset<8>& button_flags, vector<vector<string>>& numbered_sentences, string word_to_compare, vector<WordData>& data)
 {
-	
+
 
 	// количество частей речи, которые можно найти
 	const int amount_of_parts_of_speech = 6;
@@ -749,9 +586,6 @@ void deal_with_words(bitset<8>& button_flags, vector<vector<string>>& numbered_s
 	// подстановка сравниваемого слова на соответствующую позицию в векторе для корректного последующего сравнения
 	if (!word_to_compare.empty())
 	{
-		// перевод слова в UTF-8
-		word_to_compare = ansi_to_utf8(word_to_compare);
-
 		word_to_compare = lowFirstLetter(word_to_compare);
 
 		comparing_word_part_of_speech = get_comparing_word_part(word_to_compare);
@@ -773,7 +607,7 @@ void deal_with_words(bitset<8>& button_flags, vector<vector<string>>& numbered_s
 					if (!comparing_word_part_of_speech[i].empty())
 						button_flags.set(i, 0);
 				}
-				
+
 			}
 		}
 	}
@@ -782,16 +616,20 @@ void deal_with_words(bitset<8>& button_flags, vector<vector<string>>& numbered_s
 	const vector<string> parts_of_speech{ "V", "ADV", "A", "S", "прич", "деепр" };
 
 	// заполнение вектора векторов конкретными частями речи;
-	for (int i = 0; i < 6; i++)
+	// ПРОБЛЕМА ЗДЕСЬ. ТЕКСТ ПРОХОДИТСЯ 6 РАЗ В ПОИСКАХ СЛОВ
+
+	findWordsByPartOfSpeech(numbered_sentences,button_flags, parts_of_speech, words_text_collection,word_to_compare);
+
+	/*for (int i = 0; i < 6; i++)
 	{
 		if (button_flags.test(i))
 		{
-			words_text_collection[i] = findWordsByPartOfSpeech(numbered_sentences, parts_of_speech[i],word_to_compare);
+			words_text_collection[i] = findWordsByPartOfSpeech(numbered_sentences, parts_of_speech[i], word_to_compare);
 		}
-	}
+	}*/
 
 	// поиск рифм
-	data = find_rhymes(words_text_collection, button_flags, comparing_word_part_of_speech, parts_of_speech);
+	data = find_rhymes_fast(words_text_collection, button_flags, comparing_word_part_of_speech, parts_of_speech);
 
 
 	// поднятие всех регистров для красивого вывода и поиска слов по рифмам в

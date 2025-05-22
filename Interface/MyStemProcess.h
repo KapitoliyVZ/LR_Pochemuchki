@@ -27,6 +27,25 @@ std::string getMystemPath() {
     return "\"" + mystemPath + "\"";
 }
 
+
+std::string get_filepath(const std::string& filename) {
+    char buffer[MAX_PATH];
+    DWORD length = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
+    if (length == 0) {
+        return filename;  // fallback без кавычек
+    }
+    std::string fullPath(buffer, length);
+
+    size_t pos = fullPath.find_last_of("\\/");
+    if (pos == std::string::npos) {
+        return filename;
+    }
+
+    std::string path = fullPath.substr(0, pos + 1) + filename;
+    return path;
+}
+
+
 class MystemProcess {
 private:
     HANDLE hChildStd_IN_Wr = NULL;
