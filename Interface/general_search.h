@@ -12,6 +12,8 @@
 #include <future>
 #include <mutex>
 
+
+ 
 // структура для хранения данных о найденном причастии
 struct WordData
 {

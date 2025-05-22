@@ -9,7 +9,27 @@
 #include <stdexcept>
 #include "MyStemProcess.h"
 
-MystemProcess mystem;
+
+//MystemProcess mystem;
+
+std::string get_filepath(const std::string& filename) {
+    char buffer[MAX_PATH];
+    DWORD length = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
+    if (length == 0) {
+        return filename;  // fallback без кавычек
+    }
+    std::string fullPath(buffer, length);
+
+    size_t pos = fullPath.find_last_of("\\/");
+    if (pos == std::string::npos) {
+        return filename;
+    }
+
+    std::string path = fullPath.substr(0, pos + 1) + filename;
+    return path;
+}
+
+
 
 // функции Харитонов начало
 
@@ -466,7 +486,7 @@ std::string read_file(const std::string& path) {
 std::unordered_map<std::string, std::string> cache;
 
 // Получение части речи слова через mystem
-std::string getPartOfSpeech(const std::string& word,unordered_map<string, vector<string>>& morphemeRules) {
+std::string getPartOfSpeech(const std::string& word, unordered_map<string, vector<string>>& morphemeRules) {
 
     //string word_ANSI = utf8_to_ansi(word); // Перекодируем результат в ANSI
 
@@ -476,9 +496,10 @@ std::string getPartOfSpeech(const std::string& word,unordered_map<string, vector
         return "others";
     }
 
+    //|| ((ends_with(word, morphemeRules.at("nouns_endings")))|| (word.size() < 5) )
     // Проверка на существительное
-    if (ends_with(word, morphemeRules.at("nouns_endings")) &&
-        contains_suffix(word, morphemeRules.at("nouns_suffixes"))&& word.size()>=2) {
+    if ((ends_with(word, morphemeRules.at("nouns_endings")) &&
+        contains_suffix(word, morphemeRules.at("nouns_suffixes")) && word.size() >= 2)) {
         return "S";
     }
 
@@ -496,7 +517,7 @@ std::string getPartOfSpeech(const std::string& word,unordered_map<string, vector
 
     if (ends_with(word, morphemeRules.at("gerunds_endings")) &&
         contains_suffix(word, morphemeRules.at("gerunds_suffixes"))&& word.size() >= 5) {
-        return "прич";
+        return "деепр";
     }
 
     // Проверка на наречие
@@ -515,7 +536,7 @@ std::string getPartOfSpeech(const std::string& word,unordered_map<string, vector
     // добавить проверку нулевого окончания существительных
 
 
-    return "unknown";
+    return "S";
 
 };
 
