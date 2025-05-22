@@ -355,10 +355,6 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data)
     if (buttons::ButtonFlags.test(5))
         OutputColoredPart(buttons::widgets.hEditRhymes, L"Деепричастие", L"жёлтым", RGB(150, 150, 0));
 
-
-
-    SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)output_text.c_str());
-
     for (const auto& [part_key, words] : grouped)
     {
         // Цвет текста
