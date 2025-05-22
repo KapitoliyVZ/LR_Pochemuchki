@@ -57,6 +57,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdsho
     return 0;
 }
 
+
+
 // Обновляем состояние кнопок в зависимости от флагов
 void UpdateButtonStatesAndColors()
 {
@@ -238,6 +240,7 @@ std::wstring ansi_to_wstring(const std::string& ansi_str)
 // Вывод текста в поле
 void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordData>& rhymes_data)
 {
+
     // Сопоставление слова и части речи
     unordered_map<string, string> wordToPartOfSpeech;
     for (const auto& wordData : rhymes_data)
@@ -295,6 +298,29 @@ void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordDa
     }
 }
 
+// Универсальная функция для вывода строки с цветным словом-цветом в RichEdit
+void OutputColoredPart(HWND hEdit, const std::wstring& partName, const std::wstring& colorName, COLORREF color)
+{
+    // Выводим часть речи и " - "
+    std::wstring prefix = partName + L" - ";
+    SendMessageW(hEdit, EM_REPLACESEL, FALSE, (LPARAM)prefix.c_str());
+
+    // Устанавливаем цвет для слова-цвета
+    CHARFORMAT2 cf = { sizeof(cf) };
+    cf.dwMask = CFM_COLOR;
+    cf.crTextColor = color;
+    SendMessageW(hEdit, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
+
+    // Выводим слово-цвет
+    SendMessageW(hEdit, EM_REPLACESEL, FALSE, (LPARAM)colorName.c_str());
+
+    // Сброс цвета на чёрный
+    cf.crTextColor = RGB(0, 0, 0);
+    SendMessageW(hEdit, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
+
+    // Перевод строки
+    SendMessageW(hEdit, EM_REPLACESEL, FALSE, (LPARAM)L"\r\n");
+}
 
 void OutputRhymeInfo(const vector<WordData>& rhymes_data) 
 {
@@ -312,6 +338,24 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data)
     wstring output_text;
     output_text += L"Поиск выполнялся по следующим частям речи: " + GetActivePartsOfSpeech(buttons::ButtonFlags) + L"\r\n";
     output_text += L"Тип поиска: " + wstring(buttons::ButtonFlags.test(7) ? L"Однородный" : L"Неоднородный");
+    output_text += L"\r\nВ тексте каждая часть речи выделена цветом: \r\n";
+    SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)output_text.c_str());
+
+    // Для каждой активной части речи вызываем универсальную функцию:
+    if (buttons::ButtonFlags.test(0))
+        OutputColoredPart(buttons::widgets.hEditRhymes, L"Глагол", L"красным", RGB(200, 0, 0));
+    if (buttons::ButtonFlags.test(1))
+        OutputColoredPart(buttons::widgets.hEditRhymes, L"Наречие", L"фиолетовым", RGB(150, 0, 150));
+    if (buttons::ButtonFlags.test(2))
+        OutputColoredPart(buttons::widgets.hEditRhymes, L"Прилагательное", L"зелёным", RGB(0, 150, 0));
+    if (buttons::ButtonFlags.test(3))
+        OutputColoredPart(buttons::widgets.hEditRhymes, L"Существительное", L"синим", RGB(0, 0, 200));
+    if (buttons::ButtonFlags.test(4))
+        OutputColoredPart(buttons::widgets.hEditRhymes, L"Причастие", L"бирюзовым", RGB(0, 150, 150));
+    if (buttons::ButtonFlags.test(5))
+        OutputColoredPart(buttons::widgets.hEditRhymes, L"Деепричастие", L"жёлтым", RGB(150, 150, 0));
+
+
 
     SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)output_text.c_str());
 
@@ -522,7 +566,17 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 		// Нажата кнопка "Все части речи"
 		else if (LOWORD(wp) == buttons::buttonIDs.ButAll)
 		{
-			buttons::ButtonFlags.flip();
+			if (buttons::ButtonFlags.test(0) == true and buttons::ButtonFlags.test(1) == true and
+                buttons::ButtonFlags.test(2) == true and buttons::ButtonFlags.test(3) == true and
+                buttons::ButtonFlags.test(4) == true and buttons::ButtonFlags.test(5) == true)
+			{
+                buttons::ButtonFlags.reset(0).reset(1).reset(2).reset(3).reset(4).reset(5);
+			}
+            else
+            {
+                buttons::ButtonFlags.set(0).set(1).set(2).set(3).set(4).set(5);
+            }
+			
 			// Перерисовываем кнопку
 			SetWindowText(buttons::widgets.hAllButton, L"");
 			InvalidateRect(buttons::widgets.hAllButton, NULL, TRUE); // Перерисовываем кнопку
@@ -825,6 +879,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         }
         break;
     }
+	
     // Отработка завершения работы
     case WM_DESTROY:
     {	// Освобождаем ресурсы
@@ -1158,11 +1213,11 @@ void MainWndAddWidget(HWND hWnd)
 
     // Статические элементы
     buttons::widgets.hOutputStatusText = CreateRichEdit(L"Открыт файл: ", 
-        10*marginX + buttonWidth, marginY-10, buttonWidth-80, 30, hWnd, true);
+        10*marginX + buttonWidth, marginY-10, buttonWidth-80, 25, hWnd, true);
     buttons::widgets.hPathSaveFileText = CreateRichEdit(L"Сохранения: ",
-        10 * marginX + buttonWidth, marginY+30, buttonWidth - 80, 30, hWnd, true);
+        10 * marginX + buttonWidth, marginY+30, buttonWidth - 80, 25, hWnd, true);
     buttons::widgets.hInputWord = CreateRichEdit(L"Слово для поиска рифм", 
-        marginX, marginY + 7 * (buttonHeight + marginY) + 20 + buttonHeight + 11, buttonWidth, 30, hWnd, true);
+        marginX, marginY + 7 * (buttonHeight + marginY) + 20 + buttonHeight + 11, buttonWidth, 25, hWnd, true);
     buttons::widgets.hOutputRhymes = CreateRichEdit(L"Найденные рифмы", 
         marginX + buttonWidth + marginX, marginY + buttonHeight + marginY+50, 
         (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2 - 1, buttonHeight, hWnd, true);
@@ -1173,13 +1228,13 @@ void MainWndAddWidget(HWND hWnd)
 
     // Поля редактирования
     buttons::widgets.hOutputStatus = CreateRichEdit(L"",10*marginX + buttonWidth + buttonWidth - 79, 
-        marginY-10, buttonWidth*3, 30, hWnd, true);
+        marginY-10, buttonWidth*3, 25, hWnd, true);
     buttons::widgets.hPathSaveFileData = CreateRichEdit(L"", 10 * marginX + buttonWidth + buttonWidth - 79,
-        marginY+30, buttonWidth * 3, 30, hWnd, true);
+        marginY+30, buttonWidth * 3, 25, hWnd, true);
     buttons::widgets.hPathSaveFileRhymes = CreateRichEdit(L"", 10 * marginX + buttonWidth + buttonWidth - 79,
-        marginY + 61, buttonWidth * 3, 30, hWnd, true);
+        marginY + 56, buttonWidth * 3, 25, hWnd, true);
     buttons::widgets.hEditInputWord = CreateRichEdit(L"",marginX,
-        marginY + 7 * (buttonHeight + marginY) + 30 + buttonHeight + 32, buttonWidth, 60, hWnd);
+        marginY + 7 * (buttonHeight + marginY) + 25 + buttonHeight + 32, buttonWidth, 40, hWnd);
     SendMessage(buttons::widgets.hEditInputWord, EM_SETEVENTMASK, 0, ENM_CHANGE);
 
     // Верхняя граница для полей редактирования (вплотную с hOutputRhymes и hOutputText)

@@ -11,8 +11,10 @@
 #include <richedit.h>
 #include "general_search.h"
 #include <map>
+#include <windowsx.h>
 
 using namespace std;
+
 
 OPENFILENAMEA OFN;
 
