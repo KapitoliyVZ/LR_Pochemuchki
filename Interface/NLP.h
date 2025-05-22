@@ -13,6 +13,19 @@ MystemProcess mystem;
 
 // функции Харитонов начало
 
+// проверка на малосимвольные (местоимения, предлоги) части речи
+bool match_others(const string& word, const vector<string>& others_parts)
+{
+    for (const string& others : others_parts) {
+        if (others.empty()) continue;
+        if (others==word)//||(word.find('-'))) 
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool check_in_file(string fileName, string word_comp)
 {
 
@@ -536,49 +549,50 @@ std::string getPartOfSpeech(const std::string& word) {
         {"gerunds_suffixes", load_morphemes("gerunds_suffixes.txt")},
         {"adverbs_endings", load_morphemes("adverbs_endings.txt")},
         {"adverbs_suffixes", load_morphemes("adverbs_suffixes.txt")},
-        {"pronouns_list", load_morphemes("pronouns_list.txt")}
+        {"others_list", load_morphemes("others_list.txt")}
     };
 
+    // идентификация наречий, междометий и тд
+    if (match_others(word, morphemeRules.at("others_list")))
+    {
+        return "others";
+    }
 
     // Проверка на существительное
     if (ends_with(word, morphemeRules.at("nouns_endings")) &&
-        contains_suffix(word, morphemeRules.at("nouns_suffixes"))) {
+        contains_suffix(word, morphemeRules.at("nouns_suffixes"))&& word.size()>=2) {
         return "S";
     }
 
     //причастие
     if (ends_with(word, morphemeRules.at("participles_endings")) &&
-        contains_suffix(word, morphemeRules.at("participles_suffixes"))) {
+        contains_suffix(word, morphemeRules.at("participles_suffixes"))&& word.size() >= 5) {
         return "прич";
     }
 
     // Проверка на глагол
     if (ends_with(word, morphemeRules.at("verbs_endings")) &&
-        contains_suffix(word, morphemeRules.at("verbs_suffixes"))) {
+        contains_suffix(word, morphemeRules.at("verbs_suffixes")) && word.size() >= 2) {
         return "V";
     }
 
     if (ends_with(word, morphemeRules.at("gerunds_endings")) &&
-        contains_suffix(word, morphemeRules.at("gerunds_suffixes"))) {
+        contains_suffix(word, morphemeRules.at("gerunds_suffixes"))&& word.size() >= 5) {
         return "прич";
     }
 
     // Проверка на наречие
     if (ends_with(word, morphemeRules.at("adverbs_endings")) &&
-        contains_suffix(word, morphemeRules.at("adverbs_suffixes"))) {
+        contains_suffix(word, morphemeRules.at("adverbs_suffixes")) && word.size() >= 4) {
         return "ADV";
     }
     // Проверка на прилагательное
-    if (adj_check(word))
+    if (adj_check(word)&& word.size() >= 4)
     {
         return "А";
     }
 
-    // Проверка на местоимение (список слов)
-    const vector<string>& pronouns = morphemeRules.at("pronouns_list");
-    if (find(pronouns.begin(), pronouns.end(), word) != pronouns.end()) {
-        return "SPRO";
-    }
+    
 
     // добавить проверку нулевого окончания существительных
 
