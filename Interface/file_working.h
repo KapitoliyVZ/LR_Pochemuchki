@@ -170,7 +170,7 @@ string get_color(const string &part_of_speech)
     if (part_of_speech == "причастие")
         return "Teal"; // бирюзовый
     if (part_of_speech == "деепричастие")
-        return "DarkGoldenRod"; // коричневый
+        return "DarkGoldenRod"; // желтый
     return "black";
 }
 // Функция для записи пронумерованного текста в HTML-файл (file_output_numbered.html)
@@ -222,23 +222,31 @@ void write_outputFile_rhymes_html(const vector<WordData> &rhymes_data)
 
     file_output_rhymes << "<p>Поиск выполнялся по следующим частям речи:</p>\n<ul>\n";
 
-    vector<pair<string, string>> parts = {
-        {"глагол", "выделен в тексте красным"},
-        {"наречие", "выделено в тексте фиолетовым"},
-        {"прилагательное", "выделено в тексте зелёным"},
-        {"существительное", "выделено в тексте синим"},
-        {"причастие", "выделено в тексте бирюзовым"},
-        {"деепричастие", "выделено в тексте коричневым"}};
+    vector<tuple<int, string, string>> parts = {
+        {0, "глагол", "выделен в тексте красным"},
+        {1, "наречие", "выделено в тексте фиолетовым"},
+        {2, "прилагательное", "выделено в тексте зелёным"},
+        {3, "существительное", "выделено в тексте синим"},
+        {4, "причастие", "выделено в тексте бирюзовым"},
+        {5, "деепричастие", "выделено в тексте жёлтым"}};
 
-    for (const auto &[pos, description] : parts)
+    for (const auto &[flag_index, part, description] : parts)
     {
-        std::string color = get_color(pos);
-        file_output_rhymes << "<li>" << static_cast<char>(toupper(pos[0])) << pos.substr(1)
-                           << " - <span style='color:" << color << ";'>" << description << "</span></li>\n";
+        if (buttons::SaveButtonFlags.test(flag_index))
+        {
+            string color = get_color(part);
+            string label = static_cast<char>(toupper(part[0])) + part.substr(1); // Первая буква заглавная
+            file_output_rhymes << "<li>" << label << " - "
+                               << "<span style='color:" << color << ";'>" << description << "</span></li>\n";
+        }
     }
 
+    file_output_rhymes << "</ul>\n";
+
+    // Тип поиска
     file_output_rhymes << "<p><strong>Тип поиска:</strong> "
-                       << (buttons::SaveButtonFlags.test(7) ? "Однородный" : "Неоднородный") << "<br>\n\n\n";
+                       << (buttons::SaveButtonFlags.test(7) ? "Однородный" : "Неоднородный") << "<br>\n"
+                       << "В тексте каждая часть речи выделена цветом:</p>\n<hr>\n";
 
     // Вывод рифм
     for (const auto &output : rhymes_data)
@@ -272,7 +280,7 @@ void write_outputFile_rhymes_html(const vector<WordData> &rhymes_data)
         if (!output.rhymed_words.empty())
         {
             file_output_rhymes << "<strong>Рифмующиеся пары:</strong><ul>\n";
-            for (const std::string &rhyme : output.rhymed_words)
+            for (const string &rhyme : output.rhymed_words)
             {
                 file_output_rhymes << "<li>" << rhyme << "</li>\n";
             }
@@ -304,12 +312,50 @@ bool check_outputFile_existence(const string outputFileName)
         return false;
 }
 
+// Функция для получения суффикса частей речи
+string get_parts_of_speech_suffix()
+{
+    vector<string> parts;
+    if (buttons::SaveButtonFlags.test(0))
+		parts.push_back("verb"); // глагол
+    if (buttons::SaveButtonFlags.test(1))
+		parts.push_back("adv"); // наречие
+    if (buttons::SaveButtonFlags.test(2))
+		parts.push_back("adj"); // прилагательное
+    if (buttons::SaveButtonFlags.test(3))
+		parts.push_back("noun"); // существительное
+    if (buttons::SaveButtonFlags.test(4))
+		parts.push_back("participle"); // причастие
+    if (buttons::SaveButtonFlags.test(5))
+		parts.push_back("adverbial"); // деепричастие
+
+    string result;
+    for (size_t i = 0; i < parts.size(); ++i)
+    {
+        if (i > 0)
+            result += "-";
+        result += parts[i];
+    }
+    return result;
+}
+
+// Функция для получения суффикса типа поиска
+string get_search_type_suffix()
+{
+    return buttons::SaveButtonFlags.test(7) ? "homo" : "hetero";
+}
+
 // Функция для создания имён выходных файлов
 pair<string, string> create_outputFileNames(const string inputFilePath)
 {
+
     // Создание имен выходных файлов на основе полного пути входного файла
-    string outputFileName_numbered = inputFilePath.substr(0, inputFilePath.find_last_of('.')) + "_numbered.html"; // имя выходного файла-текста
-    string outputFileName_rhymes = inputFilePath.substr(0, inputFilePath.find_last_of('.')) + "_rhymes.html";     // имя выходного файла-рифм
+    string baseName = inputFilePath.substr(0, inputFilePath.find_last_of('.'));
+    string part_suffix = get_parts_of_speech_suffix();
+    string type_suffix = get_search_type_suffix();
+
+    string outputFileName_numbered = baseName + "_numbered_" + part_suffix + "_" + type_suffix + ".html";
+    string outputFileName_rhymes = baseName + "_rhymes_" + part_suffix + "_" + type_suffix + ".html";
 
     int count_numb = 1; // счетчик для нумерации
 
@@ -321,7 +367,7 @@ pair<string, string> create_outputFileNames(const string inputFilePath)
 
         // Удалить "(n)", если есть
         size_t pos = outputFileName_numbered.rfind('(');
-        if (pos != std::string::npos && outputFileName_numbered.back() == ')')
+        if (pos != string::npos && outputFileName_numbered.back() == ')')
             outputFileName_numbered.erase(pos); // Удаляет от '(' до конца
 
         // Добавить новую нумерацию
@@ -339,7 +385,7 @@ pair<string, string> create_outputFileNames(const string inputFilePath)
 
         // Удалить "(n)", если есть
         size_t pos = outputFileName_rhymes.rfind('(');
-        if (pos != std::string::npos && outputFileName_rhymes.back() == ')')
+        if (pos != string::npos && outputFileName_rhymes.back() == ')')
             outputFileName_rhymes.erase(pos); // Удаляет от '(' до конца
 
         // Добавить новую нумерацию
@@ -351,7 +397,7 @@ pair<string, string> create_outputFileNames(const string inputFilePath)
 }
 
 // Функция для преобразования данных рифм в UTF-8
-void convert_rhymes_data_to_utf8(std::vector<WordData> &rhymes_data)
+void convert_rhymes_data_to_utf8(vector<WordData> &rhymes_data)
 {
     for (auto &entry : rhymes_data)
     {
@@ -365,7 +411,7 @@ void convert_rhymes_data_to_utf8(std::vector<WordData> &rhymes_data)
 }
 
 //  Функция для преобразования текста в UTF-8
-void convert_sentences_to_utf8(std::vector<std::vector<std::string>> &sentences_numbered)
+void convert_sentences_to_utf8(vector<vector<string>> &sentences_numbered)
 {
     for (auto &sentence : sentences_numbered)
     {
