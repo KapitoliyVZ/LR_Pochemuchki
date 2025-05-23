@@ -234,6 +234,31 @@ std::wstring ansi_to_wstring(const std::string& ansi_str)
     return wstr;
 }
 
+// Конвертация wstring (UTF-16) в ANSI-строку (Windows-1251)
+std::string wstring_to_ansi(const std::wstring& wstr)
+{
+    if (wstr.empty()) return std::string();
+
+    // Получаем необходимый размер для ansi-строки
+    int size_needed = WideCharToMultiByte(1251 /*CP_ACP*/, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    if (size_needed == 0) {
+        // Ошибка конвертации, можно кинуть исключение или вернуть пустую строку
+        return std::string();
+    }
+
+    std::string ansi_str(size_needed, 0);
+    WideCharToMultiByte(1251 /*CP_ACP*/, 0, wstr.c_str(), -1, &ansi_str[0], size_needed, nullptr, nullptr);
+
+    // WideCharToMultiByte возвращает строку с завершающим нулём,
+    // поэтому можно удалить последний символ
+    if (!ansi_str.empty() && ansi_str.back() == '\0') {
+        ansi_str.pop_back();
+    }
+
+    return ansi_str;
+}
+
+
 // Вывод текста в поле
 void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordData>& rhymes_data)
 {
@@ -419,6 +444,8 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data)
         cf.dwMask = CFM_COLOR;
         cf.crTextColor = color;
         SendMessageW(buttons::widgets.hEditRhymes, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
+
+		if (words.empty()) continue;
 
         wstring header = L"\r\n\r\n====================\r\n" +
                          ansi_to_wstring(capitalizeAllLetters(part_key)) +
@@ -715,8 +742,8 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 			buttons::ButtonFlags[6] = 0; 
 
 			// Получаем текст из поля редактирования
-            char WordToSearch[60] = ""; 
-            GetWindowTextA(buttons::widgets.hEditInputWord, WordToSearch, 60);
+            char WordToSearch[120] = ""; 
+            GetWindowTextA(buttons::widgets.hEditInputWord, WordToSearch, 120);
 
             // слово для поиска по нему рифм
 			string word_to_compare = WordToSearch; 
@@ -742,6 +769,29 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 MessageBoxA(hWnd, "Выберите несколько частей речи или введите слово для поиска", "Ошибка", MB_OK | MB_ICONERROR);
                 break;
             }
+
+            wstring wword = ansi_to_wstring(word_to_compare);
+            wstring filtered;
+            bool started = false;
+            for (wchar_t wc : wword)
+            {
+                if (!started) 
+                {
+                    if (iswspace(wc)) continue; // Пропускаем ведущие пробелы
+                    if (iswalpha(wc) || iswdigit(wc)) 
+                    {
+                        started = true;
+                        filtered += wc;
+                    }
+                }
+                else 
+                {
+                    if (iswspace(wc)) break; // Остановиться на первом пробеле после слова
+                    if (iswalpha(wc) || iswdigit(wc))
+                        filtered += wc;
+                }
+            }
+            word_to_compare = wstring_to_ansi(filtered);
 
             // Показываем окно загрузки
             ShowLoadingWindow(hWnd);
@@ -1119,7 +1169,7 @@ BOOL MakeRoundButton(LPDRAWITEMSTRUCT lpDrawItem)
     {
         isActive = buttons::ButtonFlags.test(7);
         hBrushes = buttons::graphics.hBrushNeutral;
-        buttonText = isActive ? "Выбран режим поиска: однородный" : "Выбран режим поиска: неоднородный";
+        buttonText = isActive ? "Текущий режим: однородный" : "Текущий режим: неоднородный";
     }
 
 	// Кнопка "Поиск"
