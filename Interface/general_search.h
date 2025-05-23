@@ -36,7 +36,7 @@ vector<string> load_morphemes(string filename)
 	file.open(file_path, ios_base::in);
 
 	if (!file.is_open()) {
-		throw std::runtime_error("Не удалось открыть файл " + filename);
+		return vector<string>();
 	}
 
 	vector<string> morphemes;
@@ -360,23 +360,8 @@ vector<WordData> find_rhymes_fast(
 // основная функция работы с рифмами частей речи
 void deal_with_words(bitset<8>& button_flags, vector<vector<string>>& numbered_sentences, string word_to_compare, vector<WordData>& data)
 {
-	// инициализация векторов окончаний и суффиксов всех 6 частей речи
-	// Загрузка морфемных правил из файлов
-	unordered_map<string, vector<string>> morphemeRules = {
-		{"nouns_endings", load_morphemes("nouns_endings.txt")},
-		{"nouns_suffixes", load_morphemes("nouns_suffixes.txt")},
-		{"adjectives_endings", load_morphemes("adjectives_endings.txt")},
-		{"adjectives_suffixes", load_morphemes("adjectives_suffixes.txt")},
-		{"participles_endings", load_morphemes("participles_endings.txt")}, // Новое
-		{"participles_suffixes", load_morphemes("participles_suffixes.txt")}, // Новое
-		{"verbs_endings", load_morphemes("verbs_endings.txt")},
-		{"verbs_suffixes", load_morphemes("verbs_suffixes.txt")},
-		{"gerunds_endings", load_morphemes("gerunds_endings.txt")},
-		{"gerunds_suffixes", load_morphemes("gerunds_suffixes.txt")},
-		{"adverbs_endings", load_morphemes("adverbs_endings.txt")},
-		{"adverbs_suffixes", load_morphemes("adverbs_suffixes.txt")},
-		{"others_list", load_morphemes("others_list.txt")}
-	};
+
+
 
 	// количество частей речи, которые можно найти
 	const int amount_of_parts_of_speech = 6;
@@ -391,7 +376,7 @@ void deal_with_words(bitset<8>& button_flags, vector<vector<string>>& numbered_s
 	{
 		word_to_compare = lowFirstLetter(word_to_compare);
 
-		comparing_word_part_of_speech = get_comparing_word_part(word_to_compare, morphemeRules);
+		comparing_word_part_of_speech = get_comparing_word_part(word_to_compare, buttons::morphemeRules);
 
 		for (string& word : comparing_word_part_of_speech)
 		{
@@ -420,7 +405,7 @@ void deal_with_words(bitset<8>& button_flags, vector<vector<string>>& numbered_s
 
 
 	// поиск слов по частям речи
-	findWordsByPartOfSpeech(numbered_sentences,button_flags, parts_of_speech, words_text_collection, morphemeRules, word_to_compare);
+	findWordsByPartOfSpeech(numbered_sentences,button_flags, parts_of_speech, words_text_collection, buttons::morphemeRules, word_to_compare);
 
 	// поиск рифм
 	data = find_rhymes_fast(words_text_collection, button_flags, comparing_word_part_of_speech, parts_of_speech);

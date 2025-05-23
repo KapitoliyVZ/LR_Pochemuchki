@@ -319,6 +319,34 @@ void OutputColoredPart(HWND hEdit, const std::wstring& partName, const std::wstr
     SendMessageW(hEdit, EM_REPLACESEL, FALSE, (LPARAM)L"\r\n");
 }
 
+void OpenFileMorphemes()
+{
+    // инициализация векторов окончаний и суффиксов всех 6 частей речи
+    // Загрузка морфемных правил из файлов
+    buttons::morphemeRules = {
+        {"nouns_endings", load_morphemes("nouns_endings.txt")},
+        {"nouns_suffixes", load_morphemes("nouns_suffixes.txt")},
+        {"adjectives_endings", load_morphemes("adjectives_endings.txt")},
+        {"adjectives_suffixes", load_morphemes("adjectives_suffixes.txt")},
+        {"participles_endings", load_morphemes("participles_endings.txt")}, // Новое
+        {"participles_suffixes", load_morphemes("participles_suffixes.txt")}, // Новое
+        {"verbs_endings", load_morphemes("verbs_endings.txt")},
+        {"verbs_suffixes", load_morphemes("verbs_suffixes.txt")},
+        {"gerunds_endings", load_morphemes("gerunds_endings.txt")},
+        {"gerunds_suffixes", load_morphemes("gerunds_suffixes.txt")},
+        {"adverbs_endings", load_morphemes("adverbs_endings.txt")},
+        {"adverbs_suffixes", load_morphemes("adverbs_suffixes.txt")},
+        {"others_list", load_morphemes("others_list.txt")}
+    };
+	// Проверка на успешную загрузку
+	for (const auto& [key, value] : buttons::morphemeRules) {
+		if (value.empty()) {
+			MessageBoxA(NULL, ("Не удалось загрузить файл: " + key).c_str(), "Ошибка", MB_OK | MB_ICONERROR);
+			return;
+		}
+	}
+}
+
 void OutputRhymeInfo(const vector<WordData>& rhymes_data) 
 {
     map<string, vector<WordData>> grouped;
@@ -346,9 +374,9 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data)
     if (buttons::ButtonFlags.test(3))
         OutputColoredPart(buttons::widgets.hEditRhymes, L"• Существительное", L"выделено в тексте синим", RGB(0, 0, 200));
     if (buttons::ButtonFlags.test(4))
-        OutputColoredPart(buttons::widgets.hEditRhymes, L"• Причастие", L"выделено в тексте бирюзовым", RGB(0, 150, 150));
+        OutputColoredPart(buttons::widgets.hEditRhymes, L"• Причастие", L"выделено в тексте бирюзовым", RGB(0, 128, 128));
     if (buttons::ButtonFlags.test(5))
-        OutputColoredPart(buttons::widgets.hEditRhymes, L"• Деепричастие", L" выделено в тексте жёлтым", RGB(150, 150, 0));
+        OutputColoredPart(buttons::widgets.hEditRhymes, L"• Деепричастие", L" выделено в тексте жёлтым", RGB(184, 134, 11));
     
     
     output_text += L"\r\n";
@@ -362,9 +390,9 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data)
         // Цвет текста
         COLORREF color = RGB(0, 0, 0);
         if (part_key == "глагол") color = RGB(200, 0, 0);
-        else if (part_key == "существительное") color = RGB(0, 0, 200);
-        else if (part_key == "прилагательное") color = RGB(0, 150, 0);
         else if (part_key == "наречие") color = RGB(150, 0, 150);
+        else if (part_key == "прилагательное") color = RGB(0, 150, 0);
+        else if (part_key == "существительное") color = RGB(0, 0, 200);
         else if (part_key == "причастие") color = RGB(0, 128, 128);
         else if (part_key == "деепричастие") color = RGB(184, 134, 11);
 

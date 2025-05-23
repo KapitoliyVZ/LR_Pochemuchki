@@ -2,6 +2,9 @@
 
 #include <Windows.h>
 #include <bitset>
+#include <unordered_map>
+#include <vector>
+#include <string>
 
 
 namespace buttons
@@ -94,4 +97,6 @@ namespace buttons
     // Флаги для кнопок
     std::bitset<8> ButtonFlags = 0; 
     std::bitset<8> SaveButtonFlags = 0;
+
+    std::unordered_map<std::string, std::vector<std::string>> morphemeRules;
 }
