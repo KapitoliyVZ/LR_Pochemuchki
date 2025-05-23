@@ -29,8 +29,6 @@ std::string get_filepath(const std::string& filename) {
     return path;
 }
 
-
-
 // функции Харитонов начало
 
 // проверка на малосимвольные (местоимения, предлоги) части речи
@@ -490,6 +488,9 @@ std::string getPartOfSpeech(const std::string& word, unordered_map<string, vecto
 
     //string word_ANSI = utf8_to_ansi(word); // Перекодируем результат в ANSI
 
+    // подсчет количества слогов
+    int amount_syllables = countSyllables(word);
+
     // идентификация наречий, междометий и тд
     if (match_others(word, morphemeRules.at("others_list")))
     {
@@ -498,44 +499,43 @@ std::string getPartOfSpeech(const std::string& word, unordered_map<string, vecto
 
     //|| ((ends_with(word, morphemeRules.at("nouns_endings")))|| (word.size() < 5) )
     // Проверка на существительное
-    if ((ends_with(word, morphemeRules.at("nouns_endings")) &&
-        contains_suffix(word, morphemeRules.at("nouns_suffixes")) && word.size() >= 2)) {
+    if (((ends_with(word, morphemeRules.at("nouns_endings")) &&
+        contains_suffix(word, morphemeRules.at("nouns_suffixes"))) || ((amount_syllables<=2) && (ends_with(word, morphemeRules.at("nouns_endings"))))) && word.size() >= 2) {
         return "S";
     }
 
-    //причастие
-    if (ends_with(word, morphemeRules.at("participles_endings")) &&
-        contains_suffix(word, morphemeRules.at("participles_suffixes"))&& word.size() >= 5) {
-        return "прич";
-    }
-
     // Проверка на глагол
-    if (ends_with(word, morphemeRules.at("verbs_endings")) &&
-        contains_suffix(word, morphemeRules.at("verbs_suffixes")) && word.size() >= 2) {
+    if (((ends_with(word, morphemeRules.at("verbs_endings")) &&
+        contains_suffix(word, morphemeRules.at("verbs_suffixes"))) || ((amount_syllables <= 2) && (ends_with(word, morphemeRules.at("verbs_endings"))))) && word.size() >= 2) {
         return "V";
     }
 
-    if (ends_with(word, morphemeRules.at("gerunds_endings")) &&
-        contains_suffix(word, morphemeRules.at("gerunds_suffixes"))&& word.size() >= 5) {
-        return "деепр";
+    // Проверка на прилагательное
+    if ((adj_check(word) || ((amount_syllables <= 3) && (ends_with(word, morphemeRules.at("adjectives_endings"))))) && word.size() >= 4)
+    {
+        return "A";
     }
 
     // Проверка на наречие
-    if (ends_with(word, morphemeRules.at("adverbs_endings")) &&
-        contains_suffix(word, morphemeRules.at("adverbs_suffixes")) && word.size() >= 4) {
+    if (((ends_with(word, morphemeRules.at("adverbs_endings")) &&
+        contains_suffix(word, morphemeRules.at("adverbs_suffixes"))) || ((amount_syllables <= 2) && (ends_with(word, morphemeRules.at("adverbs_endings"))))) && word.size() >= 4) {
         return "ADV";
     }
-    // Проверка на прилагательное
-    if (adj_check(word)&& word.size() >= 4)
-    {
-        return "А";
+
+    //причастие
+    if (((ends_with(word, morphemeRules.at("participles_endings")) &&
+        contains_suffix(word, morphemeRules.at("participles_suffixes"))) || ((amount_syllables <= 2) && (ends_with(word, morphemeRules.at("participles_endings"))))) && word.size() >= 5) {
+        return "прич";
     }
 
     
 
-    // добавить проверку нулевого окончания существительных
+    if (((ends_with(word, morphemeRules.at("gerunds_endings")) &&
+        contains_suffix(word, morphemeRules.at("gerunds_suffixes"))) || ((amount_syllables <= 2) && (ends_with(word, morphemeRules.at("gerunds_endings"))))) && word.size() >= 5) {
+        return "деепр";
+    }
 
-
+    // учет нулевых окончаний
     return "S";
 
 };
@@ -560,7 +560,8 @@ void findWordsByPartOfSpeech(std::vector<std::vector<std::string>>& sentences,bi
             if (tmp_word.empty())
                 continue;
 
-            std::string partOfSpeech = getPartOfSpeech(word, morphemeRules);
+            tmp_word = lowFirstLetter(tmp_word);
+            std::string partOfSpeech = getPartOfSpeech(tmp_word, morphemeRules);
 
             for (int i = 0; i < 6; i++)
             {
@@ -572,11 +573,14 @@ void findWordsByPartOfSpeech(std::vector<std::vector<std::string>>& sentences,bi
                 {
                     
                         word = lowFirstLetter(word);
-
+                        
                         words_text_collection[i].push_back(word); // Сохраняем найденное слово с обработкой регистра
 
                         if (word_to_compare.empty() || (!word_to_compare.empty() && word_to_compare == word))
                             word = capitalizeAllLetters(word); // Обновляем слово в предложении
+
+                        // выход из поиска - слово найдено
+                        break;
                     
                 }
             

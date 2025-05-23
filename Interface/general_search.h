@@ -50,48 +50,14 @@ vector<string> load_morphemes(string filename)
 	return morphemes;
 }
 
-// Функция разбора UTF-8 строки на отдельные Unicode-символы
-std::vector<std::string> utf8Split(const std::string& str)
+// Функция разбора ANSI строки на отдельные сиволы
+std::vector<std::string> ansiSplit(const std::string& str)
 {
 	std::vector<std::string> result;
-	size_t i = 0;
-
-	while (i < str.size())
+	for (size_t i = 0; i < str.size(); ++i)
 	{
-		unsigned char c = str[i];
-		size_t char_len = 0;
-
-		if ((c & 0b10000000) == 0)
-		{
-			char_len = 1; // ASCII
-		}
-		else if ((c & 0b11100000) == 0b11000000)
-		{
-			char_len = 2;
-		}
-		else if ((c & 0b11110000) == 0b11100000)
-		{
-			char_len = 3;
-		}
-		else if ((c & 0b11111000) == 0b11110000)
-		{
-			char_len = 4;
-		}
-		else
-		{
-			// Неверный UTF-8 байт
-			char_len = 1;
-		}
-
-		if (i + char_len > str.size())
-		{
-			char_len = 1; // безопасность
-		}
-
-		result.emplace_back(str.substr(i, char_len));
-		i += char_len;
+		result.emplace_back(std::string(1, str[i]));
 	}
-
 	return result;
 }
 
@@ -137,7 +103,7 @@ int damerauLevenshteinDistance(const string& ending_1, const string& ending_2)
 // Функция для извлечения окончания слова (например, последние 4 символа)
 std::string getSuffix(const std::string& word, int suffix_length = 8)
 {
-	std::vector<std::string> letters = utf8Split(word);
+	std::vector<std::string> letters = ansiSplit(word);
 
 	std::string suffix;
 	int start = (letters.size() > suffix_length) ? letters.size() - suffix_length : 0;
@@ -177,27 +143,10 @@ int countMaxConsecutiveMatches(const std::string& s1, const std::string& s2) {
 	return maxCount;
 }
 
-// Функция для подсчета слогов в слове (по количеству гласных)
-int countSyllables(const std::string& word) {
-	// Массив гласных букв
-	const std::string vowels = "аеёиоуыэюяАЕЁИОУЫЭЮЯ";
-	int syllables = 0;
-
-	// Перебираем каждый символ в слове и проверяем, является ли он гласным
-	for (char c : word) {
-		if (vowels.find(c) != std::string::npos) {
-			syllables++;
-		}
-	}
-	return syllables;
-}
-
 bool areWordsRhymed(const std::string& word_1, const std::string& word_2) {
 	// Получаем количество слогов
-	string word_1_ansi = utf8_to_ansi(word_1);
-	string word_2_ansi = utf8_to_ansi(word_2);
-	int syllables_1 = countSyllables(word_1_ansi);
-	int syllables_2 = countSyllables(word_2_ansi);
+	int syllables_1 = countSyllables(word_1);
+	int syllables_2 = countSyllables(word_2);
 
 	// Если количество слогов не совпадает, то слова не рифмуются
 	if (std::abs(syllables_1 - syllables_2) > 1) return false;
@@ -219,8 +168,8 @@ bool areWordsRhymed(const std::string& word_1, const std::string& word_2) {
 		return maxCount;
 		};
 
-	std::vector<std::string> letters_1 = utf8Split(word_1);
-	std::vector<std::string> letters_2 = utf8Split(word_2);
+	std::vector<std::string> letters_1 = ansiSplit(word_1);
+	std::vector<std::string> letters_2 = ansiSplit(word_2);
 
 	int len_1 = letters_1.size();
 	int len_2 = letters_2.size();
@@ -469,8 +418,6 @@ void deal_with_words(bitset<8>& button_flags, vector<vector<string>>& numbered_s
 	// обозначения частей речи для MyStem
 	const vector<string> parts_of_speech{ "V", "ADV", "A", "S", "прич", "деепр" };
 
-
-	
 
 	// поиск слов по частям речи
 	findWordsByPartOfSpeech(numbered_sentences,button_flags, parts_of_speech, words_text_collection, morphemeRules, word_to_compare);

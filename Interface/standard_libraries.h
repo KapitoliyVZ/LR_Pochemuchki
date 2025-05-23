@@ -53,3 +53,19 @@
 #include <regex>
 #include <stdexcept>
 using namespace std;
+
+
+// ‘ункци€ дл€ подсчета слогов в слове (по количеству гласных)
+int countSyllables(const std::string& word) {
+	// ћассив гласных букв
+	const std::string vowels = "аеЄиоуыэю€ј≈®»ќ”џЁёя";
+	int syllables = 0;
+
+	// ѕеребираем каждый символ в слове и провер€ем, €вл€етс€ ли он гласным
+	for (char c : word) {
+		if (vowels.find(c) != std::string::npos) {
+			syllables++;
+		}
+	}
+	return syllables;
+};
