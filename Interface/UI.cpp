@@ -352,8 +352,15 @@ vector<string> OpenFileMorphemes(HWND hWnd)
 
 void OutputRhymeInfo(const vector<WordData>& rhymes_data) 
 {
-    map<string, vector<WordData>> grouped;
-
+    unordered_map<string, vector<WordData>> grouped = {
+        { "глагол", {}},
+        {"наречие", {}},
+        {"прилагательное", {}},
+        {"существительное", {}},
+        {"причастие", {}},
+        {"деепричастие", {}}
+    };
+    
     for (const auto& word : rhymes_data) 
     {
         grouped[word.part_of_speech].push_back(word);
@@ -372,21 +379,30 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data)
         OutputColoredPart(buttons::widgets.hEditRhymes, L"• Глагол", L" выделен в тексте красным", RGB(200, 0, 0));
     if (buttons::ButtonFlags.test(1))
         OutputColoredPart(buttons::widgets.hEditRhymes, L"• Наречие", L"выделено в тексте фиолетовым", RGB(150, 0, 150));
-    if (buttons::ButtonFlags.test(2))
-        OutputColoredPart(buttons::widgets.hEditRhymes, L"• Прилагательное", L"выделено в тексте зелёным", RGB(0, 150, 0));
     if (buttons::ButtonFlags.test(3))
         OutputColoredPart(buttons::widgets.hEditRhymes, L"• Существительное", L"выделено в тексте синим", RGB(0, 0, 200));
-    if (buttons::ButtonFlags.test(4))
-        OutputColoredPart(buttons::widgets.hEditRhymes, L"• Причастие", L"выделено в тексте бирюзовым", RGB(0, 128, 128));
+    if (buttons::ButtonFlags.test(2))
+        OutputColoredPart(buttons::widgets.hEditRhymes, L"• Прилагательное", L"выделено в тексте зелёным", RGB(0, 150, 0));
     if (buttons::ButtonFlags.test(5))
         OutputColoredPart(buttons::widgets.hEditRhymes, L"• Деепричастие", L" выделено в тексте жёлтым", RGB(184, 134, 11));
+    if (buttons::ButtonFlags.test(4))
+        OutputColoredPart(buttons::widgets.hEditRhymes, L"• Причастие", L"выделено в тексте бирюзовым", RGB(0, 128, 128));
+    
     
     
     output_text += L"\r\n";
     output_text += L"Тип поиска: " + wstring(buttons::ButtonFlags.test(7) ? L"Однородный" : L"Неоднородный");
     SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)output_text.c_str());
 
-    
+    // Порядок вывода
+    const vector<string> part_order = {
+        "глагол",
+        "наречие",
+        "прилагательное",
+        "существительное",
+        "причастие",
+        "деепричастие"
+    };
 
     for (const auto& [part_key, words] : grouped)
     {
