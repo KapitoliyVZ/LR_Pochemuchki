@@ -236,7 +236,6 @@ std::wstring ansi_to_wstring(const std::string& ansi_str)
     return wstr;
 }
 
-
 // Вывод текста в поле
 void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordData>& rhymes_data)
 {
@@ -756,6 +755,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             // ВЫЗОВ ФУНКЦИИ ДЛЯ ВЫВОДА В ФАЙЛ
             string outputFileName_numbered; // имя выходного файла-текста
             string outputFileName_rhymes; // имя выходного файла-рифм
+
             outputFiles_working(filename_str, outputFileName_numbered, outputFileName_rhymes, sentences, rhymes_data);
             wstring wtext, wrhymes;
             wtext += L"Файл с пронумерованным текстом: " + utf8_to_wstring(ansi_to_utf8(outputFileName_numbered));
