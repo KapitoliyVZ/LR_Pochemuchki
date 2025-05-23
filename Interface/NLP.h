@@ -506,7 +506,7 @@ std::string getPartOfSpeech(const std::string& word, unordered_map<string, vecto
 
     // Проверка на глагол
     if (((ends_with(word, morphemeRules.at("verbs_endings")) &&
-        contains_suffix(word, morphemeRules.at("verbs_suffixes"))) || ((amount_syllables <= 2) && (ends_with(word, morphemeRules.at("verbs_endings"))))) && word.size() >= 2) {
+        contains_suffix(word, morphemeRules.at("verbs_suffixes"))) || ((amount_syllables <= 4) && (ends_with(word, morphemeRules.at("verbs_endings"))))) && word.size() >= 2) {
         return "V";
     }
 
@@ -518,25 +518,25 @@ std::string getPartOfSpeech(const std::string& word, unordered_map<string, vecto
 
     // Проверка на наречие
     if (((ends_with(word, morphemeRules.at("adverbs_endings")) &&
-        contains_suffix(word, morphemeRules.at("adverbs_suffixes"))) || ((amount_syllables <= 2) && (ends_with(word, morphemeRules.at("adverbs_endings"))))) && word.size() >= 4) {
+        contains_suffix(word, morphemeRules.at("adverbs_suffixes"))) || ((amount_syllables <= 3) && (ends_with(word, morphemeRules.at("adverbs_endings"))))) && word.size() >= 4) {
         return "ADV";
     }
 
     //причастие
     if (((ends_with(word, morphemeRules.at("participles_endings")) &&
-        contains_suffix(word, morphemeRules.at("participles_suffixes"))) || ((amount_syllables <= 2) && (ends_with(word, morphemeRules.at("participles_endings"))))) && word.size() >= 5) {
+        contains_suffix(word, morphemeRules.at("participles_suffixes"))) || ((amount_syllables <= 3) && (ends_with(word, morphemeRules.at("participles_endings"))))) && word.size() >= 5) {
         return "прич";
     }
 
     
 
     if (((ends_with(word, morphemeRules.at("gerunds_endings")) &&
-        contains_suffix(word, morphemeRules.at("gerunds_suffixes"))) || ((amount_syllables <= 2) && (ends_with(word, morphemeRules.at("gerunds_endings"))))) && word.size() >= 5) {
+        contains_suffix(word, morphemeRules.at("gerunds_suffixes"))) || ((amount_syllables <= 3) && (ends_with(word, morphemeRules.at("gerunds_endings"))))) && word.size() >= 5) {
         return "деепр";
     }
 
-    // учет нулевых окончаний
-    return "S";
+    
+    return "unknown";
 
 };
 
