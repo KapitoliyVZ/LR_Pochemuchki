@@ -31,15 +31,16 @@ struct WordData
 vector<string> load_morphemes(string filename)
 {
 	string file_path = get_filepath(filename);
-
+	vector<string> morphemes;
 	ifstream file;
 	file.open(file_path, ios_base::in);
 
 	if (!file.is_open()) {
-		return vector<string>();
+		morphemes.push_back("error");
+		return morphemes;
 	}
 
-	vector<string> morphemes;
+	
 	string morpheme;
 
 	while (file >> morpheme) {

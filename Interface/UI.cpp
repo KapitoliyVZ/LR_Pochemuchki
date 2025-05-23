@@ -319,8 +319,9 @@ void OutputColoredPart(HWND hEdit, const std::wstring& partName, const std::wstr
     SendMessageW(hEdit, EM_REPLACESEL, FALSE, (LPARAM)L"\r\n");
 }
 
-void OpenFileMorphemes()
+vector<string> OpenFileMorphemes(HWND hWnd)
 {
+	vector<string> morphemesError;
     // инициализация векторов окончаний и суффиксов всех 6 частей речи
     // Загрузка морфемных правил из файлов
     buttons::morphemeRules = {
@@ -340,11 +341,13 @@ void OpenFileMorphemes()
     };
 	// Проверка на успешную загрузку
 	for (const auto& [key, value] : buttons::morphemeRules) {
-		if (value.empty()) {
-			MessageBoxA(NULL, ("Не удалось загрузить файл: " + key).c_str(), "Ошибка", MB_OK | MB_ICONERROR);
-			return;
+		if (value[0] == "error") 
+        {
+			morphemesError.push_back(key);
+			
 		}
 	}
+    return morphemesError;
 }
 
 void OutputRhymeInfo(const vector<WordData>& rhymes_data) 
@@ -516,6 +519,9 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 
 		// Создание виджетов
         MainWndAddWidget(hWnd);
+
+		// Создание словаря для хранения частей речи
+        
         EnableWindow(buttons::widgets.hSaveFile, FALSE);  // Блокировка кнопки
         EnableWindow(buttons::widgets.hSearch, FALSE);  // Блокировка кнопки
         UpdateWindow(buttons::widgets.hSaveFile);
@@ -804,7 +810,20 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
         // Нажатие кнопки "чтение файла"
         else if (LOWORD(wp) == buttons::buttonIDs.ButOpenFile)
         {
-          
+            vector <string> ErrorFiles = OpenFileMorphemes(hWnd);
+            if (!ErrorFiles.empty())
+            {
+                string errors = "Не удалось загрузить файл(ы): ";
+                for (auto it = ErrorFiles.begin(); it != ErrorFiles.end(); ++it)
+                {
+                    errors += *it;
+                    if (std::next(it) != ErrorFiles.end())
+                        errors += ", ";
+                }
+                MessageBoxA(hWnd, errors.c_str(), "Ошибка", MB_OK | MB_ICONERROR);
+                break;
+            }
+
             // Проверка успешности выбора файла
             if (GetOpenFileNameA(&OFN)) // Вызов GetOpenFileNameW
             {
