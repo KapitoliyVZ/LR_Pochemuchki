@@ -353,7 +353,6 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data)
     
     output_text += L"\r\n";
     output_text += L"Тип поиска: " + wstring(buttons::ButtonFlags.test(7) ? L"Однородный" : L"Неоднородный");
-    output_text += L"\r\nВ тексте каждая часть речи выделена цветом: \r\n";
     SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)output_text.c_str());
 
     
@@ -366,8 +365,8 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data)
         else if (part_key == "существительное") color = RGB(0, 0, 200);
         else if (part_key == "прилагательное") color = RGB(0, 150, 0);
         else if (part_key == "наречие") color = RGB(150, 0, 150);
-        else if (part_key == "причастие") color = RGB(0, 150, 150);
-        else if (part_key == "деепричастие") color = RGB(150, 150, 0);
+        else if (part_key == "причастие") color = RGB(0, 128, 128);
+        else if (part_key == "деепричастие") color = RGB(184, 134, 11);
 
         CHARFORMAT2 cf = { sizeof(cf) };
         cf.dwMask = CFM_COLOR;
