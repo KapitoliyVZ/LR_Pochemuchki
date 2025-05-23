@@ -57,8 +57,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdsho
     return 0;
 }
 
-
-
 // Обновляем состояние кнопок в зависимости от флагов
 void UpdateButtonStatesAndColors()
 {
@@ -335,24 +333,30 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data)
 
     // Заголовок
     wstring output_text;
-    output_text += L"Поиск выполнялся по следующим частям речи: " + GetActivePartsOfSpeech(buttons::ButtonFlags) + L"\r\n";
+    output_text += L"Поиск выполнялся по следующим частям речи: \r\n";
+    SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)output_text.c_str());
+    output_text = L"";
+    // Для каждой активной части речи
+    if (buttons::ButtonFlags.test(0))
+        OutputColoredPart(buttons::widgets.hEditRhymes, L"• Глагол", L" выделен в тексте красным", RGB(200, 0, 0));
+    if (buttons::ButtonFlags.test(1))
+        OutputColoredPart(buttons::widgets.hEditRhymes, L"• Наречие", L"выделено в тексте фиолетовым", RGB(150, 0, 150));
+    if (buttons::ButtonFlags.test(2))
+        OutputColoredPart(buttons::widgets.hEditRhymes, L"• Прилагательное", L"выделено в тексте зелёным", RGB(0, 150, 0));
+    if (buttons::ButtonFlags.test(3))
+        OutputColoredPart(buttons::widgets.hEditRhymes, L"• Существительное", L"выделено в тексте синим", RGB(0, 0, 200));
+    if (buttons::ButtonFlags.test(4))
+        OutputColoredPart(buttons::widgets.hEditRhymes, L"• Причастие", L"выделено в тексте бирюзовым", RGB(0, 150, 150));
+    if (buttons::ButtonFlags.test(5))
+        OutputColoredPart(buttons::widgets.hEditRhymes, L"• Деепричастие", L" выделено в тексте жёлтым", RGB(150, 150, 0));
+    
+    
+    output_text += L"\r\n";
     output_text += L"Тип поиска: " + wstring(buttons::ButtonFlags.test(7) ? L"Однородный" : L"Неоднородный");
     output_text += L"\r\nВ тексте каждая часть речи выделена цветом: \r\n";
     SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)output_text.c_str());
 
-    // Для каждой активной части речи вызываем универсальную функцию:
-    if (buttons::ButtonFlags.test(0))
-        OutputColoredPart(buttons::widgets.hEditRhymes, L"Глагол", L"красным", RGB(200, 0, 0));
-    if (buttons::ButtonFlags.test(1))
-        OutputColoredPart(buttons::widgets.hEditRhymes, L"Наречие", L"фиолетовым", RGB(150, 0, 150));
-    if (buttons::ButtonFlags.test(2))
-        OutputColoredPart(buttons::widgets.hEditRhymes, L"Прилагательное", L"зелёным", RGB(0, 150, 0));
-    if (buttons::ButtonFlags.test(3))
-        OutputColoredPart(buttons::widgets.hEditRhymes, L"Существительное", L"синим", RGB(0, 0, 200));
-    if (buttons::ButtonFlags.test(4))
-        OutputColoredPart(buttons::widgets.hEditRhymes, L"Причастие", L"бирюзовым", RGB(0, 150, 150));
-    if (buttons::ButtonFlags.test(5))
-        OutputColoredPart(buttons::widgets.hEditRhymes, L"Деепричастие", L"жёлтым", RGB(150, 150, 0));
+    
 
     for (const auto& [part_key, words] : grouped)
     {
@@ -706,14 +710,16 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 			// Если не найдено рифм, выводим сообщение
             if (rhymes_data.empty())
             {
-                MessageBoxA(hWnd, "Не найдено рифм", "Ошибка", MB_OK | MB_ICONERROR);
                 HideLoadingWindow(hWnd);
+                MessageBoxA(hWnd, "Не найдено рифм", "Ошибка", MB_OK | MB_ICONERROR);
+                
                 EnableWindow(buttons::widgets.hSaveFile, FALSE);
                 UpdateWindow(buttons::widgets.hSaveFile);
                 break;
             }
             else if(sentences.empty())
             {
+                HideLoadingWindow(hWnd);
                 MessageBoxA(hWnd, "Не найдено предложений", "Ошибка", MB_OK | MB_ICONERROR);
                 EnableWindow(buttons::widgets.hSaveFile, FALSE);
                 UpdateWindow(buttons::widgets.hSaveFile);
@@ -777,21 +783,34 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             {
                 filename_str = filename;
                 pair<bool, string> fromFunct = inputFile_working(filename_str);
-                bool fromFunctStatus = fromFunct.first;         // статус проверки файла
-                string fromFunctText = fromFunct.second;        // текст в строковой записи или ошибка файла
 
 
-				if (fromFunctStatus == false)
+				if (fromFunct.second == "Ошибка!: Пустой путь к файлу!")
 				{
-					MessageBoxA(hWnd, fromFunctText.c_str(), "Ошибка", MB_OK | MB_ICONERROR);
+                    MessageBoxA(hWnd, "Пустой путь к файлу!", "Ошибка", MB_OK | MB_ICONERROR);
 					break;
 				}
-                
-				str_sentences = fromFunctText; // Получаем текст из функции
-                SetWindowTextA(buttons::widgets.hOutputStatus, filename_str.c_str());
-
-                // open_file(filename_str);
-                UpdateCheckboxStates();
+                else if (fromFunct.second == "Ошибка!: Неверное расширение!")
+                {
+					MessageBoxA(hWnd, "Неверное расширение!", "Ошибка", MB_OK | MB_ICONERROR);
+					break;
+                }
+                else if (fromFunct.second == "Ошибка!: Не удалось открыть файл!")
+                {
+					MessageBoxA(hWnd, "Не удалось открыть файл!", "Ошибка", MB_OK | MB_ICONERROR);
+					break;
+				}
+                else if (fromFunct.second == "Ошибка!: Файл пуст!")
+                {
+					MessageBoxA(hWnd, "Файл пуст!", "Ошибка", MB_OK | MB_ICONERROR);
+					break;
+                }
+                else
+                {
+                    str_sentences = fromFunct.second; // Получаем текст из функции
+                    SetWindowTextA(buttons::widgets.hOutputStatus, filename_str.c_str());
+                    UpdateCheckboxStates();
+                }
             }
             break;
         }
@@ -900,7 +919,6 @@ void FreeLPWSTR(LPWSTR lpwstr)
 {
     delete[] lpwstr;
 }
-
 
 // Функция для преобразования LPWSTR в std::string
 std::string ConvertLPWSTRToString(LPWSTR lpwstr)
@@ -1039,7 +1057,7 @@ BOOL MakeRoundButton(LPDRAWITEMSTRUCT lpDrawItem)
     {
         isActive = buttons::ButtonFlags.test(7);
         hBrushes = buttons::graphics.hBrushNeutral;
-        buttonText = isActive ? "Режим поиска: однородный" : "Режим поиска: неоднородный";
+        buttonText = isActive ? "Выбран режим поиска: однородный" : "Выбран режим поиска: неоднородный";
     }
 
 	// Кнопка "Поиск"
@@ -1216,10 +1234,10 @@ void MainWndAddWidget(HWND hWnd)
         marginX, marginY + 7 * (buttonHeight + marginY) + 20 + buttonHeight + 11, buttonWidth, 25, hWnd, true);
     buttons::widgets.hOutputRhymes = CreateRichEdit(L"Найденные рифмы", 
         marginX + buttonWidth + marginX, marginY + buttonHeight + marginY+50, 
-        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2 - 1, buttonHeight, hWnd, true);
+        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2 - 301, buttonHeight, hWnd, true);
     buttons::widgets.hOutputText = CreateRichEdit(L"Текст с найденными рифмами", 
-        marginX + buttonWidth + marginX + (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, marginY + buttonHeight + marginY+50, 
-        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, buttonHeight, hWnd, true);
+        marginX + buttonWidth + marginX + (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2 - 300, marginY + buttonHeight + marginY+50, 
+        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2+300, buttonHeight, hWnd, true);
 
 
     // Поля редактирования
@@ -1240,9 +1258,9 @@ void MainWndAddWidget(HWND hWnd)
     int editHeight = screenHeight - editTopMargin - 2 * (buttonHeight + marginY) - 1; 
     
     buttons::widgets.hEditRhymes = CreateRichEdit(L"",marginX + buttonWidth + marginX, editTopMargin + 50,
-        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2 - 1, editHeight-50, hWnd, true);
-    buttons::widgets.hEditText = CreateRichEdit(L"text",marginX + buttonWidth + marginX + (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, editTopMargin + 50,
-        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2, editHeight-50, hWnd, true);
+        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2 - 301, editHeight-50, hWnd, true);
+    buttons::widgets.hEditText = CreateRichEdit(L"text",marginX + buttonWidth + marginX + (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2-300, editTopMargin + 50,
+        (screenWidth - (2 * marginX + buttonWidth + marginX)) / 2+300, editHeight-50, hWnd, true);
     
 
     
@@ -1395,7 +1413,6 @@ HWND CreateEdit(int x, int y, int width, int height, HWND hWnd, bool readOnly)
     return hEdit;
 }
 
-
 // Установка начальных параметров на открытие файлов для чтения и записи
 void SetOpenFileParams(HWND hWnd)
 {
@@ -1418,6 +1435,7 @@ void SetWinStatus(string status)
     SetWindowTextA(buttons::widgets.hOutputStatus, status.c_str());
 }
 
+// Показать окно загрузки
 void ShowLoadingWindow(HWND hWnd) {
     // Отключаем все кнопки, кроме кнопок тулбара
 	EnableWindow(buttons::widgets.hAllButton, FALSE);
@@ -1463,8 +1481,7 @@ void ShowLoadingWindow(HWND hWnd) {
     UpdateWindow(buttons::widgets.hLoadingWnd);
 }
 
-
-
+// Скрыть окно загрузки
 void HideLoadingWindow(HWND hWnd) {
     if (buttons::widgets.hLoadingWnd != NULL) {
         ShowWindow(buttons::widgets.hLoadingWnd, SW_HIDE);
