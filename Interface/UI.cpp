@@ -851,7 +851,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 if (!started) 
                 {
                     if (iswspace(wc)) continue; // Пропускаем ведущие пробелы
-                    if (iswalpha(wc) || iswdigit(wc)) 
+                    if (iswalpha(wc)) 
                     {
                         started = true;
                         filtered += wc;
@@ -860,12 +860,23 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 else 
                 {
                     if (iswspace(wc)) break; // Остановиться на первом пробеле после слова
-                    if (iswalpha(wc) || iswdigit(wc))
+                    if (iswalpha(wc))
                         filtered += wc;
                 }
             }
             word_to_compare = wstring_to_ansi(filtered);
             compare_word = word_to_compare;
+
+            if (compare_word.empty())
+            {
+				MessageBoxA(hWnd, "Проверьте корректность слова для поиска рифм", "Ошибка", MB_OK | MB_ICONERROR);
+				buttons::ButtonFlags.reset();
+				UpdateButtonStatesAndColors();
+				UpdateCheckboxStates();
+				EnableWindow(buttons::widgets.hSaveFile, FALSE);
+				UpdateWindow(buttons::widgets.hSaveFile);
+				break;
+            }
             // Показываем окно загрузки
             ShowLoadingWindow(hWnd);
 
