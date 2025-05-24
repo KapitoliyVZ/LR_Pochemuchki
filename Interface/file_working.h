@@ -4,16 +4,22 @@
 
 #include "UI_const.h"
 
-ifstream file_input;           // файл для чтения
-ofstream file_output_numbered; // файл-текст для записи
-ofstream file_output_rhymes;   // файл-рифмы для записи
+ifstream file_input;         // файл для чтения
+ofstream file_output_text;   // файл-текст для записи
+ofstream file_output_rhymes; // файл-рифмы для записи
 
 const string extension_txt = ".txt";   // расширение .txt
 const int len_txt = 4;                 // длина расширения .txt
 const string extension_html = ".html"; // расширение .html
 const int len_html = 5;                // длина расширения .html
 
-// Проверка наличия расширения .txt у файла
+const string error_opening_file = utf8_to_ansi("Ошибка!: Не удалось открыть файл!");           // текст ошибки при открытии файла
+const string error_empty_file = utf8_to_ansi("Не удалось выполнить чтение файла: Файл пуст!"); // текст ошибки при пустом файле
+const string error_wrong_extension_file = utf8_to_ansi("Ошибка!: Неверное расширение!");       // текст ошибки при неверном расширении
+const string error_empty_path_file = utf8_to_ansi("Ошибка!: Пустой путь к файлу!");            // текст ошибки при пустом пути к файлу
+const string error_wrong_encoding_file = utf8_to_ansi("Ошибка!: Неверная кодировка файла!");   // текст ошибки при неверной кодировке файла
+
+// Проверка наличия расширения .txt у файла для чтения
 bool check_txt_extension(string file_name)
 {
     if (file_name.length() >= len_txt && file_name.substr(file_name.length() - len_txt) == extension_txt)
@@ -22,8 +28,8 @@ bool check_txt_extension(string file_name)
         return false; // если нет расширения
 }
 
-// Проверка, является ли файл пустым
-bool check_inputFile_is_empty(string file_name)
+// Проверка, является ли файл для чтения пустым
+bool check_inputFile_is_empty(const string file_name)
 {
     // true - файл пустой
     // false - файл не пустой
@@ -38,12 +44,21 @@ bool check_inputFile_is_empty(string file_name)
         return false;
 }
 
+// Функция для проверки кодировки файла для чтения
+bool check_encoding_file()
+{
+    // true - файл в кодировке ANSII
+    // false - файл не в кодировке ANSII
+
+    return true; // ничего подозрительного, вероятно ANSI
+}
+
 // Функция для работы с файлом для чтения: проверка имени и открытия файла, возвращает:
 // {false, Error_text} или {true, text_in_file)
 pair<bool, string> inputFile_working(const string &inputFilePath) // filePath - путь к файлу
 {
     if (inputFilePath.empty())
-        return {false, "Ошибка!: Пустой путь к файлу!"}; // Путь к файлу пустой
+        return {false, error_empty_path_file}; // Путь к файлу пустой
 
     string path = inputFilePath;
     // Удаление кавычек в начале и конце строки, если они есть
@@ -51,16 +66,19 @@ pair<bool, string> inputFile_working(const string &inputFilePath) // filePath - 
         path = path.substr(1, path.size() - 2);
 
     if (!check_txt_extension(path))
-        return {false, "Ошибка!: Неверное расширение!"}; // Неверное расширение
+        return {false, error_wrong_extension_file}; // Неверное расширение
 
     // Открытие файла через глобальный ifstream file_input
     file_input.open(path, ios_base::in);
 
     if (!file_input.is_open())
-        return {false, "Ошибка!: Не удалось открыть файл!"}; // Не удалось открыть файл
+        return {false, error_opening_file}; // Не удалось открыть файл
 
     if (check_inputFile_is_empty(path))
-        return {false, "Ошибка!: Файл пуст!"}; // файл пустой
+        return {false, error_empty_file}; // файл пустой
+
+    if (!check_encoding_file())
+        return {false, error_wrong_encoding_file}; // Неверная кодировка файла
 
     string text_in_string; // текст файла
 
@@ -73,19 +91,9 @@ pair<bool, string> inputFile_working(const string &inputFilePath) // filePath - 
 
 /////////////////////////////////////////////////////////////
 
-// Функция для записи пронумерованного текста в TXT-файл (file_output_numbered.txt)
+// Функция для записи пронумерованного текста в TXT-файл (file_output_text.txt)
 void write_outputFile_text_txt(vector<vector<string>> sentences_numbered)
 {
-    // для проверки по точкам останова
-    /*for (vector<string>& sentence : sentences_numbered)
-    {
-        bool firstWord = true;
-        for (string& word : sentence)
-        {
-            word = utf8_to_ansi(word);
-        }
-    }*/
-
     const set<string> punctuationMarks = {".", ",", "!", "?", ":", ";", "-", "(", ")", "\"", "'"};
     for (const vector<string> &sentence : sentences_numbered)
     {
@@ -93,14 +101,14 @@ void write_outputFile_text_txt(vector<vector<string>> sentences_numbered)
         for (const string &word : sentence)
         {
             if (!firstWord && punctuationMarks.find(word) == punctuationMarks.end())
-                file_output_numbered << " ";
-            file_output_numbered << word;
+                file_output_text << " ";
+            file_output_text << word;
             firstWord = false;
         }
 
-        file_output_numbered << "\n"; // Перенос строки после предложения
+        file_output_text << "\n"; // Перенос строки после предложения
     }
-    file_output_numbered.close();
+    file_output_text.close();
 }
 // Функция для записи рифм в TXT-файл (file_output_rhymes.txt)
 void write_outputFile_rhymes_txt(vector<WordData> rhymes_data)
@@ -156,7 +164,7 @@ void write_outputFile_rhymes_txt(vector<WordData> rhymes_data)
     file_output_rhymes.close();
 }
 
-// Возвращает цвет HTML по части речи
+// Функция возвращает цвет HTML по части речи
 string get_color(const string &part_of_speech)
 {
     if (part_of_speech == "глагол")
@@ -173,7 +181,7 @@ string get_color(const string &part_of_speech)
         return "DarkGoldenRod"; // желтый
     return "black";
 }
-// Функция для записи пронумерованного текста в HTML-файл (file_output_numbered.html)
+// Функция для записи пронумерованного текста в HTML-файл (file_output_text.html)
 void write_outputFile_text_html(const vector<WordData> &rhymes_data, const vector<vector<string>> &sentences_numbered)
 {
     // Создаем отображение слово+часть_речи -> цвет
@@ -184,7 +192,7 @@ void write_outputFile_text_html(const vector<WordData> &rhymes_data, const vecto
         word_to_color[key] = get_color(entry.part_of_speech);
     }
 
-    file_output_numbered << "<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"><title>Text</title></head>\n<body>\n";
+    file_output_text << "<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"><title>Text</title></head>\n<body>\n";
 
     for (size_t i = 0; i < sentences_numbered.size(); ++i)
     {
@@ -197,21 +205,21 @@ void write_outputFile_text_html(const vector<WordData> &rhymes_data, const vecto
                 {
                     string key = entry.word + "|" + entry.part_of_speech;
                     string color = word_to_color[key];
-                    file_output_numbered << "<span style=\"color:" << color << "\">" << word << "</span> ";
+                    file_output_text << "<span style=\"color:" << color << "\">" << word << "</span> ";
                     colored = true;
                     break;
                 }
             }
             if (!colored)
             {
-                file_output_numbered << word << " ";
+                file_output_text << word << " ";
             }
         }
-        file_output_numbered << "<br>\n";
+        file_output_text << "<br>\n";
     }
 
-    file_output_numbered << "</body>\n</html>";
-    file_output_numbered.close();
+    file_output_text << "</body>\n</html>";
+    file_output_text.close();
 }
 // Функция для записи рифм в HTML-файл (file_output_rhymes.html)
 void write_outputFile_rhymes_html(const vector<WordData> &rhymes_data)
@@ -317,17 +325,17 @@ string get_parts_of_speech_suffix()
 {
     vector<string> parts;
     if (buttons::SaveButtonFlags.test(0))
-		parts.push_back("verb"); // глагол
+        parts.push_back("verb"); // глагол
     if (buttons::SaveButtonFlags.test(1))
-		parts.push_back("adv"); // наречие
+        parts.push_back("adv"); // наречие
     if (buttons::SaveButtonFlags.test(2))
-		parts.push_back("adj"); // прилагательное
+        parts.push_back("adj"); // прилагательное
     if (buttons::SaveButtonFlags.test(3))
-		parts.push_back("noun"); // существительное
+        parts.push_back("noun"); // существительное
     if (buttons::SaveButtonFlags.test(4))
-		parts.push_back("participle"); // причастие
+        parts.push_back("participle"); // причастие
     if (buttons::SaveButtonFlags.test(5))
-		parts.push_back("adverbial"); // деепричастие
+        parts.push_back("adverbial"); // деепричастие
 
     string result;
     for (size_t i = 0; i < parts.size(); ++i)
@@ -346,16 +354,16 @@ string get_search_type_suffix()
 }
 
 // Функция для создания имён выходных файлов
-pair<string, string> create_outputFileNames(const string inputFilePath)
+pair<string, string> create_outputFileNames(const string inputFilePath, string &compare_word)
 {
-
     // Создание имен выходных файлов на основе полного пути входного файла
+
     string baseName = inputFilePath.substr(0, inputFilePath.find_last_of('.'));
     string part_suffix = get_parts_of_speech_suffix();
     string type_suffix = get_search_type_suffix();
 
-    string outputFileName_numbered = baseName + "_numbered_" + part_suffix + "_" + type_suffix + ".html";
-    string outputFileName_rhymes = baseName + "_rhymes_" + part_suffix + "_" + type_suffix + ".html";
+    string outputFileName_numbered = baseName + "_TEXT_" + (compare_word == "" ? (part_suffix + "_" + type_suffix) : (type_suffix == "homo" ? (compare_word + "_" + type_suffix) : (compare_word + "_" + part_suffix + "_" + type_suffix))) + ".html";
+    string outputFileName_rhymes = baseName + "_RHYMES_" + (compare_word == "" ? (part_suffix + "_" + type_suffix) : (type_suffix == "homo" ? (compare_word + "_" + type_suffix) : (compare_word + "_" + part_suffix + "_" + type_suffix))) + ".html";
 
     int count_numb = 1; // счетчик для нумерации
 
@@ -427,21 +435,22 @@ bool outputFiles_working(const string inputFilePath,                // путь 
                          string &outputFileName_numbered,           // адрес-имя выходного файла-текста
                          string &outputFileName_rhymes,             // адрес-имя выходного файла-рифм
                          vector<vector<string>> sentences_numbered, // вектор пронумерованных предложений
-                         vector<WordData> rhymes_data)              // информация о рифмах
+                         vector<WordData> rhymes_data,              // информация о рифмах
+                         string &compare_word)
 {
     convert_rhymes_data_to_utf8(rhymes_data);      // преобразование данных рифм в UTF-8
     convert_sentences_to_utf8(sentences_numbered); // преобразование текста в UTF-8
 
     // получаем имена выходных файлов из пути входного файла
-    pair<string, string> fromFunct = create_outputFileNames(inputFilePath);
+    pair<string, string> fromFunct = create_outputFileNames(inputFilePath, compare_word);
     outputFileName_numbered = fromFunct.first; // имя выходного файла-текста
     outputFileName_rhymes = fromFunct.second;  // имя выходного файла-рифм
 
-    // открытие файлов на запись
-    file_output_numbered.open(outputFileName_numbered, ios_base::out | ios::trunc);
+	// открытие файлов для записи
+    file_output_text.open(outputFileName_numbered, ios_base::out | ios::trunc);
     file_output_rhymes.open(outputFileName_rhymes, ios_base::out | ios::trunc);
 
-    if (file_output_numbered.is_open() and file_output_rhymes.is_open())
+    if (file_output_text.is_open() and file_output_rhymes.is_open())
     {
         write_outputFile_text_html(rhymes_data, sentences_numbered); // запись пронумерованного текста
         write_outputFile_rhymes_html(rhymes_data);                   // запись рифм
