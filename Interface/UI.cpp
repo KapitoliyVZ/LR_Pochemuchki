@@ -61,24 +61,29 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdsho
 
 
 
-// Эвристика: если часто встречаются символы из "кракозябристого" диапазона,
-// считаем, что это испорченная UTF-8 строка, а не корректная ANSI
+bool isFalseCoding(const std::string& str) {
+    static const std::vector<std::string> known_bad_prefixes = {
+        "Ѓ", "Ќ", "Рђ", "Р‘", "СЃ", "С‡",
+    };
+
+    // Если встречаются подряд подозрительные буквы, которые редко бывают в русском тексте — это кракозябра
+    for (const auto& prefix : known_bad_prefixes) {
+        size_t pos = str.find(prefix);
+        if (pos != std::string::npos && pos + 1 < str.size()) {
+            unsigned char next_ch = static_cast<unsigned char>(str[pos + 1]);
+            if (next_ch >= 0x80 && next_ch <= 0xBF) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 bool containsCorruptedUtf8(const std::vector<std::vector<std::string>>& data) {
     for (const auto& row : data) {
         for (const auto& str : row) {
-            int suspiciousCount = 0;
-
-            for (unsigned char ch : str) {
-                // Наиболее характерные символы кракозябр (ошибочно интерпретированные UTF-8 байты)
-                if (ch == 0xD0 || ch == 0xD1 ||                // UTF-8 кириллические лид-байты
-                    (ch >= 0xC0 && ch <= 0xDF) ||              // часто даёт 'Р', 'С', 'П' и т.д.
-                    (ch >= 0x80 && ch <= 0xBF)) {              // continuation bytes (часто встречаются после D0/D1)
-                    suspiciousCount++;
-                }
-            }
-
-            // Эвристика: если более 20% символов подозрительные — считаем строку кракозяброй
-            if (!str.empty() && suspiciousCount > static_cast<int>(str.size()) / 5) {
+            if (isFalseCoding(str)) {
                 return true;
             }
         }
