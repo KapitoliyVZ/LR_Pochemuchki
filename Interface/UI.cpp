@@ -63,7 +63,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdsho
 
 bool isFalseCoding(const std::string& str) {
     static const std::vector<std::string> known_bad_prefixes = {
-        "Ѓ", "Ќ", "Рђ", "Р‘", "СЃ", "С‡",
+        "Ѓ", "Ќ", "Рђ", "Р‘", "СЃ", "С‡"
     };
 
     // Если встречаются подряд подозрительные буквы, которые редко бывают в русском тексте — это кракозябра
@@ -885,7 +885,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             UpdateWindow(buttons::widgets.hLoadingWnd);
 
 			// Если не найдено рифм, выводим сообщение
-            if (rhymes_data.empty()&&containsCorruptedUtf8(sentences) == false)
+            if (rhymes_data.empty() && containsCorruptedUtf8(sentences) == false)
             {
                 HideLoadingWindow(hWnd);
                 MessageBoxA(hWnd, "Не найдено рифм!", "Предупреждение", MB_OK | MB_ICONERROR);
