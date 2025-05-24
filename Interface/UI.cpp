@@ -1020,6 +1020,8 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 						SetWindowTextA(buttons::widgets.hOutputStatus, ""); // Очищаем поле статуса
 					
 						MessageBoxA(hWnd, "Кодировка файла не ANSI", "Ошибка", MB_OK | MB_ICONERROR);
+                        EnableWindow(buttons::widgets.hSaveFile, FALSE);  // Блокировка кнопки
+                        UpdateWindow(buttons::widgets.hSaveFile);
 						break;
 					}
                     SetWindowTextA(buttons::widgets.hOutputStatus, filename_str.c_str());
