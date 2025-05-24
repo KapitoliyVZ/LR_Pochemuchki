@@ -1641,7 +1641,7 @@ void SetOpenFileParams(HWND hWnd)
     OFN.lpstrFilter = "Текстовые файлы (*.txt)\0*.txt\0Все файлы (*.*)\0*.*\0";
     OFN.lpstrFileTitle = NULL;
     OFN.nMaxFileTitle = 0;
-    OFN.lpstrInitialDir = "D:\\";
+    OFN.lpstrInitialDir = "С:\\";
     OFN.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 }
 
