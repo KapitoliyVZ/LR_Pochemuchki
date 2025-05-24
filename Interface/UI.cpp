@@ -529,7 +529,7 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data, string& compare_word)
             }
             else
             {
-                SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)L"\r\nРифмующиеся слов нет");
+                SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)L"\r\nРифмующихся слов нет");
             }
         }
 
@@ -940,27 +940,30 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 filename_str = filename;
                 pair<bool, string> fromFunct = inputFile_working(filename_str);
 
-
-				if (fromFunct.second == "Ошибка!: Пустой путь к файлу!")
-				{
-                    MessageBoxA(hWnd, "Пустой путь к файлу!", "Ошибка", MB_OK | MB_ICONERROR);
-					break;
-				}
-                else if (fromFunct.second == "Ошибка!: Неверное расширение!")
+                if (fromFunct.first == false)
                 {
-					MessageBoxA(hWnd, "Неверное расширение!", "Ошибка", MB_OK | MB_ICONERROR);
-					break;
+                    if (fromFunct.second == "Ошибка!: Пустой путь к файлу!")
+                    {
+                        MessageBoxA(hWnd, "Пустой путь к файлу!", "Ошибка", MB_OK | MB_ICONERROR);
+                        break;
+                    }
+                    else if (fromFunct.second == "Ошибка!: Неверное расширение!")
+                    {
+                        MessageBoxA(hWnd, "Неверное расширение!", "Ошибка", MB_OK | MB_ICONERROR);
+                        break;
+                    }
+                    else if (fromFunct.second == "Ошибка!: Не удалось открыть файл!")
+                    {
+                        MessageBoxA(hWnd, "Не удалось открыть файл!", "Ошибка", MB_OK | MB_ICONERROR);
+                        break;
+                    }
+                    else if (fromFunct.second == "Ошибка!: Файл пуст!")
+                    {
+                        MessageBoxA(hWnd, "Файл пуст!", "Ошибка", MB_OK | MB_ICONERROR);
+                        break;
+                    }
                 }
-                else if (fromFunct.second == "Ошибка!: Не удалось открыть файл!")
-                {
-					MessageBoxA(hWnd, "Не удалось открыть файл!", "Ошибка", MB_OK | MB_ICONERROR);
-					break;
-				}
-                else if (fromFunct.second == "Ошибка!: Файл пуст!")
-                {
-					MessageBoxA(hWnd, "Файл пуст!", "Ошибка", MB_OK | MB_ICONERROR);
-					break;
-                }
+				
                 else
                 {
                     str_sentences = fromFunct.second; // Получаем текст из функции
