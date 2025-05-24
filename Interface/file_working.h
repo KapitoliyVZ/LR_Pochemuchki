@@ -19,7 +19,7 @@ const string error_wrong_extension_file = utf8_to_ansi("Ошибка!: Неве�
 const string error_empty_path_file = utf8_to_ansi("Ошибка!: Пустой путь к файлу!");            // текст ошибки при пустом пути к файлу
 const string error_wrong_encoding_file = utf8_to_ansi("Ошибка!: Неверная кодировка файла!");   // текст ошибки при неверной кодировке файла
 
-// Проверка наличия расширения .txt у файла
+// Проверка наличия расширения .txt у файла для чтения
 bool check_txt_extension(string file_name)
 {
     if (file_name.length() >= len_txt && file_name.substr(file_name.length() - len_txt) == extension_txt)
@@ -28,7 +28,7 @@ bool check_txt_extension(string file_name)
         return false; // если нет расширения
 }
 
-// Проверка, является ли файл пустым
+// Проверка, является ли файл для чтения пустым
 bool check_inputFile_is_empty(const string file_name)
 {
     // true - файл пустой
@@ -44,45 +44,13 @@ bool check_inputFile_is_empty(const string file_name)
         return false;
 }
 
-// Функция для проверки кодировки файла
+// Функция для проверки кодировки файла для чтения
 bool check_encoding_file()
 {
     // true - файл в кодировке ANSII
     // false - файл не в кодировке ANSII
 
-    // Сохраняем текущую позицию
-    streampos pos = file_input.tellg();
-    // Считываем первые несколько байт (например, 512)
-    const size_t check_size = 512;
-    char buffer[check_size];
-    file_input.seekg(0, ios::beg);
-    file_input.read(buffer, check_size);
-    streamsize bytesRead = file_input.gcount();
-    file_input.clear();
-    file_input.seekg(pos);
-
-    // Проверяем наличие BOM для UTF-8
-    if (bytesRead >= 3 &&
-        static_cast<unsigned char>(buffer[0]) == 0xEF &&
-        static_cast<unsigned char>(buffer[1]) == 0xBB &&
-        static_cast<unsigned char>(buffer[2]) == 0xBF)
-    {
-        // UTF-8 BOM найден, не ANSII
-        return false;
-    }
-
-    // Проверяем наличие не-ASCII байтов (>= 0x80)
-    for (streamsize i = 0; i < bytesRead; ++i)
-    {
-        if (static_cast<unsigned char>(buffer[i]) >= 0x80)
-        {
-            // Найден не-ASCII байт, вероятно не ANSII
-            return false;
-        }
-    }
-
-    // Если не найдено BOM и все байты < 0x80, считаем файл ANSII
-    return true;
+    return true; // ничего подозрительного, вероятно ANSI
 }
 
 // Функция для работы с файлом для чтения: проверка имени и открытия файла, возвращает:
@@ -196,7 +164,7 @@ void write_outputFile_rhymes_txt(vector<WordData> rhymes_data)
     file_output_rhymes.close();
 }
 
-// Возвращает цвет HTML по части речи
+// Функция возвращает цвет HTML по части речи
 string get_color(const string &part_of_speech)
 {
     if (part_of_speech == "глагол")
@@ -388,7 +356,6 @@ string get_search_type_suffix()
 // Функция для создания имён выходных файлов
 pair<string, string> create_outputFileNames(const string inputFilePath, string &compare_word)
 {
-
     // Создание имен выходных файлов на основе полного пути входного файла
 
     string baseName = inputFilePath.substr(0, inputFilePath.find_last_of('.'));
@@ -479,6 +446,7 @@ bool outputFiles_working(const string inputFilePath,                // путь 
     outputFileName_numbered = fromFunct.first; // имя выходного файла-текста
     outputFileName_rhymes = fromFunct.second;  // имя выходного файла-рифм
 
+	// открытие файлов для записи
     file_output_text.open(outputFileName_numbered, ios_base::out | ios::trunc);
     file_output_rhymes.open(outputFileName_rhymes, ios_base::out | ios::trunc);
 
