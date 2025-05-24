@@ -487,6 +487,9 @@ std::unordered_map<std::string, std::string> cache;
 std::string getPartOfSpeech(const std::string& word, unordered_map<string, vector<string>>& morphemeRules) {
 
     //string word_ANSI = utf8_to_ansi(word); // Перекодируем результат в ANSI
+    // ввод флагов для обнаружения отличий между существительными и прилагательными
+    bool nouns_found = false;
+    bool adjective_found = false;
 
     // подсчет количества слогов
     int amount_syllables = countSyllables(word);
@@ -501,7 +504,8 @@ std::string getPartOfSpeech(const std::string& word, unordered_map<string, vecto
     // Проверка на существительное
     if (((ends_with(word, morphemeRules.at("nouns_endings")) &&
         contains_suffix(word, morphemeRules.at("nouns_suffixes"))) || ((amount_syllables<=2) && (ends_with(word, morphemeRules.at("nouns_endings"))))) && word.size() >= 2) {
-        return "S";
+        nouns_found = true;
+        //return "S";
     }
 
     // Проверка на глагол
@@ -513,8 +517,24 @@ std::string getPartOfSpeech(const std::string& word, unordered_map<string, vecto
     // Проверка на прилагательное
     if ((adj_check(word) || ((amount_syllables <= 3) && (ends_with(word, morphemeRules.at("adjectives_endings"))))) && word.size() >= 4)
     {
-        return "A";
+        if (nouns_found == true)
+            adjective_found = true;
+        else
+            return "A";
     }
+
+
+    // дополнительная проверка существительных и прилагательных
+    if (nouns_found == true && adjective_found == true)
+    {
+        // в случае если по окончаниям оба true, то вероятнее всего - прилагательное, так как окончания приалагательных - несколько символов
+        if (ends_with(word, morphemeRules.at("nouns_endings")) && ends_with(word, morphemeRules.at("adjectives_endings")))
+            return "A";
+    }
+
+    // если слово определено только как существительное
+    if (nouns_found == true && adjective_found == false)
+        return "S";
 
     // Проверка на наречие
     if (((ends_with(word, morphemeRules.at("adverbs_endings")) &&
@@ -529,13 +549,14 @@ std::string getPartOfSpeech(const std::string& word, unordered_map<string, vecto
     }
 
     
-
+    // деепричастие
     if (((ends_with(word, morphemeRules.at("gerunds_endings")) &&
         contains_suffix(word, morphemeRules.at("gerunds_suffixes"))) || ((amount_syllables <= 3) && (ends_with(word, morphemeRules.at("gerunds_endings"))))) && word.size() >= 5) {
         return "деепр";
     }
 
-    
+  
+    // если ни одна проверка не пройдена, то возвращение значение "неизввестно"
     return "unknown";
 
 };
