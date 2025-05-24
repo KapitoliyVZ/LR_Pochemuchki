@@ -957,9 +957,14 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                         MessageBoxA(hWnd, "Не удалось открыть файл!", "Ошибка", MB_OK | MB_ICONERROR);
                         break;
                     }
-                    else if (fromFunct.second == "Ошибка!: Файл пуст!")
+                    else if (fromFunct.second == "Не удалось выполнить чтение файла: Файл пуст!")
                     {
-                        MessageBoxA(hWnd, "Файл пуст!", "Ошибка", MB_OK | MB_ICONERROR);
+                        MessageBoxA(hWnd, "Не удалось выполнить чтение файла: Файл пуст!", "Ошибка", MB_OK | MB_ICONERROR);
+                        break;
+                    }
+                    else if (fromFunct.second == "Ошибка!: Неверная кодировка файла!")
+                    {
+                        MessageBoxA(hWnd, "Неверная кодировка файла!", "Ошибка", MB_OK | MB_ICONERROR);
                         break;
                     }
                 }
@@ -1581,7 +1586,7 @@ void SetOpenFileParams(HWND hWnd)
     OFN.hwndOwner = hWnd;
     OFN.lpstrFile = filename;
     OFN.nMaxFile = sizeof(filename);
-    OFN.lpstrFilter = "*.txt";
+    OFN.lpstrFilter = "Текстовые файлы (*.txt)\0*.txt\0Все файлы (*.*)\0*.*\0";
     OFN.lpstrFileTitle = NULL;
     OFN.nMaxFileTitle = 0;
     OFN.lpstrInitialDir = "D:\\";
