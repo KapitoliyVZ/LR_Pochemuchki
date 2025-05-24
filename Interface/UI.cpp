@@ -57,6 +57,35 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdsho
     return 0;
 }
 
+
+
+
+
+// Эвристика: если часто встречаются символы из "кракозябристого" диапазона,
+// считаем, что это испорченная UTF-8 строка, а не корректная ANSI
+bool containsCorruptedUtf8(const std::vector<std::vector<std::string>>& data) {
+    for (const auto& row : data) {
+        for (const auto& str : row) {
+            int suspiciousCount = 0;
+
+            for (unsigned char ch : str) {
+                // Наиболее характерные символы кракозябр (ошибочно интерпретированные UTF-8 байты)
+                if (ch == 0xD0 || ch == 0xD1 ||                // UTF-8 кириллические лид-байты
+                    (ch >= 0xC0 && ch <= 0xDF) ||              // часто даёт 'Р', 'С', 'П' и т.д.
+                    (ch >= 0x80 && ch <= 0xBF)) {              // continuation bytes (часто встречаются после D0/D1)
+                    suspiciousCount++;
+                }
+            }
+
+            // Эвристика: если более 20% символов подозрительные — считаем строку кракозяброй
+            if (!str.empty() && suspiciousCount > static_cast<int>(str.size()) / 5) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 // Обновляем состояние кнопок в зависимости от флагов
 void UpdateButtonStatesAndColors()
 {
@@ -851,10 +880,10 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             UpdateWindow(buttons::widgets.hLoadingWnd);
 
 			// Если не найдено рифм, выводим сообщение
-            if (rhymes_data.empty())
+            if (rhymes_data.empty()&&containsCorruptedUtf8(sentences) == false)
             {
                 HideLoadingWindow(hWnd);
-                MessageBoxA(hWnd, "Не найдено рифм", "Ошибка", MB_OK | MB_ICONERROR);
+                MessageBoxA(hWnd, "Не найдено рифм!", "Предупреждение", MB_OK | MB_ICONERROR);
                 EnableWindow(buttons::widgets.hSaveFile, FALSE);
                 UpdateWindow(buttons::widgets.hSaveFile);
                 break;
@@ -862,7 +891,15 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             else if(sentences.empty())
             {
                 HideLoadingWindow(hWnd);
-                MessageBoxA(hWnd, "Не найдено предложений", "Ошибка", MB_OK | MB_ICONERROR);
+                MessageBoxA(hWnd, "Не найдено предложений", "Предупреждение", MB_OK | MB_ICONERROR);
+                EnableWindow(buttons::widgets.hSaveFile, FALSE);
+                UpdateWindow(buttons::widgets.hSaveFile);
+                break;
+            }
+            else if (containsCorruptedUtf8(sentences) == true)
+            {
+                HideLoadingWindow(hWnd);
+                MessageBoxA(hWnd, "Кодировка файла не ANSI", "Ошибка", MB_OK | MB_ICONERROR);
                 EnableWindow(buttons::widgets.hSaveFile, FALSE);
                 UpdateWindow(buttons::widgets.hSaveFile);
                 break;
