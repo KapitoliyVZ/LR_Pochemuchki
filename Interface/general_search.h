@@ -362,8 +362,6 @@ vector<WordData> find_rhymes_fast(
 void deal_with_words(bitset<8>& button_flags, vector<vector<string>>& numbered_sentences, string word_to_compare, vector<WordData>& data)
 {
 
-
-
 	// количество частей речи, которые можно найти
 	const int amount_of_parts_of_speech = 6;
 
@@ -377,7 +375,8 @@ void deal_with_words(bitset<8>& button_flags, vector<vector<string>>& numbered_s
 	{
 		word_to_compare = lowFirstLetter(word_to_compare);
 
-		comparing_word_part_of_speech = get_comparing_word_part(word_to_compare, buttons::morphemeRules);
+		comparing_word_part_of_speech = get_comparing_word_part(word_to_compare);
+		
 
 		for (string& word : comparing_word_part_of_speech)
 		{

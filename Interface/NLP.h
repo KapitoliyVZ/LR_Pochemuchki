@@ -10,7 +10,7 @@
 #include "MyStemProcess.h"
 
 
-//MystemProcess mystem;
+MystemProcess mystem;
 
 std::string get_filepath(const std::string& filename) {
     char buffer[MAX_PATH];
@@ -610,12 +610,63 @@ void findWordsByPartOfSpeech(std::vector<std::vector<std::string>>& sentences,bi
     }
 }
 
+
+
+
+
+// Получение части речи слова через mystem
+std::string get_Mystem_part_of_speech(const std::string& word) {
+    if (cache.find(word) != cache.end()) return cache[word]; // Используем кэш
+
+    std::string result = mystem.analyze(word); // Запускаем mystem
+    result = utf8_to_ansi(result); // Перекодируем результат в ANSI
+
+    // Ищем разбор в фигурных скобках
+    size_t pos = result.find('{');
+    if (pos != std::string::npos) {
+        size_t endPos = result.find('}', pos);
+        if (endPos != std::string::npos) {
+            std::string analysis = result.substr(pos + 1, endPos - pos - 1);
+
+            // Получаем только первую часть до '|'
+            size_t pipePos = analysis.find('|');
+            std::string firstParse = (pipePos != std::string::npos)
+                ? analysis.substr(0, pipePos)
+                : analysis;
+
+            // Приоритетная проверка некоторых частей речи
+            if (firstParse.find("прич") != std::string::npos) cache[word] = "прич";
+            else if (firstParse.find("деепр") != std::string::npos) cache[word] = "деепр";
+            else if (firstParse.find("SPRO") != std::string::npos) cache[word] = "SPRO";
+            else if (firstParse.find("ADV") != std::string::npos) cache[word] = "ADV";
+            else if (firstParse.find("A=") != std::string::npos) cache[word] = "A";
+            else {
+                // Универсальный способ — взять символ после =
+                size_t equalsPos = firstParse.find('=');
+                if (equalsPos != std::string::npos && equalsPos + 1 < firstParse.size()) {
+                    // До первого символа "," или "=" после =
+                    size_t endPos = firstParse.find_first_of(",=", equalsPos + 1);
+                    std::string posTag = (endPos != std::string::npos)
+                        ? firstParse.substr(equalsPos + 1, endPos - equalsPos - 1)
+                        : firstParse.substr(equalsPos + 1);
+                    cache[word] = posTag;
+                }
+            }
+            return cache[word];
+        }
+    }
+    return ""; // Если не удалось определить часть речи
+}
+
+
 // Возвращает слово, если его часть речи соответствует одной из категорий
-std::vector<std::string> get_comparing_word_part(std::string& comparing_word,unordered_map<string, vector<string>>& morphemeRules) {
+std::vector<std::string> get_comparing_word_part(std::string& comparing_word) {
     std::vector<std::string> part_of_speech(6, "");
     if (comparing_word == " ") return part_of_speech;
 
-    std::string part = getPartOfSpeech(comparing_word, morphemeRules);
+    string comparing_word_UTF8 = ansi_to_utf8(comparing_word);
+    // вот это заменить на версию для MyStem
+    std::string part = get_Mystem_part_of_speech(comparing_word_UTF8);
 
     // Проверка всех целевых частей речи
     if (part == "V") part_of_speech[0] = comparing_word;
