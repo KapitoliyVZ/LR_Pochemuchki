@@ -61,17 +61,22 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdsho
 
 
 
-bool isFalseCoding(const std::string& str) {
-    static const std::vector<std::string> known_bad_prefixes = {
+bool isFalseCoding(const string& str) 
+{
+    static const std::vector<std::string> known_bad_prefixes = 
+    {
         "Ѓ", "Ќ", "Рђ", "Р‘", "СЃ", "С‡"
     };
 
     // Если встречаются подряд подозрительные буквы, которые редко бывают в русском тексте — это кракозябра
-    for (const auto& prefix : known_bad_prefixes) {
+    for (const auto& prefix : known_bad_prefixes) 
+    {
         size_t pos = str.find(prefix);
-        if (pos != std::string::npos && pos + 1 < str.size()) {
+        if (pos != std::string::npos && pos + 1 < str.size()) 
+        {
             unsigned char next_ch = static_cast<unsigned char>(str[pos + 1]);
-            if (next_ch >= 0x80 && next_ch <= 0xBF) {
+            if (next_ch >= 0x80 && next_ch <= 0xBF) 
+            {
                 return true;
             }
         }
@@ -80,16 +85,6 @@ bool isFalseCoding(const std::string& str) {
     return false;
 }
 
-bool containsCorruptedUtf8(const std::vector<std::vector<std::string>>& data) {
-    for (const auto& row : data) {
-        for (const auto& str : row) {
-            if (isFalseCoding(str)) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
 
 // Обновляем состояние кнопок в зависимости от флагов
 void UpdateButtonStatesAndColors()
@@ -885,12 +880,15 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             UpdateWindow(buttons::widgets.hLoadingWnd);
 
 			// Если не найдено рифм, выводим сообщение
-            if (rhymes_data.empty() && containsCorruptedUtf8(sentences) == false)
+            if (rhymes_data.empty())
             {
                 HideLoadingWindow(hWnd);
                 MessageBoxA(hWnd, "Не найдено рифм!", "Предупреждение", MB_OK | MB_ICONERROR);
                 EnableWindow(buttons::widgets.hSaveFile, FALSE);
                 UpdateWindow(buttons::widgets.hSaveFile);
+                buttons::ButtonFlags.reset();
+                UpdateButtonStatesAndColors();
+                UpdateCheckboxStates();
                 break;
             }
             else if(sentences.empty())
@@ -899,14 +897,9 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 MessageBoxA(hWnd, "Не найдено предложений", "Предупреждение", MB_OK | MB_ICONERROR);
                 EnableWindow(buttons::widgets.hSaveFile, FALSE);
                 UpdateWindow(buttons::widgets.hSaveFile);
-                break;
-            }
-            else if (containsCorruptedUtf8(sentences) == true)
-            {
-                HideLoadingWindow(hWnd);
-                MessageBoxA(hWnd, "Кодировка файла не ANSI", "Ошибка", MB_OK | MB_ICONERROR);
-                EnableWindow(buttons::widgets.hSaveFile, FALSE);
-                UpdateWindow(buttons::widgets.hSaveFile);
+                buttons::ButtonFlags.reset();
+                UpdateButtonStatesAndColors();
+                UpdateCheckboxStates();
                 break;
             }
             else
@@ -1014,6 +1007,21 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 else
                 {
                     str_sentences = fromFunct.second; // Получаем текст из функции
+					if (isFalseCoding(str_sentences) == true)
+					{
+						// Если кодировка файла не ANSI, выводим сообщение об ошибке
+						// и не сохраняем текст в поле вывода
+						str_sentences = "";
+						rhymes_data.clear();
+						sentences.clear();
+						//buttons::ButtonFlags.reset();
+						SetWindowTextA(buttons::widgets.hEditRhymes, "");
+						SetWindowTextA(buttons::widgets.hEditText, "");
+						SetWindowTextA(buttons::widgets.hOutputStatus, ""); // Очищаем поле статуса
+					
+						MessageBoxA(hWnd, "Кодировка файла не ANSI", "Ошибка", MB_OK | MB_ICONERROR);
+						break;
+					}
                     SetWindowTextA(buttons::widgets.hOutputStatus, filename_str.c_str());
                     UpdateCheckboxStates();
                 }
