@@ -346,16 +346,17 @@ string get_search_type_suffix()
 }
 
 // Функция для создания имён выходных файлов
-pair<string, string> create_outputFileNames(const string inputFilePath)
+pair<string, string> create_outputFileNames(const string inputFilePath, string& compare_word)
 {
 
     // Создание имен выходных файлов на основе полного пути входного файла
+
     string baseName = inputFilePath.substr(0, inputFilePath.find_last_of('.'));
     string part_suffix = get_parts_of_speech_suffix();
     string type_suffix = get_search_type_suffix();
 
-    string outputFileName_numbered = baseName + "_numbered_" + part_suffix + "_" + type_suffix + ".html";
-    string outputFileName_rhymes = baseName + "_rhymes_" + part_suffix + "_" + type_suffix + ".html";
+    string outputFileName_numbered = baseName + "_numbered_" + (compare_word == "" ? (part_suffix + "_" + type_suffix) : (type_suffix == "homo" ? (compare_word + "_" + type_suffix) : (compare_word + "_" + part_suffix + "_" + type_suffix))) + ".html";
+    string outputFileName_rhymes = baseName + "_rhymes_" + (compare_word == "" ? (part_suffix + "_" + type_suffix) : (type_suffix == "homo" ? (compare_word + "_" + type_suffix) : (compare_word + "_" + part_suffix + "_" + type_suffix))) + ".html";
 
     int count_numb = 1; // счетчик для нумерации
 
@@ -427,19 +428,21 @@ bool outputFiles_working(const string inputFilePath,                // путь 
                          string &outputFileName_numbered,           // адрес-имя выходного файла-текста
                          string &outputFileName_rhymes,             // адрес-имя выходного файла-рифм
                          vector<vector<string>> sentences_numbered, // вектор пронумерованных предложений
-                         vector<WordData> rhymes_data)              // информация о рифмах
+                         vector<WordData> rhymes_data,              // информация о рифмах
+                         string &compare_word)
 {
     convert_rhymes_data_to_utf8(rhymes_data);      // преобразование данных рифм в UTF-8
     convert_sentences_to_utf8(sentences_numbered); // преобразование текста в UTF-8
 
     // получаем имена выходных файлов из пути входного файла
-    pair<string, string> fromFunct = create_outputFileNames(inputFilePath);
+    pair<string, string> fromFunct = create_outputFileNames(inputFilePath, compare_word);
     outputFileName_numbered = fromFunct.first; // имя выходного файла-текста
     outputFileName_rhymes = fromFunct.second;  // имя выходного файла-рифм
 
-    // открытие файлов на запись
+
     file_output_numbered.open(outputFileName_numbered, ios_base::out | ios::trunc);
     file_output_rhymes.open(outputFileName_rhymes, ios_base::out | ios::trunc);
+    
 
     if (file_output_numbered.is_open() and file_output_rhymes.is_open())
     {

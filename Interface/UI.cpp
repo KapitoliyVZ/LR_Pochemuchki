@@ -259,14 +259,26 @@ std::string wstring_to_ansi(const std::wstring& wstr)
 }
 
 
+struct WordInfo {
+    std::string part_of_speech;
+    std::vector<std::string> rhymed_words;
+};
+
 // Вывод текста в поле
 void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordData>& rhymes_data)
 {
+    bool capitalize = false;
 
-    // Сопоставление слова и части речи
-    unordered_map<string, string> wordToPartOfSpeech;
-    for (const auto& wordData : rhymes_data)
-        wordToPartOfSpeech[wordData.word] = wordData.part_of_speech;
+    // Сопоставление слова и части речи + рифмующиеся слова
+    unordered_map<std::string, WordInfo> wordToInfo;
+    unordered_map<std::string, std::string> rhymeWordToPartOfSpeech;
+
+    for (const auto& wordData : rhymes_data) {
+        wordToInfo[wordData.word] = { wordData.part_of_speech, wordData.rhymed_words };
+        for (const auto& rhyme : wordData.rhymed_words) {
+            rhymeWordToPartOfSpeech[rhyme] = wordData.part_of_speech;
+        }
+    }
 
     // Очищаем поле перед выводом
     SetWindowTextW(buttons::widgets.hEditText, L"");
@@ -276,9 +288,9 @@ void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordDa
         bool firstWord = true;
         for (const auto& word : sentence)
         {
-            // Вставляем пробел перед словом, если это не первое слово
-            if (!firstWord) {
-                // Сброс цвета на чёрный для пробела
+			capitalize = false;
+            if (!firstWord)
+            {
                 CHARFORMAT2 cf_def = { sizeof(cf_def) };
                 cf_def.dwMask = CFM_COLOR;
                 cf_def.crTextColor = RGB(0, 0, 0);
@@ -288,15 +300,27 @@ void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordDa
 
             // Определяем цвет слова
             COLORREF color = RGB(0, 0, 0);
-            auto it = wordToPartOfSpeech.find(word);
-            if (it != wordToPartOfSpeech.end()) {
-                const std::string& part = it->second;
+            std::string part;
+            auto it = wordToInfo.find(word);
+            if (it != wordToInfo.end()) {
+                part = it->second.part_of_speech;
+            }
+            else {
+                auto rit = rhymeWordToPartOfSpeech.find(word);
+                if (rit != rhymeWordToPartOfSpeech.end()) 
+                {
+                    part = rit->second;
+					capitalize = true; // Если слово рифмуется, то делаем его заглавным
+                }
+            }
+
+            if (!part.empty()) {
                 if (part == "глагол") color = RGB(200, 0, 0);
                 else if (part == "существительное") color = RGB(0, 0, 200);
                 else if (part == "прилагательное") color = RGB(0, 150, 0);
                 else if (part == "наречие") color = RGB(150, 0, 150);
-                else if (part == "причастие") color = RGB(0, 150, 150);
-                else if (part == "деепричастие") color = RGB(150, 150, 0);
+                else if (part == "причастие") color = RGB(0, 128, 128);
+                else if (part == "деепричастие") color = RGB(184, 134, 11);
             }
 
             // Устанавливаем цвет для слова
@@ -305,8 +329,19 @@ void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordDa
             cf.crTextColor = color;
             SendMessageW(buttons::widgets.hEditText, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
 
+            string capitalized_word;
+            wstring wword;
             // Вставляем слово
-            std::wstring wword = ansi_to_wstring(word);
+            if (capitalize == true)
+            {
+				capitalized_word = capitalizeAllLetters(word); // Функция для заглавных букв
+                wword = ansi_to_wstring(capitalized_word);
+            }
+            else
+            {
+                wword = ansi_to_wstring(word);
+            }
+            
             SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)wword.c_str());
 
             firstWord = false;
@@ -318,6 +353,7 @@ void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordDa
         SendMessageW(buttons::widgets.hEditText, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf_def);
         SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)L"\r\n");
     }
+
 }
 
 // Универсальная функция для вывода строки с цветным словом-цветом в RichEdit
@@ -375,7 +411,7 @@ vector<string> OpenFileMorphemes(HWND hWnd)
     return morphemesError;
 }
 
-void OutputRhymeInfo(const vector<WordData>& rhymes_data) 
+void OutputRhymeInfo(const vector<WordData>& rhymes_data, string& compare_word) 
 {
     unordered_map<string, vector<WordData>> grouped = {
         { "глагол", {}},
@@ -396,7 +432,11 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data)
 
     // Заголовок
     wstring output_text;
-    output_text += L"Поиск выполнялся по следующим частям речи: \r\n";
+	if (compare_word == "")
+		output_text = L"Результаты поиска рифм по частям речи:\r\n";
+	else
+		output_text = L"Результаты поиска рифм для слова \"" + ansi_to_wstring(compare_word) + (buttons::ButtonFlags.test(7) == 1 ? L"\" по части речи слова:\r\n" : L"\" по частям речи:\r\n");
+    //output_text += L"Поиск выполнялся по следующим частям речи: \r\n";
     SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)output_text.c_str());
     output_text = L"";
     // Для каждой активной части речи
@@ -446,10 +486,13 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data)
         SendMessageW(buttons::widgets.hEditRhymes, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
 
 		if (words.empty()) continue;
+        wstring header;
 
-        wstring header = L"\r\n\r\n====================\r\n" +
-                         ansi_to_wstring(capitalizeAllLetters(part_key)) +
-                         L"\r\n====================";
+            header = L"\r\n\r\n====================\r\n" +
+                ansi_to_wstring(capitalizeAllLetters(part_key)) +
+                L"\r\n====================";
+		
+            
         SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)header.c_str());
 
         for (const WordData& output : words)
@@ -551,7 +594,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 	static string str_sentences;                        // Строка для хранения текста
     static vector<vector<string>> sentences;    // Вектор текста с разделенными предложениями
     static vector<WordData> rhymes_data;        // Найденные рифмы к данному слову
-
+	static string compare_word;                 // Слово для поиска рифм
     switch (msg)
     {
 		// Создание окна
@@ -747,7 +790,8 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 
             // слово для поиска по нему рифм
 			string word_to_compare = WordToSearch; 
-            
+			
+
 			// Проверяем, если поле ввода пустое
 			if (word_to_compare.length() != 0)
 			{
@@ -792,7 +836,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 }
             }
             word_to_compare = wstring_to_ansi(filtered);
-
+            compare_word = word_to_compare;
             // Показываем окно загрузки
             ShowLoadingWindow(hWnd);
 
@@ -811,7 +855,6 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             {
                 HideLoadingWindow(hWnd);
                 MessageBoxA(hWnd, "Не найдено рифм", "Ошибка", MB_OK | MB_ICONERROR);
-                
                 EnableWindow(buttons::widgets.hSaveFile, FALSE);
                 UpdateWindow(buttons::widgets.hSaveFile);
                 break;
@@ -831,7 +874,7 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             }
             
             // Вывод рифм
-            OutputRhymeInfo(rhymes_data);
+            OutputRhymeInfo(rhymes_data, compare_word);
 
             UpdateWindow(buttons::widgets.hLoadingWnd);
 
@@ -861,13 +904,14 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             string outputFileName_numbered; // имя выходного файла-текста
             string outputFileName_rhymes; // имя выходного файла-рифм
 
-            outputFiles_working(filename_str, outputFileName_numbered, outputFileName_rhymes, sentences, rhymes_data);
+            outputFiles_working(filename_str, outputFileName_numbered, outputFileName_rhymes, sentences, rhymes_data, compare_word);
             wstring wtext, wrhymes;
             wtext += L"Файл с пронумерованным текстом: " + utf8_to_wstring(ansi_to_utf8(outputFileName_numbered));
             wrhymes += L"Файл с найденными рифмами: " + utf8_to_wstring(ansi_to_utf8(outputFileName_rhymes));
             // Устанавливаем текст в поле "Выбранный файл"
             SetWindowTextW(buttons::widgets.hPathSaveFileData, wtext.c_str());
             SetWindowTextW(buttons::widgets.hPathSaveFileRhymes, wrhymes.c_str());
+			compare_word = "";
             UpdateWindow(buttons::widgets.hPathSaveFileData);
             UpdateWindow(buttons::widgets.hPathSaveFileRhymes);
             EnableWindow(buttons::widgets.hSaveFile, FALSE);  // Блокировка кнопки
