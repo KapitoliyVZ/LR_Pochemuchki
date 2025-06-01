@@ -30,7 +30,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdsho
     int screenHeight = GetSystemMetrics(SM_CYSCREEN) - 45;
 
     // Само создание с заложенными параметрами
-    HWND hMainWnd = CreateWindow(L"MainClass", L"Приложения поиска рифм", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+    HWND hMainWnd = CreateWindow(L"MainClass", L"Приложение для поиска рифм", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
                                  0, 0, screenWidth, screenHeight, NULL, NULL, NULL, NULL);
     if (!hMainWnd) {
         MessageBox(NULL, L"Не удалось создать главное окно", L"Ошибка", MB_OK | MB_ICONERROR);

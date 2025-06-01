@@ -192,7 +192,7 @@ void write_outputFile_text_html(const vector<WordData> &rhymes_data, const vecto
         word_to_color[key] = get_color(entry.part_of_speech);
     }
 
-    file_output_text << "<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"><title>Text</title></head>\n<body>\n";
+    file_output_text << "<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"><title>Текст</title></head>\n<body>\n";
 
     for (size_t i = 0; i < sentences_numbered.size(); ++i)
     {
