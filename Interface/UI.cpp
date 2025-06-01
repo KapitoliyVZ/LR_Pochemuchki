@@ -846,37 +846,47 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             wstring wword = ansi_to_wstring(word_to_compare);
             wstring filtered;
             bool started = false;
+            bool wordChanged = false; // Флаг для отслеживания изменения слова
+
             for (wchar_t wc : wword)
             {
-                if (!started) 
+                if (!started)
                 {
                     if (iswspace(wc)) continue; // Пропускаем ведущие пробелы
-                    if (iswalpha(wc)) 
+                    if (iswalpha(wc))
                     {
                         started = true;
                         filtered += wc;
+                        wordChanged = true; // Устанавливаем флаг, если слово изменяется
                     }
                 }
-                else 
+                else
                 {
                     if (iswspace(wc)) break; // Остановиться на первом пробеле после слова
                     if (iswalpha(wc))
+                    {
                         filtered += wc;
+                        wordChanged = true; // Устанавливаем флаг, если слово изменяется
+                    }
                 }
             }
+
             word_to_compare = wstring_to_ansi(filtered);
             compare_word = word_to_compare;
 
-            if (compare_word.empty())
+            // Проверяем на пустоту и изменение слова
+            if (compare_word.empty() && wordChanged)
             {
-				MessageBoxA(hWnd, "Проверьте корректность слова для поиска рифм", "Ошибка", MB_OK | MB_ICONERROR);
-				buttons::ButtonFlags.reset();
-				UpdateButtonStatesAndColors();
-				UpdateCheckboxStates();
-				EnableWindow(buttons::widgets.hSaveFile, FALSE);
-				UpdateWindow(buttons::widgets.hSaveFile);
-				break;
+                MessageBoxA(hWnd, "Проверьте корректность слова для поиска рифм", "Ошибка", MB_OK | MB_ICONERROR);
+                buttons::ButtonFlags.reset();
+                UpdateButtonStatesAndColors();
+                UpdateCheckboxStates();
+                EnableWindow(buttons::widgets.hSaveFile, FALSE);
+                UpdateWindow(buttons::widgets.hSaveFile);
+                break;
             }
+            
+           
             // Показываем окно загрузки
             ShowLoadingWindow(hWnd);
 
