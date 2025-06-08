@@ -30,7 +30,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdsho
     int screenHeight = GetSystemMetrics(SM_CYSCREEN) - 45;
 
     // Само создание с заложенными параметрами
-    HWND hMainWnd = CreateWindow(L"MainClass", L"Приложения поиска рифм", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+    HWND hMainWnd = CreateWindow(L"MainClass", L"Приложение для поиска рифм", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
                                  0, 0, screenWidth, screenHeight, NULL, NULL, NULL, NULL);
     if (!hMainWnd) {
         MessageBox(NULL, L"Не удалось создать главное окно", L"Ошибка", MB_OK | MB_ICONERROR);
@@ -846,26 +846,47 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             wstring wword = ansi_to_wstring(word_to_compare);
             wstring filtered;
             bool started = false;
+            bool wordChanged = false; // Флаг для отслеживания изменения слова
+
             for (wchar_t wc : wword)
             {
-                if (!started) 
+                if (!started)
                 {
                     if (iswspace(wc)) continue; // Пропускаем ведущие пробелы
-                    if (iswalpha(wc) || iswdigit(wc)) 
+                    if (iswalpha(wc))
                     {
                         started = true;
                         filtered += wc;
+                        wordChanged = true; // Устанавливаем флаг, если слово изменяется
                     }
                 }
-                else 
+                else
                 {
                     if (iswspace(wc)) break; // Остановиться на первом пробеле после слова
-                    if (iswalpha(wc) || iswdigit(wc))
+                    if (iswalpha(wc))
+                    {
                         filtered += wc;
+                        wordChanged = true; // Устанавливаем флаг, если слово изменяется
+                    }
                 }
             }
+
             word_to_compare = wstring_to_ansi(filtered);
             compare_word = word_to_compare;
+
+            // Проверяем на пустоту и изменение слова
+            if (compare_word.empty() && wordChanged)
+            {
+                MessageBoxA(hWnd, "Проверьте корректность слова для поиска рифм", "Ошибка", MB_OK | MB_ICONERROR);
+                buttons::ButtonFlags.reset();
+                UpdateButtonStatesAndColors();
+                UpdateCheckboxStates();
+                EnableWindow(buttons::widgets.hSaveFile, FALSE);
+                UpdateWindow(buttons::widgets.hSaveFile);
+                break;
+            }
+            
+           
             // Показываем окно загрузки
             ShowLoadingWindow(hWnd);
 
@@ -1020,6 +1041,8 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 						SetWindowTextA(buttons::widgets.hOutputStatus, ""); // Очищаем поле статуса
 					
 						MessageBoxA(hWnd, "Кодировка файла не ANSI", "Ошибка", MB_OK | MB_ICONERROR);
+                        EnableWindow(buttons::widgets.hSaveFile, FALSE);  // Блокировка кнопки
+                        UpdateWindow(buttons::widgets.hSaveFile);
 						break;
 					}
                     SetWindowTextA(buttons::widgets.hOutputStatus, filename_str.c_str());
@@ -1639,7 +1662,7 @@ void SetOpenFileParams(HWND hWnd)
     OFN.lpstrFilter = "Текстовые файлы (*.txt)\0*.txt\0Все файлы (*.*)\0*.*\0";
     OFN.lpstrFileTitle = NULL;
     OFN.nMaxFileTitle = 0;
-    OFN.lpstrInitialDir = "D:\\";
+    OFN.lpstrInitialDir = "С:\\";
     OFN.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 }
 
