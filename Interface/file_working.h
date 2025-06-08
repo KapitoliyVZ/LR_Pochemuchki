@@ -446,7 +446,7 @@ bool outputFiles_working(const string inputFilePath,                // путь 
     outputFileName_numbered = fromFunct.first; // имя выходного файла-текста
     outputFileName_rhymes = fromFunct.second;  // имя выходного файла-рифм
 
-	// открытие файлов для записи
+    // открытие файлов для записи
     file_output_text.open(outputFileName_numbered, ios_base::out | ios::trunc);
     file_output_rhymes.open(outputFileName_rhymes, ios_base::out | ios::trunc);
 
