@@ -392,6 +392,11 @@ void OutputColoredPart(HWND hEdit, const std::wstring& partName, const std::wstr
     std::wstring prefix = partName + L" - ";
     SendMessageW(hEdit, EM_REPLACESEL, FALSE, (LPARAM)prefix.c_str());
 
+    if (colorName == L"пусто")
+    {
+        return;
+    }
+
     // Устанавливаем цвет для слова-цвета
     CHARFORMAT2 cf = { sizeof(cf) };
     cf.dwMask = CFM_COLOR;
@@ -461,26 +466,45 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data, string& compare_word)
 
     // Заголовок
     wstring output_text;
-	if (compare_word == "")
-		output_text = L"Результаты поиска рифм по частям речи:\r\n";
-	else
-		output_text = L"Результаты поиска рифм для слова \"" + ansi_to_wstring(compare_word) + (buttons::ButtonFlags.test(7) == 1 ? L"\" по части речи слова:\r\n" : L"\" по частям речи:\r\n");
+    if (compare_word == "")
+    {
+        output_text = L"Результаты поиска рифм по частям речи:\r\n";
+        // Для каждой активной части речи
+        if (buttons::ButtonFlags.test(0))
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Глагол", L"выделен в тексте красным", RGB(200, 0, 0));
+        if (buttons::ButtonFlags.test(1))
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Наречие", L"выделено в тексте фиолетовым", RGB(150, 0, 150));
+        if (buttons::ButtonFlags.test(3))
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Существительное", L"выделено в тексте синим", RGB(0, 0, 200));
+        if (buttons::ButtonFlags.test(2))
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Прилагательное", L"выделено в тексте зелёным", RGB(0, 150, 0));
+        if (buttons::ButtonFlags.test(5))
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Деепричастие", L"выделено в тексте жёлтым", RGB(184, 134, 11));
+        if (buttons::ButtonFlags.test(4))
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Причастие", L"выделено в тексте бирюзовым", RGB(0, 128, 128));
+    }
+    else
+    {
+        output_text = L"Результаты поиска рифм для слова \"" + ansi_to_wstring(compare_word) + (buttons::ButtonFlags.test(7) == 1 ? L"\" по части речи слова:\r\n" : L"\" по частям речи:\r\n");
+        // Для каждой активной части речи
+        if (buttons::ButtonFlags.test(0))
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Глагол", L"пусто", RGB(200, 0, 0));
+        if (buttons::ButtonFlags.test(1))
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Наречие", L"пусто", RGB(150, 0, 150));
+        if (buttons::ButtonFlags.test(3))
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Существительное", L"пусто", RGB(0, 0, 200));
+        if (buttons::ButtonFlags.test(2))
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Прилагательное", L"пусто", RGB(0, 150, 0));
+        if (buttons::ButtonFlags.test(5))
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Деепричастие", L"пусто", RGB(184, 134, 11));
+        if (buttons::ButtonFlags.test(4))
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Причастие", L"пусто", RGB(0, 128, 128));
+        output_text += L" В тексте будет выделено розовым цветом";
+    }
     //output_text += L"Поиск выполнялся по следующим частям речи: \r\n";
     SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)output_text.c_str());
     output_text = L"";
-    // Для каждой активной части речи
-    if (buttons::ButtonFlags.test(0))
-        OutputColoredPart(buttons::widgets.hEditRhymes, L"• Глагол", L" выделен в тексте красным", RGB(200, 0, 0));
-    if (buttons::ButtonFlags.test(1))
-        OutputColoredPart(buttons::widgets.hEditRhymes, L"• Наречие", L"выделено в тексте фиолетовым", RGB(150, 0, 150));
-    if (buttons::ButtonFlags.test(3))
-        OutputColoredPart(buttons::widgets.hEditRhymes, L"• Существительное", L"выделено в тексте синим", RGB(0, 0, 200));
-    if (buttons::ButtonFlags.test(2))
-        OutputColoredPart(buttons::widgets.hEditRhymes, L"• Прилагательное", L"выделено в тексте зелёным", RGB(0, 150, 0));
-    if (buttons::ButtonFlags.test(5))
-        OutputColoredPart(buttons::widgets.hEditRhymes, L"• Деепричастие", L" выделено в тексте жёлтым", RGB(184, 134, 11));
-    if (buttons::ButtonFlags.test(4))
-        OutputColoredPart(buttons::widgets.hEditRhymes, L"• Причастие", L"выделено в тексте бирюзовым", RGB(0, 128, 128));
+    
     
     
     
@@ -667,7 +691,6 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
 
     case WM_COMMAND:
     {
-       
         // Проверяем, если уведомление пришло от поля ввода слова
         if (HIWORD(wp) == EN_CHANGE && (HWND)lp == buttons::widgets.hEditInputWord)
         {
@@ -847,6 +870,8 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             wstring filtered;
             bool started = false;
             bool wordChanged = false; // Флаг для отслеживания изменения слова
+            bool prolonged_ckeck = false;
+            bool error_word = false;
 
             for (wchar_t wc : wword)
             {
@@ -862,11 +887,19 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
                 }
                 else
                 {
-                    if (iswspace(wc)) break; // Остановиться на первом пробеле после слова
-                    if (iswalpha(wc))
+                    if (iswspace(wc)) prolonged_ckeck = true; // Остановиться на первом пробеле после слова
+                    if (iswalpha(wc) and prolonged_ckeck == false)
                     {
                         filtered += wc;
                         wordChanged = true; // Устанавливаем флаг, если слово изменяется
+                    }
+                    if (prolonged_ckeck == true)
+                    {
+                        if (iswalpha(wc))
+                        {
+                            error_word = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -875,15 +908,18 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             compare_word = word_to_compare;
 
             // Проверяем на пустоту и изменение слова
-            if (compare_word.empty() && wordChanged)
+            if (buttons::ButtonFlags[6] == true)
             {
-                MessageBoxA(hWnd, "Проверьте корректность слова для поиска рифм", "Ошибка", MB_OK | MB_ICONERROR);
-                buttons::ButtonFlags.reset();
-                UpdateButtonStatesAndColors();
-                UpdateCheckboxStates();
-                EnableWindow(buttons::widgets.hSaveFile, FALSE);
-                UpdateWindow(buttons::widgets.hSaveFile);
-                break;
+                if (compare_word.empty() or error_word == true)
+                {
+                    MessageBoxA(hWnd, "Проверьте корректность слова для поиска рифм", "Ошибка", MB_OK | MB_ICONERROR);
+                    buttons::ButtonFlags.reset();
+                    UpdateButtonStatesAndColors();
+                    UpdateCheckboxStates();
+                    EnableWindow(buttons::widgets.hSaveFile, FALSE);
+                    UpdateWindow(buttons::widgets.hSaveFile);
+                    break;
+                }
             }
             
            
@@ -950,6 +986,14 @@ LRESULT CALLBACK SoftwareMainProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp
             buttons::ButtonFlags.reset();
             UpdateButtonStatesAndColors();
             UpdateCheckboxStates();
+
+            /*
+            buttons::ButtonFlags.reset();
+                UpdateButtonStatesAndColors();
+                UpdateCheckboxStates();
+                EnableWindow(buttons::widgets.hSaveFile, FALSE);
+                UpdateWindow(buttons::widgets.hSaveFile);
+            */
 
 
         }
