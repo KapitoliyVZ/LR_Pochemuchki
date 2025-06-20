@@ -194,13 +194,18 @@ void write_outputFile_text_html(const vector<WordData> &rhymes_data, const vecto
 
     file_output_text << "<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"><title>Текст</title></head>\n<body>\n";
 
+    // проходим по предложениям
     for (size_t i = 0; i < sentences_numbered.size(); ++i)
     {
+        // проходим по словам
         for (const auto &word : sentences_numbered[i])
         {
-            bool colored = false;
+            bool colored = false; // Переменная для проверки, было ли слово раскрашено
+
+            // проходим по рифмам
             for (const auto &entry : rhymes_data)
             {
+                // Проверяем, совпадает ли слово с текущим словом из рифм
                 if (word == entry.word)
                 {
                     string key = entry.word + "|" + entry.part_of_speech;
@@ -210,9 +215,24 @@ void write_outputFile_text_html(const vector<WordData> &rhymes_data, const vecto
                     break;
                 }
             }
+            // Если не найдено, ищем среди рифмующихся слов (выделяем розовым)
             if (!colored)
             {
-                file_output_text << word << " ";
+                bool rhymed = false;
+                for (const auto &entry : rhymes_data)
+                {
+                    // Проверяем, есть ли слово в рифмующихся словах и есть ли слово для сравнения
+                    if (std::find(entry.rhymed_words.begin(), entry.rhymed_words.end(), word) != entry.rhymed_words.end() && buttons::SaveButtonFlags.test(6))
+                    {
+                        file_output_text << "<span style=\"color:fuchsia\">" << word << "</span> ";
+                        rhymed = true;
+                        break;
+                    }
+                }
+                if (!rhymed)
+                {
+                    file_output_text << word << " ";
+                }
             }
         }
         file_output_text << "<br>\n";
@@ -238,8 +258,10 @@ void write_outputFile_rhymes_html(const vector<WordData> &rhymes_data)
         {4, "причастие", "выделено в тексте бирюзовым"},
         {5, "деепричастие", "выделено в тексте жёлтым"}};
 
+    // Вывод заголовка частей речи с их цветами и описаниями
     for (const auto &[flag_index, part, description] : parts)
     {
+        // Проверяем, активна ли данная часть речи
         if (buttons::SaveButtonFlags.test(flag_index))
         {
             string color = get_color(part);
@@ -248,13 +270,29 @@ void write_outputFile_rhymes_html(const vector<WordData> &rhymes_data)
                                << "<span style='color:" << color << ";'>" << description << "</span></li>\n";
         }
     }
+    file_output_rhymes << "</ul>\n";
+
+    // Проверяем, есть ли рифмующиеся слова хотя бы у одного объекта
+    bool has_rhymed = false;
+    for (const auto &entry : rhymes_data)
+    {
+        if ((!entry.rhymed_words.empty() || !entry.rhymed_words_sentences_number.empty()) && buttons::SaveButtonFlags.test(6))
+        {
+            has_rhymed = true;
+            break;
+        }
+    }
+    if (has_rhymed)
+    {
+        file_output_rhymes << "Рифмующиеся слова в тексте — <span style='color:fuchsia;'>выделены в тексте розовым</span></li>\n";
+    }
 
     file_output_rhymes << "</ul>\n";
 
     // Тип поиска
     file_output_rhymes << "<p><strong>Тип поиска:</strong> "
                        << (buttons::SaveButtonFlags.test(7) ? "Однородный" : "Неоднородный") << "<br>\n"
-                       << "В тексте каждая часть речи выделена цветом:</p>\n<hr>\n";
+                       << "Вывод слов осуществляется по мере их встрече в тексте.</p><hr>\n";
 
     // Вывод рифм
     for (const auto &output : rhymes_data)
@@ -269,14 +307,14 @@ void write_outputFile_rhymes_html(const vector<WordData> &rhymes_data)
         file_output_rhymes << "<strong>Количество встреч в тексте:</strong> " << output.amount << "<br>\n";
         file_output_rhymes << "<strong>Количество рифмующихся пар:</strong> " << output.rhymed_amount << "<br>\n";
 
-        file_output_rhymes << "<strong>Найдено в следующих предложениях:</strong> ";
+        file_output_rhymes << "<strong>Найдено в следующем(-их) предложении(-ях):</strong> ";
         if (!output.sentence_counter.empty())
         {
             for (size_t i = 0; i < output.sentence_counter.size(); ++i)
             {
                 if (i > 0)
                     file_output_rhymes << ", ";
-                file_output_rhymes << output.sentence_counter[i];
+                file_output_rhymes << output.sentence_counter[i]; // вывод номера предложения данного слова.
             }
         }
         else
@@ -287,10 +325,23 @@ void write_outputFile_rhymes_html(const vector<WordData> &rhymes_data)
 
         if (!output.rhymed_words.empty())
         {
-            file_output_rhymes << "<strong>Рифмующиеся пары:</strong><ul>\n";
-            for (const string &rhyme : output.rhymed_words)
+            file_output_rhymes << "<strong>Рифмующееся(-иеся) слово(-а) (Номер(-а) предложения(-ий), в которых встречается(-ются)):</strong><ul>\n";
+            for (size_t i = 0; i < output.rhymed_words.size(); ++i)
             {
-                file_output_rhymes << "<li>" << rhyme << "</li>\n";
+                file_output_rhymes << "<li>" << output.rhymed_words[i];
+                // Выводим номера предложений для этого слова
+                if (i < output.rhymed_words_sentences_number.size() && !output.rhymed_words_sentences_number[i].empty())
+                {
+                    file_output_rhymes << " (номер(-а) предложения(-й): ";
+                    for (size_t j = 0; j < output.rhymed_words_sentences_number[i].size(); ++j)
+                    {
+                        if (j > 0)
+                            file_output_rhymes << ", ";
+                        file_output_rhymes << output.rhymed_words_sentences_number[i][j];
+                    }
+                    file_output_rhymes << ")";
+                }
+                file_output_rhymes << "</li>\n";
             }
             file_output_rhymes << "</ul>\n";
         }
