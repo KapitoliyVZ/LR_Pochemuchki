@@ -23,9 +23,53 @@ struct WordData
 	vector<string> rhymed_words;  // вектор для хранения слов, с которыми рифмуется слово
 	int amount = 0;				  // количество встреч данного слова в тексте
 	int rhymed_amount = 0;		  // количество слов, с которым рифмуется взятое слово
+	vector<vector<int>> rhymed_words_sentences_number; // вектор векторов номеров предложений, в которых встречено рифмующееся слово
+
 };
 
+// функция поиска рифмующихся слов в предложениях
+void find_number_of_sentences(vector<WordData>& data,vector<vector<string>>& sentences)
+{
+	for (int i = 0; i< sentences.size(); i++)
+	{
+		vector<string> sentence = sentences[i];
+		
+		for (string& word : sentence)
+		{
+			string tmp_word = lowFirstLetter(word);
+				for (WordData& information : data)
+				{
+					for (int j = 0; j<information.rhymed_words.size();j++)
+					{
+						information.rhymed_words_sentences_number.resize(information.rhymed_amount);
+						if (information.rhymed_words[j] == tmp_word)
+						{
+							vector<int>& one_word = information.rhymed_words_sentences_number[j];
 
+								bool exist = false;
+								if (one_word.empty())
+									one_word.push_back(i + 1);
+								else
+								{
+									for (int g = 0; g < one_word.size(); g++)
+									{
+										if (one_word[g] == i + 1)
+										{
+											exist = true;
+											break;
+										}
+										
+									}
+									if (exist==false)
+										one_word.push_back(i + 1);
+								}
+							
+						}
+					}
+				}
+		}
+	}
+}
 
 // Загружает морфемные признаки из файла
 vector<string> load_morphemes(string filename)
@@ -403,12 +447,13 @@ void deal_with_words(bitset<8>& button_flags, vector<vector<string>>& numbered_s
 	// обозначения частей речи для MyStem
 	const vector<string> parts_of_speech{ "V", "ADV", "A", "S", "прич", "деепр" };
 
-
 	// поиск слов по частям речи
 	findWordsByPartOfSpeech(numbered_sentences,button_flags, parts_of_speech, words_text_collection, buttons::morphemeRules, word_to_compare);
 
 	// поиск рифм
 	data = find_rhymes_fast(words_text_collection, button_flags, comparing_word_part_of_speech, parts_of_speech);
+
+	find_number_of_sentences(data, numbered_sentences);
 
 	// поднятие всех регистров для красивого вывода и поиска слов по рифмам в
 	for (WordData& record : data)

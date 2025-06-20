@@ -592,7 +592,7 @@ void findWordsByPartOfSpeech(std::vector<std::vector<std::string>>& sentences,bi
 
                 if ((partOfSpeech == parts_of_speech[i]) && button_flags.test(i))
                 {
-                    
+                        
                         word = lowFirstLetter(word);
                         
                         words_text_collection[i].push_back(word); // Сохраняем найденное слово с обработкой регистра
@@ -665,7 +665,7 @@ std::vector<std::string> get_comparing_word_part(std::string& comparing_word) {
     if (comparing_word == " ") return part_of_speech;
 
     string comparing_word_UTF8 = ansi_to_utf8(comparing_word);
-    // вот это заменить на версию для MyStem
+    // вызов mystem
     std::string part = get_Mystem_part_of_speech(comparing_word_UTF8);
 
     // Проверка всех целевых частей речи
