@@ -292,7 +292,7 @@ void write_outputFile_rhymes_html(const vector<WordData> &rhymes_data)
     // Тип поиска
     file_output_rhymes << "<p><strong>Тип поиска:</strong> "
                        << (buttons::SaveButtonFlags.test(7) ? "Однородный" : "Неоднородный") << "<br>\n"
-                       << "Вывод слов осуществляется по мере их встрече в тексте.</p><hr>\n";
+                       << "Вывод слов осуществляется по мере их встречи в тексте.</p><hr>\n";
 
     // Вывод рифм
     for (const auto &output : rhymes_data)
