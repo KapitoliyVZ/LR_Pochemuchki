@@ -480,8 +480,9 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data, string& compare_word)
     wstring output_text;
     if (compare_word == "")
     {
-        output_text = L"Результаты поиска рифм по частям речи:\r\n";
+        output_text = L"Результаты поиска рифм по частям речи:\r\n\r\n";
         SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)output_text.c_str());
+        output_text = L"";
         // Для каждой активной части речи
         if (buttons::ButtonFlags.test(0))
             OutputColoredPart(buttons::widgets.hEditRhymes, L"• Глагол", L"выделен в тексте красным", RGB(200, 0, 0));
@@ -498,7 +499,7 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data, string& compare_word)
     }
     else
     {
-        output_text = L"Результаты поиска рифм для слова \"" + ansi_to_wstring(compare_word) + (buttons::ButtonFlags.test(7) == 1 ? L"\" по части речи слова:\r\n" : L"\" по частям речи:\r\n");
+        output_text = L"Результаты поиска рифм для слова \"" + ansi_to_wstring(compare_word) + (buttons::ButtonFlags.test(7) == 1 ? L"\" по части речи слова:\r\n\r\n" : L"\" по частям речи:\r\n");
         SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)output_text.c_str());
         // Для каждой активной части речи
         if (buttons::ButtonFlags.test(0))
@@ -576,7 +577,7 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data, string& compare_word)
 
             SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)word_info.c_str());
 
-            wstring sentence_info = L"\r\nНайдено в предложениях: ";
+            wstring sentence_info = L"\r\nНайдено в предложении(-ях): ";
             if (!output.sentence_counter.empty())
             {
                 for (size_t i = 0; i < output.sentence_counter.size(); ++i)
@@ -593,12 +594,12 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data, string& compare_word)
 
             if (!output.rhymed_words.empty())
             {
-                SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)L"\r\nРифмующиеся слова:");
+                SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)L"\r\nРифмующееся(-иеся) слово(-а):");
                 int index = 0;
                 for (const auto& rhymed : output.rhymed_words)
                 {
                     wstring rhyme = L"\r\n  • " + ansi_to_wstring(rhymed);
-                    rhyme += L" (предл.";
+                    rhyme += L" (предложение(-я): ";
                     for (auto pos : output.rhymed_words_sentences_number[index])
                     {
                         rhyme += to_wstring(pos);
