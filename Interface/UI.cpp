@@ -297,14 +297,17 @@ struct WordInfo {
 void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordData>& rhymes_data, string& compare_word)
 {
     bool capitalize = false;
-
+	bool firstWord = true;
+    COLORREF save_color;
     // Сопоставление слова и части речи + рифмующиеся слова
     unordered_map<std::string, WordInfo> wordToInfo;
     unordered_map<std::string, std::string> rhymeWordToPartOfSpeech;
 
-    for (const auto& wordData : rhymes_data) {
+    for (const auto& wordData : rhymes_data) 
+    {
         wordToInfo[wordData.word] = { wordData.part_of_speech, wordData.rhymed_words };
-        for (const auto& rhyme : wordData.rhymed_words) {
+        for (const auto& rhyme : wordData.rhymed_words) 
+        {
             rhymeWordToPartOfSpeech[rhyme] = wordData.part_of_speech;
         }
     }
@@ -355,10 +358,25 @@ void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordDa
                     }
                     else
                     {
-                        color = RGB(255, 0, 255);
+                        if (firstWord)
+                        {
+                            if (part == "глагол") color = RGB(200, 0, 0);
+                            else if (part == "существительное") color = RGB(0, 0, 200);
+                            else if (part == "прилагательное") color = RGB(0, 150, 0);
+                            else if (part == "наречие") color = RGB(150, 0, 150);
+                            else if (part == "причастие") color = RGB(0, 128, 128);
+                            else if (part == "деепричастие") color = RGB(184, 134, 11);
+                        }
+                        else
+                        {
+                            save_color = color;
+                            color = RGB(255, 0, 255);
+						} // Если слово рифмуется, то делаем его розовым
+
                     }
                 }
             
+
             // Устанавливаем цвет для слова
             CHARFORMAT2 cf = { sizeof(cf) };
             cf.dwMask = CFM_COLOR;
@@ -378,6 +396,21 @@ void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordDa
                 wword = ansi_to_wstring(word);
             }
             
+            if (word == compare_word)
+            {
+                cf = { sizeof(cf) };
+                cf.dwMask = CFM_COLOR;
+                cf.crTextColor = save_color;
+                SendMessageW(buttons::widgets.hEditText, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
+            }
+            else
+            {
+                cf = { sizeof(cf) };
+                cf.dwMask = CFM_COLOR;
+                cf.crTextColor = color;
+                SendMessageW(buttons::widgets.hEditText, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
+            }
+
             SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)wword.c_str());
 
             firstWord = false;
@@ -395,7 +428,6 @@ void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordDa
 // Универсальная функция для вывода строки с цветным словом-цветом в RichEdit
 void OutputColoredPart(HWND hEdit, const std::wstring& partName, const std::wstring& colorName, COLORREF color)
 {
-    // Выводим часть речи и " - "
     wstring prefix;
     if (colorName == L"пусто")
     {
@@ -403,6 +435,11 @@ void OutputColoredPart(HWND hEdit, const std::wstring& partName, const std::wstr
         SendMessageW(hEdit, EM_REPLACESEL, FALSE, (LPARAM)prefix.c_str());
         return;
 	}
+    else if (colorName == L" выделено в тексте розовым")
+    {
+        prefix = partName;
+        SendMessageW(hEdit, EM_REPLACESEL, FALSE, (LPARAM)prefix.c_str());
+    }
     else
     {
         prefix = partName + L" - ";
@@ -501,6 +538,7 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data, string& compare_word)
     {
         output_text = L"Результаты поиска рифм для слова \"" + ansi_to_wstring(compare_word) + (buttons::ButtonFlags.test(7) == 1 ? L"\" по части речи слова:\r\n\r\n" : L"\" по частям речи:\r\n");
         SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)output_text.c_str());
+        output_text = L"";
         // Для каждой активной части речи
         if (buttons::ButtonFlags.test(0))
             OutputColoredPart(buttons::widgets.hEditRhymes, L"• Глагол", L"пусто", RGB(200, 0, 0));
@@ -514,17 +552,16 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data, string& compare_word)
             OutputColoredPart(buttons::widgets.hEditRhymes, L"• Деепричастие", L"пусто", RGB(184, 134, 11));
         if (buttons::ButtonFlags.test(4))
             OutputColoredPart(buttons::widgets.hEditRhymes, L"• Причастие", L"пусто", RGB(0, 128, 128));
-        output_text = L"\nВ тексте рифмованные пары будут выделены розовым цветом";
+
+        OutputColoredPart(buttons::widgets.hEditRhymes, L"\nРифмованные пары будут", L"выделены в тексте розовым", RGB(255, 0, 255));
+
         SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)output_text.c_str());
         output_text = L"";
     }
-
-    
-    
-    
     
     output_text += L"\r\n";
     output_text += L"Тип поиска: " + wstring(buttons::ButtonFlags.test(7) ? L"Однородный" : L"Неоднородный");
+    output_text += L"\r\nВывод слов осуществляется по мере их встречи в тексте";
     SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)output_text.c_str());
 
     // Порядок вывода
@@ -541,19 +578,14 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data, string& compare_word)
     {
         // Цвет текста
         COLORREF color = RGB(0, 0, 0);
-        if (compare_word == "")
-        {
+        
             if (part_key == "глагол") color = RGB(200, 0, 0);
             else if (part_key == "наречие") color = RGB(150, 0, 150);
             else if (part_key == "прилагательное") color = RGB(0, 150, 0);
             else if (part_key == "существительное") color = RGB(0, 0, 200);
             else if (part_key == "причастие") color = RGB(0, 128, 128);
             else if (part_key == "деепричастие") color = RGB(184, 134, 11);
-        }
-        else
-        {
-            color = RGB(255, 0, 255);
-        }
+
         CHARFORMAT2 cf = { sizeof(cf) };
         cf.dwMask = CFM_COLOR;
         cf.crTextColor = color;
@@ -569,10 +601,37 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data, string& compare_word)
             
         SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)header.c_str());
 
+		COLORREF save_color = color; // Сохраняем цвет для сброса
+		// Сброс цвета
+        color = RGB(0, 0, 0);
+        cf = { sizeof(cf) };
+        cf.dwMask = CFM_COLOR;
+        cf.crTextColor = color;
+        SendMessageW(buttons::widgets.hEditRhymes, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
+
         for (const WordData& output : words)
         {
-            wstring word_info = L"\r\n\r\nСлово: " + ansi_to_wstring(output.word) +
-                                L"\r\nЧасть речи: " + ansi_to_wstring(output.part_of_speech) +
+            wstring word_info = L"\r\n\r\nСлово: ";
+
+            SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)word_info.c_str());
+
+            color = save_color;
+            cf = { sizeof(cf) };
+            cf.dwMask = CFM_COLOR;
+            cf.crTextColor = color;
+            SendMessageW(buttons::widgets.hEditRhymes, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
+            
+            word_info = ansi_to_wstring(output.word);
+
+            SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)word_info.c_str());
+
+            color = RGB(0, 0, 0);
+            cf = { sizeof(cf) };
+            cf.dwMask = CFM_COLOR;
+            cf.crTextColor = color;
+            SendMessageW(buttons::widgets.hEditRhymes, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
+			
+            word_info = L"\r\nЧасть речи: " + ansi_to_wstring(output.part_of_speech) +
                                 L"\r\nКоличество встреч в тексте: " + to_wstring(output.amount);
 
             SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)word_info.c_str());
