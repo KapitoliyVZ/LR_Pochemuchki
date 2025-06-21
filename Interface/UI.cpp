@@ -509,6 +509,7 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data, string& compare_word)
 
     // Заголовок
     wstring output_text;
+    // Вывод в поле рифм при поиске без слова
     if (compare_word == "")
     {
         output_text = L"Результаты поиска рифм по частям речи:\r\n\r\n";
@@ -528,9 +529,32 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data, string& compare_word)
         if (buttons::ButtonFlags.test(4))
             OutputColoredPart(buttons::widgets.hEditRhymes, L"• Причастие", L"выделено в тексте бирюзовым", RGB(0, 128, 128));
     }
+    // Вывод в поле рифм при неоднородном поиске по слову 
+    else if (buttons::ButtonFlags.test(7) == false)
+    {
+        output_text = L"Результаты поиска рифм для слова \"" + ansi_to_wstring(compare_word) + (buttons::ButtonFlags.test(7) == 1 ? L"\" по части речи слова:\r\n\r\n" : L"\" по частям речи:\r\n\r\n");
+        SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)output_text.c_str());
+        output_text = L"";
+        // Для каждой активной части речи
+        if (buttons::ButtonFlags.test(0))
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Глагол", L"пусто", RGB(200, 0, 0));
+        if (buttons::ButtonFlags.test(1))
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Наречие", L"пусто", RGB(150, 0, 150));
+        if (buttons::ButtonFlags.test(3))
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Существительное", L"пусто", RGB(0, 0, 200));
+        if (buttons::ButtonFlags.test(2))
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Прилагательное", L"пусто", RGB(0, 150, 0));
+        if (buttons::ButtonFlags.test(5))
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Деепричастие", L"пусто", RGB(184, 134, 11));
+        if (buttons::ButtonFlags.test(4))
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Причастие", L"пусто", RGB(0, 128, 128));
+
+        OutputColoredPart(buttons::widgets.hEditRhymes, L"\nРифмованные пары будут", L"выделены в тексте розовым", RGB(255, 0, 255));
+    }
+    // Вывод в поле рифм при однородном поиске по слову 
     else
     {
-        output_text = L"Результаты поиска рифм для слова \"" + ansi_to_wstring(compare_word) + (buttons::ButtonFlags.test(7) == 1 ? L"\" по части речи слова:\r\n\r\n" : L"\" по частям речи:\r\n");
+        output_text = L"Результаты поиска рифм для слова \"" + ansi_to_wstring(compare_word) + (buttons::ButtonFlags.test(7) == 1 ? L"\" по части речи слова:\r\n\r\n" : L"\" по частям речи:\r\n\r\n");
         SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)output_text.c_str());
         output_text = L"";
         // Для каждой активной части речи
@@ -550,7 +574,6 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data, string& compare_word)
         OutputColoredPart(buttons::widgets.hEditRhymes, L"\nРифмованные пары будут", L"выделены в тексте розовым", RGB(255, 0, 255));
 
         SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)output_text.c_str());
-        output_text = L"";
     }
     
     output_text += L"\r\n";
@@ -626,7 +649,7 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data, string& compare_word)
             SendMessageW(buttons::widgets.hEditRhymes, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
 			
             word_info = L"\r\nЧасть речи: " + ansi_to_wstring(output.part_of_speech) +
-                                L"\r\nКоличество встреч в тексте: " + to_wstring(output.amount);
+                                L"\r\nКоличество появлений в тексте: " + to_wstring(output.amount);
 
             SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)word_info.c_str());
 
