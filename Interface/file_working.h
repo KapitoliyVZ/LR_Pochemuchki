@@ -288,7 +288,7 @@ void write_outputFile_rhymes_html(const vector<WordData> &rhymes_data)
     // Тип поиска
     file_output_rhymes << "<p><strong>Тип поиска:</strong> "
                        << (buttons::SaveButtonFlags.test(7) ? "Однородный" : "Неоднородный") << "<br>\n"
-                       << "Вывод слов осуществляется по мере их встречи в тексте.</p><hr>\n";
+                       << "Вывод слов осуществляется по мере их появлений в тексте.</p><hr>\n";
 
     // Вывод рифм
     for (const auto &output : rhymes_data)
@@ -300,7 +300,7 @@ void write_outputFile_rhymes_html(const vector<WordData> &rhymes_data)
                            << "<span style='color:" << color << ";'>" << output.word << "</span><br>\n";
 
         file_output_rhymes << "<strong>Часть речи:</strong> " << output.part_of_speech << "<br>\n";
-        file_output_rhymes << "<strong>Количество встреч в тексте:</strong> " << output.amount << "<br>\n";
+        file_output_rhymes << "<strong>Количество появлений в тексте:</strong> " << output.amount << "<br>\n";
         file_output_rhymes << "<strong>Количество рифмующихся пар:</strong> " << output.rhymed_amount << "<br>\n";
 
         file_output_rhymes << "<strong>Найдено в следующем(-их) предложении(-ях):</strong> ";
@@ -321,7 +321,7 @@ void write_outputFile_rhymes_html(const vector<WordData> &rhymes_data)
 
         if (!output.rhymed_words.empty())
         {
-            file_output_rhymes << "<strong>Рифмующееся(-иеся) слово(-а) (Номер(-а) предложения(-ий), в которых встречается(-ются)):</strong><ul>\n";
+            file_output_rhymes << "<strong>Рифмующееся(-иеся) слово(-а) (номер(-а) предложения(-ий), в котором(-ых) появляется(-ются)):</strong><ul>\n";
             for (size_t i = 0; i < output.rhymed_words.size(); ++i)
             {
                 file_output_rhymes << "<li>" << output.rhymed_words[i];

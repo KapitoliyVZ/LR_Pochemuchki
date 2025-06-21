@@ -57,10 +57,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdsho
     return 0;
 }
 
-
-
-
-
 bool isFalseCoding(const string& str) 
 {
     static const std::vector<std::string> known_bad_prefixes = 
@@ -84,7 +80,6 @@ bool isFalseCoding(const string& str)
 
     return false;
 }
-
 
 // Обновляем состояние кнопок в зависимости от флагов
 void UpdateButtonStatesAndColors()
@@ -287,7 +282,6 @@ std::string wstring_to_ansi(const std::wstring& wstr)
     return ansi_str;
 }
 
-
 struct WordInfo {
     std::string part_of_speech;
     std::vector<std::string> rhymed_words;
@@ -297,22 +291,20 @@ struct WordInfo {
 void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordData>& rhymes_data, string& compare_word)
 {
     bool capitalize = false;
-	bool firstWord = true;
+    bool firstWord = true;
     COLORREF save_color;
-    // Сопоставление слова и части речи + рифмующиеся слова
     unordered_map<std::string, WordInfo> wordToInfo;
     unordered_map<std::string, std::string> rhymeWordToPartOfSpeech;
 
-    for (const auto& wordData : rhymes_data) 
+    for (const auto& wordData : rhymes_data)
     {
         wordToInfo[wordData.word] = { wordData.part_of_speech, wordData.rhymed_words };
-        for (const auto& rhyme : wordData.rhymed_words) 
+        for (const auto& rhyme : wordData.rhymed_words)
         {
             rhymeWordToPartOfSpeech[rhyme] = wordData.part_of_speech;
         }
     }
 
-    // Очищаем поле перед выводом
     SetWindowTextW(buttons::widgets.hEditText, L"");
 
     for (const auto& sentence : sentences)
@@ -320,7 +312,7 @@ void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordDa
         bool firstWord = true;
         for (const auto& word : sentence)
         {
-			capitalize = false;
+            capitalize = false;
             if (!firstWord)
             {
                 CHARFORMAT2 cf_def = { sizeof(cf_def) };
@@ -333,22 +325,38 @@ void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordDa
             // Определяем цвет слова
             COLORREF color = RGB(0, 0, 0);
             std::string part;
+            bool isMainWord = false;
             auto it = wordToInfo.find(word);
             if (it != wordToInfo.end()) {
                 part = it->second.part_of_speech;
+                isMainWord = true;
             }
             else {
                 auto rit = rhymeWordToPartOfSpeech.find(word);
-                if (rit != rhymeWordToPartOfSpeech.end()) 
+                if (rit != rhymeWordToPartOfSpeech.end())
                 {
                     part = rit->second;
-					capitalize = true; // Если слово рифмуется, то делаем его заглавным
+                    capitalize = true; // Если слово рифмуется, то делаем его заглавным
                 }
             }
-                if (!part.empty()) 
+
+            if (!part.empty())
+            {
+                if (compare_word == "")
                 {
-                    if (compare_word == "")
+                    // Всегда цвет по части речи
+                    if (part == "глагол") color = RGB(200, 0, 0);
+                    else if (part == "существительное") color = RGB(0, 0, 200);
+                    else if (part == "прилагательное") color = RGB(0, 150, 0);
+                    else if (part == "наречие") color = RGB(150, 0, 150);
+                    else if (part == "причастие") color = RGB(0, 128, 128);
+                    else if (part == "деепричастие") color = RGB(184, 134, 11);
+                }
+                else
+                {
+                    if (isMainWord)
                     {
+                        // Для слов из wordToInfo — всегда цвет по части речи
                         if (part == "глагол") color = RGB(200, 0, 0);
                         else if (part == "существительное") color = RGB(0, 0, 200);
                         else if (part == "прилагательное") color = RGB(0, 150, 0);
@@ -358,24 +366,12 @@ void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordDa
                     }
                     else
                     {
-                        if (firstWord)
-                        {
-                            if (part == "глагол") color = RGB(200, 0, 0);
-                            else if (part == "существительное") color = RGB(0, 0, 200);
-                            else if (part == "прилагательное") color = RGB(0, 150, 0);
-                            else if (part == "наречие") color = RGB(150, 0, 150);
-                            else if (part == "причастие") color = RGB(0, 128, 128);
-                            else if (part == "деепричастие") color = RGB(184, 134, 11);
-                        }
-                        else
-                        {
-                            save_color = color;
-                            color = RGB(255, 0, 255);
-						} // Если слово рифмуется, то делаем его розовым
-
+                        // Для рифмующихся слов — розовый
+                        save_color = color;
+                        color = RGB(255, 0, 255);
                     }
                 }
-            
+            }
 
             // Устанавливаем цвет для слова
             CHARFORMAT2 cf = { sizeof(cf) };
@@ -385,17 +381,16 @@ void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordDa
 
             string capitalized_word;
             wstring wword;
-            // Вставляем слово
             if (capitalize == true)
             {
-				capitalized_word = capitalizeAllLetters(word); // Функция для заглавных букв
+                capitalized_word = capitalizeAllLetters(word);
                 wword = ansi_to_wstring(capitalized_word);
             }
             else
             {
                 wword = ansi_to_wstring(word);
             }
-            
+
             if (word == compare_word)
             {
                 cf = { sizeof(cf) };
@@ -415,15 +410,14 @@ void OutputTextInfo(const vector<vector<string>>& sentences, const vector<WordDa
 
             firstWord = false;
         }
-        // После предложения — сброс цвета и вставка переноса строки
         CHARFORMAT2 cf_def = { sizeof(cf_def) };
         cf_def.dwMask = CFM_COLOR;
         cf_def.crTextColor = RGB(0, 0, 0);
         SendMessageW(buttons::widgets.hEditText, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf_def);
         SendMessageW(buttons::widgets.hEditText, EM_REPLACESEL, FALSE, (LPARAM)L"\r\n");
     }
-
 }
+
 
 // Универсальная функция для вывода строки с цветным словом-цветом в RichEdit
 void OutputColoredPart(HWND hEdit, const std::wstring& partName, const std::wstring& colorName, COLORREF color)
@@ -541,17 +535,17 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data, string& compare_word)
         output_text = L"";
         // Для каждой активной части речи
         if (buttons::ButtonFlags.test(0))
-            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Глагол", L"пусто", RGB(200, 0, 0));
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Глагол", L"выделен в тексте красным", RGB(200, 0, 0));
         if (buttons::ButtonFlags.test(1))
-            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Наречие", L"пусто", RGB(150, 0, 150));
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Наречие", L"выделено в тексте фиолетовым", RGB(150, 0, 150));
         if (buttons::ButtonFlags.test(3))
-            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Существительное", L"пусто", RGB(0, 0, 200));
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Существительное", L"выделено в тексте синим", RGB(0, 0, 200));
         if (buttons::ButtonFlags.test(2))
-            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Прилагательное", L"пусто", RGB(0, 150, 0));
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Прилагательное", L"выделено в тексте зелёным", RGB(0, 150, 0));
         if (buttons::ButtonFlags.test(5))
-            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Деепричастие", L"пусто", RGB(184, 134, 11));
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Деепричастие", L"выделено в тексте жёлтым", RGB(184, 134, 11));
         if (buttons::ButtonFlags.test(4))
-            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Причастие", L"пусто", RGB(0, 128, 128));
+            OutputColoredPart(buttons::widgets.hEditRhymes, L"• Причастие", L"выделено в тексте бирюзовым", RGB(0, 128, 128));
 
         OutputColoredPart(buttons::widgets.hEditRhymes, L"\nРифмованные пары будут", L"выделены в тексте розовым", RGB(255, 0, 255));
 
