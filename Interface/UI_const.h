@@ -30,7 +30,7 @@ OPENFILENAMEA OFN;
 string filename_str = "";
 char filename[265] = {};
 
-
+// —труктура дл€ хранени€ начальных размеров окна
 struct InitialDimensions {
 	int x;
 	int y;
