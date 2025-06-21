@@ -65,14 +65,16 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdsho
     return 0;
 }
 
+// функция проверки правильности кодировки
 bool isFalseCoding(const string& str) 
 {
+    // нехарактерные символы
     static const std::vector<std::string> known_bad_prefixes = 
     {
         "Ѓ", "Ќ", "Рђ", "Р‘", "СЃ", "С‡"
     };
 
-    // Если встречаются подряд подозрительные буквы, которые редко бывают в русском тексте — это кракозябра
+    // Если встречаются подряд нехарактерные символы - неверная кодировка
     for (const auto& prefix : known_bad_prefixes) 
     {
         size_t pos = str.find(prefix);
