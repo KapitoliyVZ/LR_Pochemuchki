@@ -619,7 +619,7 @@ void OutputRhymeInfo(const vector<WordData>& rhymes_data, string& compare_word)
     
     output_text += L"\r\n";
     output_text += L"Тип поиска: " + wstring(buttons::ButtonFlags.test(7) ? L"Однородный" : L"Неоднородный");
-    output_text += L"\r\nВывод слов осуществляется по мере их встречи в тексте";
+    output_text += L"\r\nВывод слов осуществляется по мере их появлений в тексте";
     SendMessageW(buttons::widgets.hEditRhymes, EM_REPLACESEL, FALSE, (LPARAM)output_text.c_str());
 
     // Порядок вывода
@@ -1443,9 +1443,9 @@ BOOL MakeRoundButton(LPDRAWITEMSTRUCT lpDrawItem)
     DeleteObject(hBgBrush); // Удаляем кисть после использования
 
     // Выбираем нужную кисть для кнопки
-    HBRUSH hBrushes;
+    HBRUSH hBrushes = nullptr;
     BOOL isActive = FALSE;
-    const char *buttonText;
+    const char *buttonText = nullptr;
 	// Определяем текст кнопки в зависимости от ее идентификатора
 	// Кнопка "Выход"
     if (lpDrawItem->hwndItem == buttons::widgets.hExitButton)
