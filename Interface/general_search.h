@@ -12,7 +12,9 @@
 #include <future>
 #include <mutex>
 
-
+// данный заголовочный файл предназначен для выполнения следующих функций:
+// - основная функция, которая объединяет в себе все функции, необходимые для создания вектора структур с содержательной информацией
+// - функции для поиска рифм
  
 // структура для хранения данных о найденном причастии
 struct WordData
@@ -79,54 +81,9 @@ void find_number_of_sentences(vector<WordData>& data, vector<vector<string>>& se
 	}
 }
 
-/*
-// функция поиска рифмующихся слов в предложениях
-void find_number_of_sentences(vector<WordData>& data,vector<vector<string>>& sentences)
-{
-	for (int i = 0; i< sentences.size(); i++)
-	{
-		vector<string> sentence = sentences[i];
-		
-		for (string& word : sentence)
-		{
-			string tmp_word_low = lowFirstLetter(word);
-			
-				for (WordData& information : data)
-				{
-					for (int j = 0; j<information.rhymed_words.size();j++)
-					{
-						information.rhymed_words_sentences_number.resize(information.rhymed_amount);
-						if ((information.rhymed_words[j] == tmp_word_low) || (capitalizeAllLetters(information.rhymed_words[j])==word))
-						{
-							vector<int>& one_word = information.rhymed_words_sentences_number[j];
 
-								bool exist = false;
-								if (one_word.empty())
-									one_word.push_back(i + 1);
-								else
-								{
-									for (int g = 0; g < one_word.size(); g++)
-									{
-										if (one_word[g] == i + 1)
-										{
-											exist = true;
-											break;
-										}
-										
-									}
-									if (exist==false)
-										one_word.push_back(i + 1);
-								}
-							
-						}
-					}
-				}
-		}
-	}
-}
-*/
 
-// Загружает морфемные признаки из файла
+// функция для загрузки морфемных признаки из файла
 vector<string> load_morphemes(string filename)
 {
 	string file_path = get_filepath(filename);
@@ -200,22 +157,6 @@ int damerauLevenshteinDistance(const string& ending_1, const string& ending_2)
 	return dist[len_1][len_2];
 }
 
-// Функция для извлечения окончания слова (например, последние 4 символа)
-std::string getSuffix(const std::string& word, int suffix_length = 8)
-{
-	std::vector<std::string> letters = ansiSplit(word);
-
-	std::string suffix;
-	int start = (letters.size() > suffix_length) ? letters.size() - suffix_length : 0;
-
-	for (int i = start; i < letters.size(); ++i)
-	{
-		suffix += letters[i];
-	}
-
-	return suffix;
-}
-
 // функция проверки наличия причастия в структуре причастий
 bool existence_of_participle(vector<WordData>& data, string& comparing_participle)
 {
@@ -243,7 +184,9 @@ int countMaxConsecutiveMatches(const std::string& s1, const std::string& s2) {
 	return maxCount;
 }
 
+// функция проверки рифмования двух взятых слов
 bool areWordsRhymed(const std::string& word_1, const std::string& word_2) {
+	
 	// Получаем количество слогов
 	int syllables_1 = countSyllables(word_1);
 	int syllables_2 = countSyllables(word_2);
@@ -311,7 +254,7 @@ bool areWordsRhymed(const std::string& word_1, const std::string& word_2) {
 	}
 }
 
-// функция проверки наличия одинаковых рифмованных причастий
+// функция проверки наличия одинаковых рифмованных слов
 bool existenceRhymedParticiples(WordData& candidate, const string& word)
 {
 
@@ -326,11 +269,6 @@ bool existenceRhymedParticiples(WordData& candidate, const string& word)
 // функция взятия название части речи взятого слова
 std::string get_output_part_of_speech(string part_of_speech)
 {
-	// перевод в ANSI, чтобы проверка проходила для случая кириллицы (причастие, деепричастие)
-	//part_of_speech = utf8_to_ansi(part_of_speech);
-
-	// { "V", "ADV", "A", "S", "прич", "деепр" }
-
 	// основная проверка части речи
 
 	if (part_of_speech == "V")
@@ -354,48 +292,57 @@ std::string get_output_part_of_speech(string part_of_speech)
 
 };
 
+// функция взятия суффикса слова
 string get_suffix(const string& word, size_t length = 3) {
 	if (word.length() < length) return word;
 	return word.substr(word.length() - length, length);
 }
 
-vector<WordData> find_rhymes_fast(
+
+// основная функция поиска рифм
+vector<WordData> find_rhymes_fast
+(
 	const vector<vector<string>>& words_text_collection,
 	bitset<8> button_flags,
 	const vector<string>& word_to_compare,
 	const vector<string>& parts_of_speech)
 {
-	vector<WordData> data;
-	unordered_set<string> added_words;
-	unordered_map<string, vector<string>> rhyme_cache;
+	vector<WordData> data;                  // результирующий список объектов WordData с рифмами
+	unordered_set<string> added_words;      // множество уже обработанных слов (для исключения повторов)
+	unordered_map<string, vector<string>> rhyme_cache;  // кэш рифм: слово → список уже найденных рифм
 
+	// определение режима работы на основе переданных флагов и наличия слова для сравнения
 	int variant = 0;
 	if (button_flags.test(7)) variant = word_to_compare.empty() ? 0 : 1;
 	else variant = word_to_compare.empty() ? 2 : 3;
 
-	// Создаем индекс по суффиксам для каждого POS
+	// строим индекс по суффиксам слов (для ускоренного доступа при поиске рифм)
 	vector<unordered_map<string, vector<string>>> suffix_indices(6);
 	for (int i = 0; i < 6; ++i) {
 		for (const auto& word : words_text_collection[i]) {
-			suffix_indices[i][get_suffix(word)].push_back(word);
+			suffix_indices[i][get_suffix(word)].push_back(word);  // группировка слов по суффиксу
 		}
 	}
 
-	// Лямбда для получения рифм через индекс
+	// анонимная функция (лямбда), возвращающая рифмующиеся слова к заданному слову
 	auto get_rhymes = [&](const string& word, int pos, bool cross_pos) -> vector<string> {
+		// проверка, есть ли слово в кэше
 		if (rhyme_cache.find(word) != rhyme_cache.end())
 			return rhyme_cache[word];
 
 		vector<string> rhymes;
-		string suff = get_suffix(word);
-		unordered_set<string> seen;
+		string suff = get_suffix(word);     // получаем суффикс слова
+		unordered_set<string> seen;         // для исключения повторов
 
+		// если разрешён поиск рифм по другим частям речи
 		if (cross_pos) {
 			for (int j = 0; j < 6; ++j) {
-				if (j == pos) continue;
+				if (j == pos) continue;  // пропускаем исходную часть речи
 				if (suffix_indices[j].count(suff)) {
 					for (const auto& candidate : suffix_indices[j][suff]) {
+						// проверка, что слово не совпадает само с собой и ещё не встречалось
 						if (candidate != word && seen.insert(candidate).second) {
+							// проверка, являются ли слова рифмующимися
 							if (areWordsRhymed(word, candidate)) {
 								rhymes.push_back(candidate);
 							}
@@ -404,6 +351,7 @@ vector<WordData> find_rhymes_fast(
 				}
 			}
 		}
+		// иначе ищем рифмы только внутри одной части речи
 		else {
 			if (suffix_indices[pos].count(suff)) {
 				for (const auto& candidate : suffix_indices[pos][suff]) {
@@ -416,38 +364,48 @@ vector<WordData> find_rhymes_fast(
 			}
 		}
 
+		// сохраняем найденные рифмы в кэш
 		rhyme_cache[word] = rhymes;
 		return rhymes;
 		};
 
+	// обработка одного слова: формирование объекта WordData и добавление в результат
 	auto process_word = [&](const string& word, int pos, bool cross_pos) {
-		if (word.empty()) return;
-		if (!added_words.insert(word).second) return;
+		if (word.empty()) return;  // пропуск пустых слов
+		if (!added_words.insert(word).second) return;  // пропуск уже обработанных слов
 
 		WordData wd;
 		wd.word = word;
-		wd.rhymed_words = get_rhymes(word, pos, cross_pos);
-		wd.part_of_speech = get_output_part_of_speech(parts_of_speech[pos]);
-		wd.rhymed_amount = wd.rhymed_words.size();
-		data.push_back(std::move(wd));
+		wd.rhymed_words = get_rhymes(word, pos, cross_pos);  // получение рифм
+		wd.part_of_speech = get_output_part_of_speech(parts_of_speech[pos]);  // определение ЧР для вывода
+		wd.rhymed_amount = wd.rhymed_words.size();  // подсчёт рифм
+		data.push_back(std::move(wd));  // добавление в результирующий список
 		};
 
+	// основная логика в зависимости от определённого выше варианта
 	switch (variant) {
 	case 0:
+		// вариант 0: однородный поиск без сравниваемого слова
 		for (int i = 0; i < 6; ++i)
 			for (const auto& w : words_text_collection[i])
 				process_word(w, i, false);
 		break;
+
 	case 1:
+		// вариант 1: однородный поиск со сравниваемым словом
 		for (int i = 0; i < 6; ++i)
 			process_word(word_to_compare[i], i, false);
 		break;
+
 	case 2:
+		// вариант 2: неоднородный поиск без сравниваемого слова
 		for (int i = 0; i < 6; ++i)
 			for (const auto& w : words_text_collection[i])
 				process_word(w, i, true);
 		break;
+
 	case 3:
+		// вариант 3: неоднородный поиск со сравниваемым словом
 		for (int i = 0; i < 6; ++i)
 			process_word(word_to_compare[i], i, true);
 		break;
@@ -457,7 +415,7 @@ vector<WordData> find_rhymes_fast(
 }
 
 
-// основная функция работы с рифмами частей речи
+// основная функция работы со словами текста и заполнением вектора струтур слов содержательной информацией
 void deal_with_words(bitset<8>& button_flags, vector<vector<string>>& numbered_sentences, string word_to_compare, vector<WordData>& data)
 {
 
@@ -469,7 +427,7 @@ void deal_with_words(bitset<8>& button_flags, vector<vector<string>>& numbered_s
 
 	vector<string> comparing_word_part_of_speech;
 
-	// подстановка сравниваемого слова на соответствующую позицию в векторе для корректного последующего сравнения
+	// подстановка сравниваемого слова на соответствующую позицию в векторе части речи для корректного последующего сравнения
 	if (!word_to_compare.empty())
 	{
 		word_to_compare = lowFirstLetter(word_to_compare);

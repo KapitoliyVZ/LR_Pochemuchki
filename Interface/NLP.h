@@ -9,34 +9,50 @@
 #include <stdexcept>
 #include "MyStemProcess.h"
 
+// данный заголовочный файл предназначен для выполнения следующих функций:
+// - определение части речи по окончаниям и суффиксам из служебных файлов при однородном и неоднородном поиске без сравниваемого слова
+// - определение части речи с помощью вспомогательной функции, которая работает с MyStem при однородном и неоднородном поиске со сравниваемым словом
 
 MystemProcess mystem;
 
+// функция получения пути к служебным файлам
 std::string get_filepath(const std::string& filename) {
-    char buffer[MAX_PATH];
-    DWORD length = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
-    if (length == 0) {
-        return filename;  // fallback без кавычек
-    }
-    std::string fullPath(buffer, length);
+    
+    char buffer[MAX_PATH];  // создаётся буфер для хранения полного пути до исполняемого файла
+    
+    // получение пути к текущему .exe файлу (без передачи hModule)
+    DWORD length = GetModuleFileNameA(nullptr, buffer, MAX_PATH);  
 
+    if (length == 0)
+    {
+        return filename;  // если не удалось получить путь — возвращается имя файла как есть
+    }
+
+    // преобразование C-строки в std::string
+    std::string fullPath(buffer, length);  
+
+    // поиск последнего слэша или обратного слэша, чтобы отделить путь от имени файла
     size_t pos = fullPath.find_last_of("\\/");
-    if (pos == std::string::npos) {
-        return filename;
+    
+    if (pos == std::string::npos)
+    {
+        return filename;  // если слэш не найден, путь некорректен — возвращается только имя файла
     }
 
-    std::string path = fullPath.substr(0, pos + 1) + filename;
-    return path;
+    // вырезается путь до директории .exe и к нему добавляется переданное имя файла
+    std::string path = fullPath.substr(0, pos + 1) + filename;  
+    
+    // возвращается полный путь к файлу, находящемуся в той же папке, что и исполняемый файл
+    return path;  
 }
 
-// функции Харитонов начало
 
 // проверка на малосимвольные (местоимения, предлоги) части речи
 bool match_others(const string& word, const vector<string>& others_parts)
 {
     for (const string& others : others_parts) {
         if (others.empty()) continue;
-        if (others==word)//||(word.find('-'))) 
+        if (others==word) 
         {
             return true;
         }
@@ -44,48 +60,64 @@ bool match_others(const string& word, const vector<string>& others_parts)
     return false;
 }
 
+// функция для проверки наличия полученной части слова в служебном файле
 bool check_in_file(string fileName, string word_comp)
 {
-
+    // переменная-результат, по умолчанию false — слово не найдено
     bool res(false);
 
+    // получение абсолютного пути к файлу, который должен находиться рядом с исполняемым файлом
     string file_path = get_filepath(fileName);
 
+    // открытие входного потока для чтения файла
     ifstream file;
     file.open(file_path, ios_base::in);
 
+    // если файл успешно открыт
     if (file.is_open())
     {
-        string str;
-        string wordFile("");    //инициализация строки для сверки со строкой, подающейся на вход
+        string str;               // строка для построчного чтения
+        string wordFile("");      // переменная для накопления слова из строки файла до пробела
 
+        // цикл продолжается, пока не достигнут конец файла
         while (!file.eof())
         {
-            getline(file, str); //считывание строки из файла
+            // считывание следующей строки из файла
+            getline(file, str);
 
+            // перебор каждого символа в считанной строке
             for (int i(0); i < str.size(); i++)
             {
-                if (str[i] != ' ') wordFile += str[i];  //считывание слова до пробела из строки
+                // если текущий символ не пробел — добавляется к слову
+                if (str[i] != ' ') wordFile += str[i];
                 else
                 {
-                    //при пробеле сравнение с входной строкой считанного из файла слова
+                    // при обнаружении пробела происходит сравнение накопленного слова с входным значением
                     if (wordFile == word_comp)
                     {
-
+                        // если найдено совпадение, устанавливается результат и выход из цикла
                         res = true;
                         break;
                     }
-                    else wordFile = ""; //если не соотвествует, очистка считанной строки и переход к считыванию следующего слова
+                    else
+                        // если не совпало — очищается накопленное слово для следующей попытки
+                        wordFile = "";
                 }
             }
+
+            // если результат уже найден — выход из внешнего цикла
             if (res) break;
         }
     }
+
+    // закрытие файла (даже если он не открылся — вызов безопасен)
     file.close();
 
+    // возвращение результата
     return res;
 }
 
+// функция для проверки - является ли взятая буква гласной
 bool vowel_check(char letter)
 {
     bool res(false);
@@ -107,6 +139,7 @@ bool vowel_check(char letter)
     return res;
 }
 
+// функция проверки на то, что слово не является причастием
 bool participle_check(string wordSt) {
 
     bool res(false);
@@ -199,7 +232,7 @@ bool numerals_check(string wordSt) {
     return res;
 }
 
-// Проверяет, оканчивается ли слово на один из суффиксов/окончаний
+// функция проверки - оканчивается ли слово на один из суффиксов/окончаний
 bool ends_with(const string& word, const vector<string>& suffixes) {
     for (const string& suffix : suffixes) {
         if (suffix.empty()) continue;
@@ -211,7 +244,7 @@ bool ends_with(const string& word, const vector<string>& suffixes) {
     return false;
 }
 
-// Проверяет, содержит ли слово один из суффиксов (не только окончание)
+// функция проверки - содержит ли слово один из суффиксов (не только окончание)
 bool contains_suffix(const string& word, const vector<string>& suffixes) {
     for (const string& suffix : suffixes) {
         if (suffix.empty()) continue;
@@ -222,6 +255,7 @@ bool contains_suffix(const string& word, const vector<string>& suffixes) {
     return false;
 }
 
+// функция проверки - является ли слово прилагательным
 bool adj_check(string wordIn) {
 
     string word = wordIn;
@@ -234,28 +268,28 @@ bool adj_check(string wordIn) {
     int j(3);
     do {
 
-        //запись окончания и начала слова в соотвествующие строки
+        // запись окончания и начала слова в соотвествующие строки
         if (word.size() > j + 1)
         {
             for (int i(word.size() - j); i < word.size(); i++) wordEnd += word[i];
             for (int i(0); i < word.size() - j; i++) wordStart += word[i];
         }
 
-        //проверка на наличие окончаний прилагательных
+        // проверка на наличие окончаний прилагательных
         if (check_in_file("adj_ends.txt", wordEnd)) res = true;
 
-        //проверка на то, что слово не является местоимением
+        // проверка на то, что слово не является местоимением
         if (res && check_in_file("pronouns.txt", wordStart)) res = false;
 
-        //проверка на то, что слово не является числительным
+        // проверка на то, что слово не является числительным
         if (res && numerals_check(wordStart)) res = false;
 
-        //проверка на то, что слово не является причастием
+        // проверка на то, что слово не является причастием
         if (res && participle_check(wordStart)) res = false;
 
         if (res) break;
 
-        //очистка служебных строк
+        // очистка служебных строк
         wordEnd = "";
         if (j != 2) wordStart = "";
 
@@ -264,51 +298,60 @@ bool adj_check(string wordIn) {
 
     } while (j > 1);
 
-    //проверка на то, что буква, предшествующая первой букве окончания является гласной
+    // проверка на то, что буква, предшествующая первой букве окончания является гласной
     if (res) if (vowel_check(wordStart[wordStart.size() - 1])) res = false;
-    //проверка на то, что буква, предшествующая первой букве окончания является мягким знаком
+    // проверка на то, что буква, предшествующая первой букве окончания является мягким знаком
     if (res) if (wordStart[wordStart.size() - 1] == 'ь') res = false;
 
     return res;
 }
 
-// Функции Харитонов конец
 
-
-// функция перевода ANSI в UTF-8
+// функция преобразует строку из кодировки Windows-1251 (ANSI) в UTF-8
 std::string ansi_to_utf8(const std::string& ansi_str) {
-    int wide_size = MultiByteToWideChar(1251, 0, ansi_str.c_str(), -1, nullptr, 0);
-    std::wstring wide_str(wide_size, 0);
-    MultiByteToWideChar(1251, 0, ansi_str.c_str(), -1, &wide_str[0], wide_size);
+    // сначала конвертация из ANSI в wide-строку (UTF-16)
+    int wide_size = MultiByteToWideChar(1251, 0, ansi_str.c_str(), -1, nullptr, 0);  // получение необходимого размера для буфера
+    std::wstring wide_str(wide_size, 0);  // выделение буфера под wide-строку
+    MultiByteToWideChar(1251, 0, ansi_str.c_str(), -1, &wide_str[0], wide_size);  // реальное преобразование в wide-строку
 
-    int utf8_size = WideCharToMultiByte(CP_UTF8, 0, wide_str.c_str(), -1, nullptr, 0, nullptr, nullptr);
-    std::string utf8_str(utf8_size, 0);
-    WideCharToMultiByte(CP_UTF8, 0, wide_str.c_str(), -1, &utf8_str[0], utf8_size, nullptr, nullptr);
+    // теперь конвертация из wide-строки (UTF-16) в UTF-8
+    int utf8_size = WideCharToMultiByte(CP_UTF8, 0, wide_str.c_str(), -1, nullptr, 0, nullptr, nullptr);  // получение нужного размера
+    std::string utf8_str(utf8_size, 0);  // выделение буфера
+    WideCharToMultiByte(CP_UTF8, 0, wide_str.c_str(), -1, &utf8_str[0], utf8_size, nullptr, nullptr);  // реальное преобразование
 
-    if (!utf8_str.empty()) utf8_str.pop_back(); // Удаляем завершающий ноль
+    // удаление завершающего '\0', т.к. std::string его не требует
+    if (!utf8_str.empty()) utf8_str.pop_back();
     return utf8_str;
 }
 
-// Конвертация строки из UTF-8 в wide-строку (UTF-16)
+
+// функция преобразует строку из UTF-8 в wide-строку (UTF-16), которая используется внутри Windows API
 std::wstring utf8_to_wstring(const std::string& utf8_str) {
+    // определение необходимого размера для wide-строки
     int size_needed = MultiByteToWideChar(CP_UTF8, 0, utf8_str.c_str(), -1, nullptr, 0);
-    std::wstring wstr(size_needed, 0);
+    std::wstring wstr(size_needed, 0);  // выделение буфера
+
+    // конвертация из UTF-8 в wide-строку
     MultiByteToWideChar(CP_UTF8, 0, utf8_str.c_str(), -1, &wstr[0], size_needed);
-    if (!wstr.empty()) wstr.pop_back(); // Удаляем завершающий ноль
+
+    // удаление завершающего символа '\0', не нужного в std::wstring
+    if (!wstr.empty()) wstr.pop_back();
     return wstr;
 }
 
-// Конвертация UTF-8 → Windows-1251 (ANSI) через wide-строку
+// функция преобразует строку из UTF-8 в ANSI (Windows-1251) через промежуточную wide-строку
 std::string utf8_to_ansi(const std::string& utf8_str) {
+    // сначала преобразование UTF-8 → wide-строка
     int wide_size = MultiByteToWideChar(CP_UTF8, 0, utf8_str.c_str(), -1, nullptr, 0);
     std::wstring wide_str(wide_size, 0);
     MultiByteToWideChar(CP_UTF8, 0, utf8_str.c_str(), -1, &wide_str[0], wide_size);
 
+    // затем преобразование wide-строки → ANSI (кодировка 1251)
     int ansi_size = WideCharToMultiByte(1251, 0, wide_str.c_str(), -1, nullptr, 0, nullptr, nullptr);
     std::string ansi_str(ansi_size, 0);
     WideCharToMultiByte(1251, 0, wide_str.c_str(), -1, &ansi_str[0], ansi_size, nullptr, nullptr);
 
-    // Удаляем завершающий нулевой символ, если он есть
+    // удаление лишнего завершающего символа '\0', если он был добавлен
     if (!ansi_str.empty() && ansi_str.back() == '\0') {
         ansi_str.pop_back();
     }
@@ -316,26 +359,23 @@ std::string utf8_to_ansi(const std::string& utf8_str) {
     return ansi_str;
 }
 
-// Обратная конвертация wide-строки в UTF-8
+
+
+// функция преобразует wide-строку (UTF-16) в строку UTF-8
 std::string wstring_to_utf8(const std::wstring& wstr) {
+    // определение размера буфера для UTF-8 строки
     int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
-    std::string str(size_needed, 0);
+    std::string str(size_needed, 0);  // выделение буфера
+
+    // выполнение конвертации
     WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, &str[0], size_needed, nullptr, nullptr);
-    if (!str.empty()) str.pop_back(); // Удаляем завершающий ноль
+
+    // удаление завершающего нуля, добавленного API
+    if (!str.empty()) str.pop_back();
     return str;
 }
 
-std::wstring keepOnlyRussianLetters(const std::wstring& input) {
-    std::wstring result;
-    for (wchar_t wc : input) {
-        // Проверяем диапазоны русских букв: А-Я, а-я, Ё, ё
-        if ((wc >= L'А' && wc <= L'я') || wc == L'Ё' || wc == L'ё') {
-            result += wc;
-        }
-    }
-    return result;
-}
-
+// функция очистки строки от знаков пунктуации (необходимо для проверки на знаки пунктуации 
 std::string cleanRussianOnly(const std::string& input) {
     std::string result;
     for (unsigned char ch : input) {
@@ -351,6 +391,8 @@ std::string cleanRussianOnly(const std::string& input) {
     return result;
 }
 
+
+// функция преобразования первого символа строки с загловного на строчный
 std::string lowFirstLetter(const std::string& input) {
     static const std::unordered_map<unsigned char, unsigned char> to_lower = {
         {0xC0, 0xE0}, // А->а
@@ -399,6 +441,8 @@ std::string lowFirstLetter(const std::string& input) {
     return result;
 }
 
+
+// функция замены всех символов на заглавные
 std::string capitalizeAllLetters(const std::string& input) {
     static const std::unordered_map<unsigned char, unsigned char> to_upper = {
         {0xE0, 0xC0}, // а->А
@@ -447,38 +491,13 @@ std::string capitalizeAllLetters(const std::string& input) {
     return result;
 }
 
-// Удаляет знаки пунктуации из слова
-std::string removePunctuation(const std::string& word) {
-    // Преобразуем UTF-8 → UTF-16
-    int wideSize = MultiByteToWideChar(CP_UTF8, 0, word.c_str(), -1, nullptr, 0);
-    std::wstring wideStr(wideSize, 0);
-    MultiByteToWideChar(CP_UTF8, 0, word.c_str(), -1, &wideStr[0], wideSize);
-    if (!wideStr.empty()) wideStr.pop_back(); // Удаляем завершающий ноль
-
-    // Фильтруем только символы, которые НЕ являются пунктуацией/разделителями
-    std::wstring filtered;
-    for (wchar_t wc : wideStr) {
-        if (!iswpunct(wc) && !iswspace(wc) && !iswcntrl(wc) &&
-            wc != L'«' && wc != L'»' && wc != L'“' && wc != L'”' &&
-            wc != L'–' && wc != L'—' && wc != L'…') {
-            filtered += wc;
-        }
-    }
-
-    // Преобразуем обратно UTF-16 → UTF-8
-    int utf8Size = WideCharToMultiByte(CP_UTF8, 0, filtered.c_str(), -1, nullptr, 0, nullptr, nullptr);
-    std::string utf8Str(utf8Size, 0);
-    WideCharToMultiByte(CP_UTF8, 0, filtered.c_str(), -1, &utf8Str[0], utf8Size, nullptr, nullptr);
-    if (!utf8Str.empty()) utf8Str.pop_back(); // Удаляем завершающий ноль
-
-    return utf8Str;
-}
-
+/*
 // Чтение содержимого файла в строку
 std::string read_file(const std::string& path) {
     std::ifstream in(path, std::ios::binary);
     return std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
 }
+*/
 
 // Кэш, чтобы не вызывать повторно mystem для одного и того же слова
 std::unordered_map<std::string, std::string> cache;
@@ -486,7 +505,7 @@ std::unordered_map<std::string, std::string> cache;
 // Получение части речи слова через mystem
 std::string getPartOfSpeech(const std::string& word, unordered_map<string, vector<string>>& morphemeRules) {
 
-    //string word_ANSI = utf8_to_ansi(word); // Перекодируем результат в ANSI
+    
     // ввод флагов для обнаружения отличий между существительными и прилагательными
     bool nouns_found = false;
     bool adjective_found = false;
@@ -500,12 +519,12 @@ std::string getPartOfSpeech(const std::string& word, unordered_map<string, vecto
         return "others";
     }
 
-    //|| ((ends_with(word, morphemeRules.at("nouns_endings")))|| (word.size() < 5) )
+    
     // Проверка на существительное
     if (((ends_with(word, morphemeRules.at("nouns_endings")) &&
         contains_suffix(word, morphemeRules.at("nouns_suffixes"))) || ((amount_syllables<=2) && (ends_with(word, morphemeRules.at("nouns_endings"))))) && word.size() >= 2) {
         nouns_found = true;
-        //return "S";
+        
     }
 
     // Проверка на глагол
@@ -572,9 +591,6 @@ void findWordsByPartOfSpeech(std::vector<std::vector<std::string>>& sentences,bi
     for (auto& sentence : sentences) {
         for (auto& word : sentence) {
 
-            // TMP 24.04.2025
-            //word = removePunctuation(word); // Удаляем пунктуацию
-
             // с помощью вспомогательной переменной проверяем, не является ли слово знаком пунктуации
             tmp_word = word;
             tmp_word = cleanRussianOnly(tmp_word);
@@ -611,9 +627,6 @@ void findWordsByPartOfSpeech(std::vector<std::vector<std::string>>& sentences,bi
 }
 
 
-
-
-
 // Получение части речи слова через mystem
 std::string get_Mystem_part_of_speech(const std::string& word) {
     if (cache.find(word) != cache.end()) return cache[word]; // Используем кэш
@@ -634,14 +647,14 @@ std::string get_Mystem_part_of_speech(const std::string& word) {
                 ? analysis.substr(0, pipePos)
                 : analysis;
 
-            // Приоритетная проверка некоторых частей речи
+            // Приоритетная проверка частей речи
             if (firstParse.find("прич") != std::string::npos) cache[word] = "прич";
             else if (firstParse.find("деепр") != std::string::npos) cache[word] = "деепр";
             else if (firstParse.find("SPRO") != std::string::npos) cache[word] = "SPRO";
             else if (firstParse.find("ADV") != std::string::npos) cache[word] = "ADV";
             else if (firstParse.find("A=") != std::string::npos) cache[word] = "A";
             else {
-                // Универсальный способ — взять символ после =
+                // взятие символа после =
                 size_t equalsPos = firstParse.find('=');
                 if (equalsPos != std::string::npos && equalsPos + 1 < firstParse.size()) {
                     // До первого символа "," или "=" после =
