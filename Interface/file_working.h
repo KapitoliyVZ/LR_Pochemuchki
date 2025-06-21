@@ -1,3 +1,11 @@
+//   Данный заголовочный файл содержит функции и константы для работы с файлами ввода и вывода, реализует :
+//    - Проверку и открытие входных файлов, обработку ошибок открытия и чтения.
+//    - Генерацию и проверку имён выходных файлов(TXT / HTML) для сохранения результатов анализа текста и рифм.
+//    - Запись результатов анализа текста и рифм в текстовые и HTML - файлы с форматированием и цветовым выделением частей речи.
+//    - Вспомогательные функции для преобразования кодировок, получения суффиксов частей речи и типа поиска, проверки существования файлов.
+//    - Использует глобальные потоки для работы с файлами, а также структуры данных для хранения информации о словах, рифмах и предложениях.
+
+
 #pragma once
 #ifndef FILE_WORKING_H
 #define FILE_WORKING_H
@@ -44,15 +52,6 @@ bool check_inputFile_is_empty(const string file_name)
         return false;
 }
 
-// Функция для проверки кодировки файла для чтения
-bool check_encoding_file()
-{
-    // true - файл в кодировке ANSII
-    // false - файл не в кодировке ANSII
-
-    return true; // ничего подозрительного, вероятно ANSI
-}
-
 // Функция для работы с файлом для чтения: проверка имени и открытия файла, возвращает:
 // {false, Error_text} или {true, text_in_file)
 pair<bool, string> inputFile_working(const string &inputFilePath) // filePath - путь к файлу
@@ -76,9 +75,6 @@ pair<bool, string> inputFile_working(const string &inputFilePath) // filePath - 
 
     if (check_inputFile_is_empty(path))
         return {false, error_empty_file}; // файл пустой
-
-    if (!check_encoding_file())
-        return {false, error_wrong_encoding_file}; // Неверная кодировка файла
 
     string text_in_string; // текст файла
 
@@ -356,6 +352,8 @@ void write_outputFile_rhymes_html(const vector<WordData> &rhymes_data)
     file_output_rhymes << "</body>\n</html>";
     file_output_rhymes.close();
 }
+
+/////////////////////////////////////////////////////////////
 
 // Функция проверки наличия файла с данным именем в системе
 bool check_outputFile_existence(const string outputFileName)
